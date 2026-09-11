@@ -72,6 +72,36 @@ See `python3 find_opportunities.py --help` for the full option list
 (posted-days window, deadline window, retry count, custom db/drafts
 paths, digest recipient).
 
+## Web UI (recommended for everyday use)
+
+A plain website version of this tool — no command line needed after
+setup. Runs locally on your own machine, same as the CLI: your API key
+and Gmail password never leave your computer.
+
+```bash
+pip install -r requirements.txt -r webapp/requirements.txt
+python3 webapp/app.py
+```
+
+Then open **http://localhost:5000** in your browser. The first time,
+it'll ask you to paste your SAM.gov API key — after that, everything is
+click-based:
+
+- **Home** — one big button to check for new contracts, with a quick
+  summary of what it found
+- **Contracts** — every match, plain-language labels instead of jargon
+  ("🔥 Great Match" instead of a raw score), sorted best-first
+- **Review Packets** — the auto-generated go/no-go scaffolds, with a
+  checklist you can tick off right on the page
+- **Settings** — your business categories (NAICS codes), certifications,
+  timing, and email alerts, all as forms — no code required
+
+Why this isn't a hosted website you can visit from anywhere: it needs
+your SAM.gov API key (and optionally your Gmail app password) to work,
+and there's no safe way to hold those secrets in a page hosted on the
+open web without exposing them in the page's own code. Running it
+locally keeps them on your machine, same as the CLI always has.
+
 ## Eligibility filtering
 
 Set-aside notices are classified three ways:
@@ -85,8 +115,10 @@ Set-aside notices are classified three ways:
   from output by default since we don't hold those certifications; pass
   `--include-restricted-set-asides` to see them anyway.
 
-Update `ELIGIBLE_SET_ASIDE_HINTS` / `RESTRICTED_SET_ASIDE_HINTS` in
-`find_opportunities.py` if your certifications change.
+Change which certifications you hold from the Web UI's Settings tab
+(checkboxes), or by editing `certifications` in `settings.json` — no
+code changes needed. The CLI's `--naics`/module-level defaults are still
+there for scripting/CI use.
 
 ## Scheduling (GitHub Actions)
 

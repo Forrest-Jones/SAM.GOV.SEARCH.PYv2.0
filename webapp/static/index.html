@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contract Finder</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="setup-screen" class="setup-screen" hidden>
+    <div class="setup-card">
+      <h1>👋 Welcome</h1>
+      <p>This tool finds government contracts that match your business, so you don't have to dig through SAM.gov yourself. Let's get it connected — it only takes a minute.</p>
+
+      <label class="field-label" for="setup-api-key">Your SAM.gov API Key</label>
+      <p class="field-help">Free to get. Go to <strong>sam.gov → Account Details → Get API Key</strong>, copy it, and paste it here.</p>
+      <input id="setup-api-key" type="password" placeholder="Paste your API key here" autocomplete="off" />
+
+      <button id="setup-save" class="btn btn-primary">Save & Get Started</button>
+      <p id="setup-error" class="error-text" hidden></p>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="brand">📋 Contract Finder</div>
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="dashboard">Home</button>
+        <button class="tab-btn" data-tab="opportunities">Contracts</button>
+        <button class="tab-btn" data-tab="drafts">Review Packets</button>
+        <button class="tab-btn" data-tab="settings">Settings</button>
+      </nav>
+    </header>
+
+    <main class="content">
+      <!-- DASHBOARD -->
+      <section id="tab-dashboard" class="tab-panel active">
+        <div class="hero-card">
+          <h1>Find contracts that match your business</h1>
+          <p>One click checks SAM.gov for new opportunities in your business categories.</p>
+          <button id="search-btn" class="btn btn-primary btn-large">🔍 Find New Contracts</button>
+          <p id="search-status" class="status-text"></p>
+        </div>
+
+        <div id="summary-cards" class="summary-cards" hidden>
+          <div class="summary-card">
+            <div class="summary-number" id="summary-total">0</div>
+            <div class="summary-label">Total matches</div>
+          </div>
+          <div class="summary-card highlight">
+            <div class="summary-number" id="summary-new">0</div>
+            <div class="summary-label">New since last time</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-number" id="summary-drafts">0</div>
+            <div class="summary-label">Review packets created</div>
+          </div>
+        </div>
+
+        <div id="dashboard-preview"></div>
+      </section>
+
+      <!-- OPPORTUNITIES -->
+      <section id="tab-opportunities" class="tab-panel">
+        <h1>Contracts</h1>
+        <p class="muted">Best matches first. Click a card for details.</p>
+        <div id="opportunities-list" class="card-list"></div>
+        <p id="opportunities-empty" class="muted" hidden>No contracts found yet — go to Home and click "Find New Contracts".</p>
+      </section>
+
+      <!-- DRAFTS -->
+      <section id="tab-drafts" class="tab-panel">
+        <h1>Review Packets</h1>
+        <p class="muted">For your best matches, we put together everything you need to decide whether to bid — the full description, attachments, and a step-by-step checklist. Nothing gets submitted automatically; these are just for your review.</p>
+        <div id="drafts-list" class="card-list"></div>
+        <p id="drafts-empty" class="muted" hidden>No review packets yet. They show up automatically for great new matches.</p>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="tab-settings" class="tab-panel">
+        <h1>Settings</h1>
+
+        <div class="settings-card">
+          <h2>Your Business Categories</h2>
+          <p class="field-help">These are your NAICS codes — they tell us what kind of work to search for. Don't know yours? They're on your SAM.gov registration, or ask your accountant.</p>
+          <div id="naics-chips" class="chip-list"></div>
+          <div class="chip-input-row">
+            <input id="naics-input" type="text" placeholder="e.g. 541213" />
+            <button id="naics-add" class="btn btn-secondary">Add</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h2>Your Certifications</h2>
+          <p class="field-help">Check anything you're certified for. Contracts reserved for certifications you don't hold are hidden automatically, so you don't waste time on ones you can't win.</p>
+          <div id="cert-checkboxes" class="checkbox-list"></div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="show-ineligible" />
+            Show me those anyway (I'll double check eligibility myself)
+          </label>
+        </div>
+
+        <div class="settings-card">
+          <h2>Timing</h2>
+          <div class="field-row">
+            <label>Only show contracts due in the next
+              <input type="number" id="deadline-max" class="num-input" min="1" /> days
+            </label>
+          </div>
+          <div class="field-row">
+            <label>But skip anything due sooner than
+              <input type="number" id="deadline-min" class="num-input" min="0" /> days
+              (not enough time to prepare a bid)
+            </label>
+          </div>
+          <div class="field-row">
+            <label>How far back to search:
+              <input type="number" id="posted-days" class="num-input" min="1" /> days
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h2>Review Packets</h2>
+          <label class="checkbox-row">
+            <input type="checkbox" id="generate-drafts" />
+            Automatically create a review packet for great matches
+          </label>
+          <div class="field-row">
+            <label>Only for matches scoring at least
+              <input type="number" id="draft-min-score" class="num-input" min="0" /> out of ~9
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h2>Email Alerts</h2>
+          <label class="checkbox-row">
+            <input type="checkbox" id="send-email" />
+            Email me when new contracts are found
+          </label>
+          <div class="field-row">
+            <label>Send to:
+              <input type="email" id="notify-email" class="text-input" />
+            </label>
+          </div>
+
+          <div class="credential-row">
+            <span>Gmail address</span>
+            <input id="gmail-user" type="email" placeholder="you@gmail.com" />
+          </div>
+          <div class="credential-row">
+            <span>Gmail App Password</span>
+            <input id="gmail-app-password" type="password" placeholder="(unchanged)" />
+            <span id="gmail-status" class="status-badge"></span>
+          </div>
+          <p class="field-help">Not your regular Gmail password — create an <strong>App Password</strong> under Google Account → Security → 2-Step Verification → App Passwords.</p>
+        </div>
+
+        <div class="settings-card">
+          <h2>SAM.gov Connection</h2>
+          <div class="credential-row">
+            <span>API Key</span>
+            <input id="sam-api-key" type="password" placeholder="(unchanged)" />
+            <span id="sam-status" class="status-badge"></span>
+          </div>
+        </div>
+
+        <button id="settings-save" class="btn btn-primary btn-large">Save Settings</button>
+        <p id="settings-status" class="status-text"></p>
+      </section>
+    </main>
+  </div>
+
+  <!-- DETAIL MODAL (shared for opportunities & drafts) -->
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal">
+      <button id="modal-close" class="modal-close">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

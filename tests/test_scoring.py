@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from find_opportunities import eligibility, score, slugify  # noqa: E402
+from find_opportunities import build_hints, eligibility, score, slugify  # noqa: E402
 
 
 def make_opp(**overrides):
@@ -105,3 +105,27 @@ def test_slugify_handles_punctuation_and_length():
     assert slugify("Tax & Accounting: Support, Services!") == "tax-accounting-support-services"
     assert slugify(None) == "opportunity"
     assert len(slugify("x" * 200)) <= 50
+
+
+def test_build_hints_splits_held_vs_not_held():
+    eligible, restricted = build_hints(["wosb", "edwosb"])
+    assert "wosb" in eligible
+    assert "8(a)" in restricted
+    assert "hubzone" in restricted
+    assert "8(a)" not in eligible
+
+
+def test_eligibility_wosb_not_shadowed_by_generic_small_business_restriction():
+    # Regression: "Woman-Owned Small Business Set-Aside" contains "small
+    # business set-aside" as a substring. If the user holds WOSB but not
+    # the generic small-business cert, the WOSB match must still win.
+    eligible_hints, restricted_hints = build_hints(["wosb", "edwosb"])
+    opp = make_opp(typeOfSetAsideDescription="Woman-Owned Small Business Set-Aside")
+    assert eligibility(opp, eligible_hints, restricted_hints) == "eligible_set_aside"
+
+
+def test_score_accepts_custom_hints():
+    eligible_hints, restricted_hints = build_hints(["8a"])
+    opp = make_opp(typeOfSetAsideDescription="8(a) Sole Source")
+    pts, reasons = score(opp, 7, 60, eligible_hints, restricted_hints)
+    assert "eligible" in reasons

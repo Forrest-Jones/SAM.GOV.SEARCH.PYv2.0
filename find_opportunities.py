@@ -109,6 +109,53 @@ RESTRICTED_SET_ASIDE_HINTS = (
     "veteran-owned small business",
 )
 
+# Known certification types, in plain language, each mapped to the notice-text
+# hints that count as a match. The web UI presents these as checkboxes; build_hints()
+# turns "which boxes are checked" into the eligible/restricted hint tuples that
+# eligibility()/score() take, so a non-technical user can change what counts as
+# eligible without touching code.
+CERTIFICATION_HINTS = {
+    "small_business": {
+        "label": "Small Business (general set-asides)",
+        "hints": ("total small business", "small business set-aside"),
+    },
+    "wosb": {
+        "label": "Woman-Owned Small Business (WOSB)",
+        "hints": ("woman-owned", "women-owned", "wosb"),
+    },
+    "edwosb": {
+        "label": "Economically Disadvantaged WOSB (EDWOSB)",
+        "hints": ("economically disadvantaged women", "edwosb"),
+    },
+    "8a": {
+        "label": "8(a) Business Development",
+        "hints": ("8(a)",),
+    },
+    "hubzone": {
+        "label": "HUBZone",
+        "hints": ("hubzone",),
+    },
+    "sdvosb": {
+        "label": "Service-Disabled Veteran-Owned Small Business (SDVOSB)",
+        "hints": ("service-disabled veteran", "sdvosb"),
+    },
+    "vosb": {
+        "label": "Veteran-Owned Small Business (VOSB)",
+        "hints": ("veteran-owned small business",),
+    },
+}
+
+
+def build_hints(certifications):
+    """certifications: iterable of CERTIFICATION_HINTS keys the user holds.
+    Returns (eligible_hints, restricted_hints) tuples for eligibility()/score()."""
+    held = set(certifications)
+    eligible, restricted = [], []
+    for key, info in CERTIFICATION_HINTS.items():
+        (eligible if key in held else restricted).extend(info["hints"])
+    return tuple(eligible), tuple(restricted)
+
+
 DEFAULT_DB_PATH = "state.sqlite3"
 DEFAULT_DRAFTS_DIR = "drafts"
 DEFAULT_TO_EMAIL = "forrestjones2010@gmail.com"
@@ -193,23 +240,27 @@ def fetch(naics_code, posted_from, posted_to, api_key, limit, max_retries):
     return results
 
 
-def eligibility(opp):
-    """full_open | eligible_set_aside | unknown_set_aside | restricted"""
+def eligibility(opp, eligible_hints=ELIGIBLE_SET_ASIDE_HINTS, restricted_hints=RESTRICTED_SET_ASIDE_HINTS):
+    """full_open | eligible_set_aside | unknown_set_aside | restricted.
+    Eligible is checked before restricted: a generic restricted hint like
+    "small business set-aside" is a substring of "woman-owned small
+    business set-aside", so an eligible-first check keeps a held
+    certification from being shadowed by a broader restricted phrase."""
     desc = (opp.get("typeOfSetAsideDescription") or "").lower()
     if not desc:
         return "full_open"
-    if any(h in desc for h in RESTRICTED_SET_ASIDE_HINTS):
-        return "restricted"
-    if any(h in desc for h in ELIGIBLE_SET_ASIDE_HINTS):
+    if any(h in desc for h in eligible_hints):
         return "eligible_set_aside"
+    if any(h in desc for h in restricted_hints):
+        return "restricted"
     return "unknown_set_aside"
 
 
-def score(opp, deadline_min, deadline_max):
+def score(opp, deadline_min, deadline_max, eligible_hints=ELIGIBLE_SET_ASIDE_HINTS, restricted_hints=RESTRICTED_SET_ASIDE_HINTS):
     pts = 0
     reasons = []
 
-    elig = eligibility(opp)
+    elig = eligibility(opp, eligible_hints, restricted_hints)
     if elig == "eligible_set_aside":
         pts += 2
         reasons.append(f"set-aside ({opp.get('typeOfSetAsideDescription')}) — eligible")
@@ -386,6 +437,82 @@ def send_email_digest(new_ones, to_addr, from_addr, app_password):
     print(f"Emailed digest to {to_addr}", file=sys.stderr)
 
 
+def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
+    """Runs the full pipeline (fetch -> filter -> score -> rank -> diff ->
+    draft -> email) from a plain config dict, so both the CLI and the web
+    UI drive identical logic. Returns a dict with the ranked list plus
+    everything that happened as a side effect (new notices, drafts written,
+    whether an email went out) so a caller can render it however it likes.
+
+    cfg keys: naics_codes (list[str]), posted_days, deadline_min, deadline_max,
+    limit, max_retries, eligible_hints, restricted_hints, include_restricted,
+    db_path, drafts_dir, draft_min_score, generate_drafts (bool),
+    to_email, from_email, app_password, send_email (bool).
+    """
+    posted_to = date.today()
+    posted_from = posted_to - timedelta(days=cfg["posted_days"])
+
+    all_opps = {}
+    for code in cfg["naics_codes"]:
+        log(f"Querying NAICS {code}...")
+        batch = fetch(
+            code,
+            posted_from.strftime("%m/%d/%Y"),
+            posted_to.strftime("%m/%d/%Y"),
+            api_key,
+            cfg["limit"],
+            cfg["max_retries"],
+        )
+        for opp in batch:
+            all_opps[opp.get("noticeId")] = opp  # dedupe across codes
+
+    eligible_hints = cfg["eligible_hints"]
+    restricted_hints = cfg["restricted_hints"]
+
+    excluded_restricted = 0
+    filtered = []
+    for opp in all_opps.values():
+        if eligibility(opp, eligible_hints, restricted_hints) == "restricted" and not cfg["include_restricted"]:
+            excluded_restricted += 1
+            continue
+        filtered.append(opp)
+
+    ranked = []
+    for opp in filtered:
+        pts, reasons = score(opp, cfg["deadline_min"], cfg["deadline_max"], eligible_hints, restricted_hints)
+        ranked.append((pts, reasons, opp))
+    ranked.sort(key=lambda r: r[0], reverse=True)
+
+    conn = open_state(cfg["db_path"])
+    new_ones = diff_and_record(conn, ranked)
+    conn.close()
+
+    draft_paths = []
+    draft_candidates = [r for r in new_ones if r[0] >= cfg["draft_min_score"]]
+    if draft_candidates and cfg["generate_drafts"]:
+        for pts, reasons, opp in draft_candidates:
+            description_text = fetch_description(opp, api_key)
+            path = write_draft(
+                opp, pts, reasons, eligibility(opp, eligible_hints, restricted_hints),
+                description_text, cfg["drafts_dir"],
+            )
+            draft_paths.append(path)
+            log(f"  drafted {path}")
+
+    emailed = False
+    if new_ones and cfg["send_email"] and cfg.get("from_email") and cfg.get("app_password"):
+        send_email_digest(new_ones, cfg["to_email"], cfg["from_email"], cfg["app_password"])
+        emailed = True
+
+    return {
+        "ranked": ranked,
+        "excluded_restricted": excluded_restricted,
+        "new_ones": new_ones,
+        "draft_paths": draft_paths,
+        "emailed": emailed,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser(description="Pull and rank SAM.gov opportunities for P1821's tax/eval lanes.")
     ap.add_argument("--posted-days", type=int, default=45)
@@ -409,43 +536,39 @@ def main():
     if not api_key:
         sys.exit('Set SAM_API_KEY first: export SAM_API_KEY="your-key-here"')
 
-    posted_to = date.today()
-    posted_from = posted_to - timedelta(days=args.posted_days)
-    naics_codes = [c.strip() for c in args.naics.split(",") if c.strip()]
+    from_addr = os.environ.get("GMAIL_USER")
+    app_password = os.environ.get("GMAIL_APP_PASSWORD")
+    if args.email and not (from_addr and app_password):
+        sys.exit("--email set but GMAIL_USER / GMAIL_APP_PASSWORD are not in the environment")
 
-    all_opps = {}
-    for code in naics_codes:
-        print(f"Querying NAICS {code}...", file=sys.stderr)
-        batch = fetch(
-            code,
-            posted_from.strftime("%m/%d/%Y"),
-            posted_to.strftime("%m/%d/%Y"),
-            api_key,
-            args.limit,
-            args.max_retries,
-        )
-        for opp in batch:
-            all_opps[opp.get("noticeId")] = opp  # dedupe across codes
+    cfg = {
+        "naics_codes": [c.strip() for c in args.naics.split(",") if c.strip()],
+        "posted_days": args.posted_days,
+        "deadline_min": args.deadline_min,
+        "deadline_max": args.deadline_max,
+        "limit": args.limit,
+        "max_retries": args.max_retries,
+        "eligible_hints": ELIGIBLE_SET_ASIDE_HINTS,
+        "restricted_hints": RESTRICTED_SET_ASIDE_HINTS,
+        "include_restricted": args.include_restricted_set_asides,
+        "db_path": args.db,
+        "drafts_dir": args.drafts_dir,
+        "draft_min_score": args.draft_min_score,
+        "generate_drafts": not args.no_drafts,
+        "to_email": args.to,
+        "from_email": from_addr,
+        "app_password": app_password,
+        "send_email": not args.no_email,
+    }
 
-    excluded_restricted = 0
-    filtered = []
-    for opp in all_opps.values():
-        if eligibility(opp) == "restricted" and not args.include_restricted_set_asides:
-            excluded_restricted += 1
-            continue
-        filtered.append(opp)
-
-    ranked = []
-    for opp in filtered:
-        pts, reasons = score(opp, args.deadline_min, args.deadline_max)
-        ranked.append((pts, reasons, opp))
-    ranked.sort(key=lambda r: r[0], reverse=True)
+    result = run_search(cfg, api_key)
+    ranked = result["ranked"]
 
     scored = sum(1 for r in ranked if r[0] > 0)
     print(f"\n{len(ranked)} unique notices, {scored} scored above zero", file=sys.stderr)
-    if excluded_restricted:
+    if result["excluded_restricted"]:
         print(
-            f"{excluded_restricted} excluded (set-aside restricted to a certification we don't hold — "
+            f"{result['excluded_restricted']} excluded (set-aside restricted to a certification we don't hold — "
             f"use --include-restricted-set-asides to see them)",
             file=sys.stderr,
         )
@@ -486,25 +609,7 @@ def main():
                 ])
         print(f"Wrote {args.csv}", file=sys.stderr)
 
-    conn = open_state(args.db)
-    new_ones = diff_and_record(conn, ranked)
-    conn.close()
-    print(f"{len(new_ones)} notice(s) new since last run (tracked in {args.db})", file=sys.stderr)
-
-    draft_candidates = [r for r in new_ones if r[0] >= args.draft_min_score]
-    if draft_candidates and not args.no_drafts:
-        for pts, reasons, opp in draft_candidates:
-            description_text = fetch_description(opp, api_key)
-            path = write_draft(opp, pts, reasons, eligibility(opp), description_text, args.drafts_dir)
-            print(f"  drafted {path}", file=sys.stderr)
-
-    if new_ones and not args.no_email:
-        from_addr = os.environ.get("GMAIL_USER")
-        app_password = os.environ.get("GMAIL_APP_PASSWORD")
-        if from_addr and app_password:
-            send_email_digest(new_ones, args.to, from_addr, app_password)
-        elif args.email:
-            sys.exit("--email set but GMAIL_USER / GMAIL_APP_PASSWORD are not in the environment")
+    print(f"{len(result['new_ones'])} notice(s) new since last run (tracked in {args.db})", file=sys.stderr)
 
 
 if __name__ == "__main__":
