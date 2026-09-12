@@ -3,6 +3,7 @@
 | | |
 |---|---|
 | **Due** | **2026-09-22 (10 days out)** |
+| Notice type | Combined Synopsis/Solicitation |
 | Solicitation | 70Z03926QCGA00037 |
 | Agency | HOMELAND SECURITY, DEPARTMENT OF.US COAST GUARD.CG ACADEMY(00039) |
 | Set-aside | Small Business Set Aside - Total |
@@ -18,6 +19,21 @@
 **2. Go or no-go.** Can you actually perform this work, at this place, by
 this date? If no, delete this folder and add a line to `skip_keywords` in
 `company.toml` so it never reaches you again.
+
+> **This one is pass/fail before anything else.** The solicitation text
+> asks for the qualifications below. No amount of proposal writing
+> substitutes for one the business does not hold.
+
+> - Needs **a licensed CPA or CPA firm** — nothing on file covers this. **Do you have it?**
+>
+
+> Nothing on file answers the requirement(s) marked above. If you
+> cannot produce it, this one is over — stop here and take the next
+> packet. Five minutes now, or the whole week after the proposal is
+> written.
+>
+> If you do hold it, add it to `credentials` in `company.toml` and
+> every future packet answers this by itself.
 
 **3. Price it.** Open `02-price-sheet.csv`. Your rates are already in it — no rate card on file yet. Enter **hours** only; the extended column totals itself.
 

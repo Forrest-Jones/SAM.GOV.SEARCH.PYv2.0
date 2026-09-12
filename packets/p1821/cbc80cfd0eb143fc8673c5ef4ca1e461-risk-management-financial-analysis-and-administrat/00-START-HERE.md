@@ -3,6 +3,7 @@
 | | |
 |---|---|
 | **Due** | **2026-09-21 (9 days out)** |
+| Notice type | Combined Synopsis/Solicitation |
 | Solicitation | 47QACA26R0306 |
 | Agency | GENERAL SERVICES ADMINISTRATION.PUBLIC BUILDINGS SERVICE.PBS R4 (AMD) ACQUISITION MGMT DIVISION |
 | Set-aside | SBA Certified Women-Owned Small Business (WOSB) Program Sole Source (FAR 19.15) |
