@@ -1,4 +1,4 @@
-# SAM.GOV.SEARCH.PYv2.0
+# Proverbs 1821 — SAM.gov Searchable Contracts
 
 Finds, ranks, and triages SAM.gov contract opportunities against Proverbs
 1821 Consulting LLC's NAICS codes (tax center support, accounting/tax
