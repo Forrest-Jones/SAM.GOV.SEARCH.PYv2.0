@@ -184,13 +184,15 @@ def credential_status():
     }
 
 
-def serialize_result(pts, reasons, opp):
+def serialize_result(pts, reasons, opp, held_certs=None):
     pop = opp.get("placeOfPerformance") or {}
     return {
         "notice_id": opp.get("noticeId"),
         "score": pts,
         "reasons": reasons,
-        "eligibility": core.eligibility(opp),
+        # Judged against the certifications actually saved in Settings, so the
+        # badge matches this business rather than the module default.
+        "eligibility": core.eligibility(opp, held_certs) if held_certs is not None else core.eligibility(opp),
         "title": opp.get("title"),
         "naics": opp.get("naicsCode"),
         "psc": opp.get("classificationCode"),
@@ -299,8 +301,6 @@ def api_search():
     if not settings["naics_codes"]:
         return jsonify({"ok": False, "error": "no_naics_codes"}), 400
 
-    eligible_hints, restricted_hints = core.build_hints(settings["certifications"])
-
     cfg = {
         "naics_codes": settings["naics_codes"],
         "posted_days": settings["posted_days"],
@@ -308,9 +308,9 @@ def api_search():
         "deadline_max": settings["deadline_max_days"],
         "limit": 100,
         "max_retries": 4,
-        "eligible_hints": eligible_hints,
-        "restricted_hints": restricted_hints,
+        "held_certs": settings["certifications"],
         "include_restricted": settings["show_ineligible"],
+        "include_expired": False,
         "db_path": DB_PATH,
         "drafts_dir": DRAFTS_DIR,
         "draft_min_score": settings["draft_min_score"],
@@ -327,7 +327,10 @@ def api_search():
     except Exception as e:
         return jsonify({"ok": False, "error": "search_failed", "detail": str(e), "log": log_lines}), 500
 
-    ranked_json = [serialize_result(pts, reasons, opp) for pts, reasons, opp in result["ranked"]]
+    ranked_json = [
+        serialize_result(pts, reasons, opp, settings["certifications"])
+        for pts, reasons, opp in result["ranked"]
+    ]
     new_ids = {opp.get("noticeId") for _, _, opp in result["new_ones"]}
 
     # Stash the raw notice (plus the description already fetched during the
@@ -350,6 +353,7 @@ def api_search():
         "ranked": ranked_json,
         "new_notice_ids": list(new_ids),
         "excluded_restricted": result["excluded_restricted"],
+        "excluded_expired": result["excluded_expired"],
         "draft_count": len(result["draft_paths"]),
         "emailed": result["emailed"],
         "log": log_lines,

@@ -86,42 +86,33 @@ NOTICE_TYPES = "p,k,r"  # presolicitation, combined synopsis/solicitation, sourc
 KEYWORDS = ["tax", "vita", "evaluation", "accounting", "financial", "audit", "irs"]
 HOME_STATES = {"TX"}  # small bonus only — best current template (McConnell AFB) is in KS
 
-# Set-asides we hold certifications for (WOSB / EDWOSB) plus generic total
-# small business set-asides, which anyone certified as an SB can pursue.
-# Matched against typeOfSetAsideDescription text since the v2 search API
-# doesn't reliably return a normalized set-aside code on every notice.
-ELIGIBLE_SET_ASIDE_HINTS = (
-    "total small business",
-    "small business set-aside",
-    "woman-owned",
-    "women-owned",
-    "wosb",
-    "edwosb",
-    "economically disadvantaged women",
-)
-# Set-asides that require a certification we don't hold — excluded from
-# results by default (--include-restricted-set-asides overrides).
-RESTRICTED_SET_ASIDE_HINTS = (
-    "8(a)",
-    "hubzone",
-    "service-disabled veteran",
-    "sdvosb",
-    "veteran-owned small business",
-)
+# Strings SAM.gov actually uses to mean "no set-aside, open to everyone".
+# The API sends these as literal text rather than an empty field, so without
+# this they read as some unrecognized set-aside program.
+NO_SET_ASIDE_PHRASES = {
+    "",
+    "no set aside used",
+    "none",
+    "n a",
+    "not applicable",
+    "full and open",
+    "full and open competition",
+}
 
-# Known certification types, in plain language, each mapped to the notice-text
-# hints that count as a match. The web UI presents these as checkboxes; build_hints()
-# turns "which boxes are checked" into the eligible/restricted hint tuples that
-# eligibility()/score() take, so a non-technical user can change what counts as
-# eligible without touching code.
+# Certification programs, each with the phrases (in normalized form — see
+# normalize_set_aside) that identify a notice as reserved for that program.
+# The web UI shows these as checkboxes, so changing what you're certified
+# for never requires touching code.
 CERTIFICATION_HINTS = {
     "small_business": {
         "label": "Small Business (general set-asides)",
-        "hints": ("total small business", "small business set-aside"),
+        # Real SAM.gov values include "Small Business Set Aside - Total" and
+        # "Total Small Business Set-Aside"; normalization flattens both.
+        "hints": ("small business set aside", "total small business"),
     },
     "wosb": {
         "label": "Woman-Owned Small Business (WOSB)",
-        "hints": ("woman-owned", "women-owned", "wosb"),
+        "hints": ("woman owned", "women owned", "wosb"),
     },
     "edwosb": {
         "label": "Economically Disadvantaged WOSB (EDWOSB)",
@@ -129,31 +120,83 @@ CERTIFICATION_HINTS = {
     },
     "8a": {
         "label": "8(a) Business Development",
-        "hints": ("8(a)",),
+        "hints": ("8(a)", "8 a "),
     },
     "hubzone": {
         "label": "HUBZone",
-        "hints": ("hubzone",),
+        "hints": ("hubzone", "hub zone"),
     },
     "sdvosb": {
         "label": "Service-Disabled Veteran-Owned Small Business (SDVOSB)",
-        "hints": ("service-disabled veteran", "sdvosb"),
+        "hints": ("service disabled veteran", "sdvosb"),
     },
     "vosb": {
         "label": "Veteran-Owned Small Business (VOSB)",
-        "hints": ("veteran-owned small business",),
+        "hints": ("veteran owned",),
     },
 }
 
+# Every program above is a small-business program, so holding any of them
+# means the business qualifies for a generic small-business set-aside too.
+# Without this, a WOSB-only profile would treat every "Small Business Set
+# Aside - Total" notice as ineligible and hide it.
+SMALL_BUSINESS_IMPLYING_CERTS = frozenset(CERTIFICATION_HINTS) - {"small_business"}
 
-def build_hints(certifications):
-    """certifications: iterable of CERTIFICATION_HINTS keys the user holds.
-    Returns (eligible_hints, restricted_hints) tuples for eligibility()/score()."""
-    held = set(certifications)
-    eligible, restricted = [], []
+DEFAULT_HELD_CERTS = ("small_business", "wosb", "edwosb")
+
+
+def normalize_set_aside(text):
+    """Flattens SAM.gov's inconsistent set-aside phrasing to one comparable
+    form. "Small Business Set-Aside", "Small Business Set Aside - Total" and
+    "Total Small Business Set-Aside" all reduce to text these hints match.
+    Parentheses survive so "8(a)" stays distinguishable."""
+    return re.sub(r"[^a-z0-9()]+", " ", (text or "").lower()).strip()
+
+
+def classify_set_aside(opp):
+    """Which certification programs a notice is reserved for.
+
+    Returns None when the notice is open to everyone, otherwise the set of
+    CERTIFICATION_HINTS keys it matches (empty set = a set-aside we don't
+    recognize). Classifying the notice first, and only then comparing
+    against what the user holds, avoids one program's phrasing shadowing
+    another's — "veteran owned" sits inside "service disabled veteran
+    owned", so SDVOSB is resolved explicitly below.
+    """
+    normalized = normalize_set_aside(opp.get("typeOfSetAsideDescription"))
+    if normalized in NO_SET_ASIDE_PHRASES:
+        return None
+
+    matched = set()
     for key, info in CERTIFICATION_HINTS.items():
-        (eligible if key in held else restricted).extend(info["hints"])
-    return tuple(eligible), tuple(restricted)
+        if any(hint in normalized for hint in info["hints"]):
+            matched.add(key)
+
+    # "service disabled veteran owned" also contains "veteran owned", so a
+    # SDVOSB notice would otherwise look like a VOSB one as well.
+    if "sdvosb" in matched:
+        matched.discard("vosb")
+    # EDWOSB text mentions women-owned too; both apply, but EDWOSB is the
+    # stricter requirement, so a WOSB-only holder must not read as eligible.
+    if "edwosb" in matched:
+        matched.discard("wosb")
+
+    return matched
+
+
+def eligibility(opp, held_certs=DEFAULT_HELD_CERTS):
+    """full_open | eligible_set_aside | unknown_set_aside | restricted"""
+    programs = classify_set_aside(opp)
+    if programs is None:
+        return "full_open"
+    if not programs:
+        return "unknown_set_aside"
+
+    held = set(held_certs)
+    if held & SMALL_BUSINESS_IMPLYING_CERTS:
+        held.add("small_business")
+
+    return "eligible_set_aside" if programs & held else "restricted"
 
 
 DEFAULT_DB_PATH = "state.sqlite3"
@@ -240,43 +283,33 @@ def fetch(naics_code, posted_from, posted_to, api_key, limit, max_retries):
     return results
 
 
-def eligibility(opp, eligible_hints=ELIGIBLE_SET_ASIDE_HINTS, restricted_hints=RESTRICTED_SET_ASIDE_HINTS):
-    """full_open | eligible_set_aside | unknown_set_aside | restricted.
-    Eligible is checked before restricted: a generic restricted hint like
-    "small business set-aside" is a substring of "woman-owned small
-    business set-aside", so an eligible-first check keeps a held
-    certification from being shadowed by a broader restricted phrase."""
-    desc = (opp.get("typeOfSetAsideDescription") or "").lower()
-    if not desc:
-        return "full_open"
-    if any(h in desc for h in eligible_hints):
-        return "eligible_set_aside"
-    if any(h in desc for h in restricted_hints):
-        return "restricted"
-    return "unknown_set_aside"
+def days_until_deadline(opp):
+    """Days from today until the response deadline, or None when the notice
+    has no parseable deadline (common on sources-sought notices)."""
+    raw = opp.get("responseDeadLine")
+    if not raw:
+        return None
+    try:
+        return (date.fromisoformat(raw[:10]) - date.today()).days
+    except ValueError:
+        return None
 
 
-def score(opp, deadline_min, deadline_max, eligible_hints=ELIGIBLE_SET_ASIDE_HINTS, restricted_hints=RESTRICTED_SET_ASIDE_HINTS):
+def score(opp, deadline_min, deadline_max, held_certs=DEFAULT_HELD_CERTS):
     pts = 0
     reasons = []
 
-    elig = eligibility(opp, eligible_hints, restricted_hints)
+    elig = eligibility(opp, held_certs)
     if elig == "eligible_set_aside":
         pts += 2
         reasons.append(f"set-aside ({opp.get('typeOfSetAsideDescription')}) — eligible")
     elif elig == "unknown_set_aside":
         reasons.append(f"set-aside ({opp.get('typeOfSetAsideDescription')}) — verify eligibility")
 
-    deadline_raw = opp.get("responseDeadLine")
-    if deadline_raw:
-        try:
-            d = date.fromisoformat(deadline_raw[:10])
-            days_left = (d - date.today()).days
-            if deadline_min <= days_left <= deadline_max:
-                pts += 2
-                reasons.append(f"{days_left}d to deadline")
-        except ValueError:
-            pass
+    days_left = days_until_deadline(opp)
+    if days_left is not None and deadline_min <= days_left <= deadline_max:
+        pts += 2
+        reasons.append(f"{days_left}d to deadline")
 
     if opp.get("classificationCode") in PRIORITY_PSC:
         pts += 1
@@ -445,7 +478,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
     whether an email went out) so a caller can render it however it likes.
 
     cfg keys: naics_codes (list[str]), posted_days, deadline_min, deadline_max,
-    limit, max_retries, eligible_hints, restricted_hints, include_restricted,
+    limit, max_retries, held_certs, include_restricted, include_expired,
     db_path, drafts_dir, draft_min_score, generate_drafts (bool),
     to_email, from_email, app_password, send_email (bool).
     """
@@ -466,20 +499,26 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
         for opp in batch:
             all_opps[opp.get("noticeId")] = opp  # dedupe across codes
 
-    eligible_hints = cfg["eligible_hints"]
-    restricted_hints = cfg["restricted_hints"]
+    held_certs = cfg["held_certs"]
 
     excluded_restricted = 0
+    excluded_expired = 0
     filtered = []
     for opp in all_opps.values():
-        if eligibility(opp, eligible_hints, restricted_hints) == "restricted" and not cfg["include_restricted"]:
+        if eligibility(opp, held_certs) == "restricted" and not cfg["include_restricted"]:
             excluded_restricted += 1
+            continue
+        # A notice whose deadline has passed can't be bid, so it's noise by
+        # default. Notices with no deadline at all (many sources-sought) stay.
+        days_left = days_until_deadline(opp)
+        if days_left is not None and days_left < 0 and not cfg.get("include_expired"):
+            excluded_expired += 1
             continue
         filtered.append(opp)
 
     ranked = []
     for opp in filtered:
-        pts, reasons = score(opp, cfg["deadline_min"], cfg["deadline_max"], eligible_hints, restricted_hints)
+        pts, reasons = score(opp, cfg["deadline_min"], cfg["deadline_max"], held_certs)
         ranked.append((pts, reasons, opp))
     ranked.sort(key=lambda r: r[0], reverse=True)
 
@@ -498,7 +537,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
                 # another call against the 1,000/day budget.
                 descriptions[opp.get("noticeId")] = description_text
             path = write_draft(
-                opp, pts, reasons, eligibility(opp, eligible_hints, restricted_hints),
+                opp, pts, reasons, eligibility(opp, held_certs),
                 description_text, cfg["drafts_dir"],
             )
             draft_paths.append(path)
@@ -512,6 +551,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
     return {
         "ranked": ranked,
         "excluded_restricted": excluded_restricted,
+        "excluded_expired": excluded_expired,
         "new_ones": new_ones,
         "draft_paths": draft_paths,
         "descriptions": descriptions,
@@ -533,6 +573,10 @@ def main():
     ap.add_argument("--draft-min-score", type=int, default=4)
     ap.add_argument("--no-drafts", action="store_true")
     ap.add_argument("--include-restricted-set-asides", action="store_true")
+    ap.add_argument("--include-expired", action="store_true",
+                    help="also show notices whose response deadline has already passed")
+    ap.add_argument("--certs", type=str, default=",".join(DEFAULT_HELD_CERTS),
+                    help=f"certifications held, comma-separated from: {','.join(CERTIFICATION_HINTS)}")
     ap.add_argument("--email", action="store_true")
     ap.add_argument("--no-email", action="store_true")
     ap.add_argument("--to", type=str, default=DEFAULT_TO_EMAIL)
@@ -554,9 +598,9 @@ def main():
         "deadline_max": args.deadline_max,
         "limit": args.limit,
         "max_retries": args.max_retries,
-        "eligible_hints": ELIGIBLE_SET_ASIDE_HINTS,
-        "restricted_hints": RESTRICTED_SET_ASIDE_HINTS,
+        "held_certs": [c.strip() for c in args.certs.split(",") if c.strip()],
         "include_restricted": args.include_restricted_set_asides,
+        "include_expired": args.include_expired,
         "db_path": args.db,
         "drafts_dir": args.drafts_dir,
         "draft_min_score": args.draft_min_score,
@@ -572,6 +616,12 @@ def main():
 
     scored = sum(1 for r in ranked if r[0] > 0)
     print(f"\n{len(ranked)} unique notices, {scored} scored above zero", file=sys.stderr)
+    if result["excluded_expired"]:
+        print(
+            f"{result['excluded_expired']} excluded (response deadline already passed — "
+            f"use --include-expired to see them)",
+            file=sys.stderr,
+        )
     if result["excluded_restricted"]:
         print(
             f"{result['excluded_restricted']} excluded (set-aside restricted to a certification we don't hold — "
