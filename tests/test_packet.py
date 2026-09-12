@@ -672,8 +672,8 @@ def test_the_gates_reach_the_checklist_where_the_decision_is_made(tmp_path):
         FILLED, str(tmp_path), 4, "")
     text = open(os.path.join(out, "00-START-HERE.md")).read()
     assert "a licensed CPA or CPA firm" in text
-    assert "pass/fail" in text
-    assert "costs you the week" in text
+    assert "pass/fail before anything else" in text
+    assert "the whole week after the proposal is" in text
 
 
 def test_a_packet_with_no_gates_says_nothing_about_them(tmp_path):
@@ -751,3 +751,85 @@ def test_the_shipped_allow_list_matches_the_profile_it_belongs_to():
     # The two codes that produced real but unperformable work are excluded.
     assert "541620" not in allowed
     assert "541720" not in allowed
+
+
+# ---------- credentials on file, and what they do and do not cover ----------
+
+EA_ONLY = {"credentials": [{"kind": "ea", "holder": "Randy White"}]}
+
+
+def test_an_enrolled_agent_does_not_satisfy_a_cpa_requirement():
+    # The most important assertion in this file. An EA is IRS-licensed
+    # under Circular 230 with unlimited representation rights before the
+    # IRS; audits and any opinion on financial statements are reserved to
+    # CPAs licensed by a state board. Treating one as the other would put
+    # a false representation on a federal submission.
+    assert company_mod.satisfies(EA_ONLY, "a licensed CPA or CPA firm") is None
+
+
+def test_an_enrolled_agent_is_still_recognised_as_held():
+    # Not satisfying the CPA gate is different from being ignored — it has
+    # to be on file so it can be cited where it IS the qualification.
+    held = company_mod.held_credentials(EA_ONLY)
+    assert len(held) == 1
+    assert held[0]["kind"] == "ea"
+    assert "Circular 230" in held[0]["label"]
+    assert held[0]["holder"] == "Randy White"
+
+
+def test_no_credential_satisfies_a_gate_it_is_not_mapped_to():
+    # Nothing is inferred from adjacency: same field is not same licence.
+    ea_gates = [g for g in company_mod.CREDENTIAL_SATISFIES.values() if g]
+    for gate in ea_gates:
+        holder = company_mod.satisfies(EA_ONLY, gate)
+        assert holder is None or holder["kind"] != "ea", gate
+
+
+def test_a_matching_credential_does_satisfy_its_gate():
+    cpa = {"credentials": [{"kind": "cpa", "holder": "J. Doe", "identifier": "TX-12345"}]}
+    holder = company_mod.satisfies(cpa, "a licensed CPA or CPA firm")
+    assert holder and holder["identifier"] == "TX-12345"
+
+
+def test_a_credential_with_no_holder_is_not_on_file():
+    # The blank template row must not read as a held credential.
+    assert company_mod.held_credentials({"credentials": [{"kind": "cpa", "holder": ""}]}) == []
+
+
+def test_the_checklist_resolves_a_gate_against_what_is_on_file(tmp_path):
+    cpa = dict(FILLED, credentials=[{"kind": "cpa", "holder": "J. Doe", "identifier": "TX-12345"}])
+    out, _, _ = packet.build_packet(
+        OPP, "requires an independent licensed CPA to audit the statements",
+        cpa, str(tmp_path), 4, "")
+    text = open(os.path.join(out, "00-START-HERE.md")).read()
+    assert "Covered." in text
+    assert "TX-12345" in text
+    assert "this one is over" not in text
+
+
+def test_the_checklist_blocks_when_nothing_on_file_covers_the_gate(tmp_path):
+    ea = dict(FILLED, credentials=[{"kind": "ea", "holder": "Randy White"}])
+    out, _, _ = packet.build_packet(
+        OPP, "requires an independent licensed CPA to audit the statements",
+        ea, str(tmp_path), 4, "")
+    text = open(os.path.join(out, "00-START-HERE.md")).read()
+    assert "nothing on file covers this" in text
+    assert "this one is over" in text
+
+
+def test_the_real_fact_bank_holds_the_enrolled_agent_and_no_cpa():
+    company = company_mod.load_company("p1821")
+    kinds = {c["kind"] for c in company_mod.held_credentials(company)}
+    assert "ea" in kinds
+    assert "cpa" not in kinds, "no CPA licence is on file; packets must not claim one"
+    assert company_mod.satisfies(company, "a licensed CPA or CPA firm") is None
+
+
+def test_every_plain_key_of_a_profile_survives_the_toml_tables():
+    # TOML footgun with teeth: the first [[p1821.xxx]] array-of-tables ends
+    # the parent table, so a bare key written after it belongs to the
+    # sub-table instead. That silently emptied packet_naics once already,
+    # which turned the capability gate off without any error.
+    company = company_mod.load_company("p1821")
+    for key in ("legal_name", "uei", "cage", "address", "packet_naics"):
+        assert company.get(key), f"{key} did not survive parsing"

@@ -77,6 +77,26 @@ packet_naics = [
   "541990",   # all other professional, scientific & technical services
 ]
 
+# Credentials the business actually holds. These answer the pass/fail
+# qualification questions a solicitation asks, so each packet can resolve
+# them itself instead of asking you every time.
+#
+# This block sits below every plain key of [p1821] on purpose: in TOML,
+# the first [[p1821.xxx]] array-of-tables ends the parent table, so any
+# bare key written after it silently belongs to the sub-table instead.
+#
+# kind must be one of: cpa, ea, pe, clearance, state_license, osha_nfpa,
+# iso_assessor, other_cert. The mapping is strict on purpose — an Enrolled
+# Agent does NOT answer a "licensed CPA" requirement. EA is an IRS
+# credential under Circular 230 with unlimited representation rights
+# before the IRS; audits and any opinion on financial statements are
+# reserved to CPAs licensed by a state board of accountancy.
+[[p1821.credentials]]
+kind       = "ea"
+holder     = "Randy White"
+identifier = ""            # EA enrollment number, if you want it cited
+expires    = ""            # renewal cycle date, if you track it
+
 # ONLY real, verifiable contracts. A plausible-sounding invented
 # reference is a false statement on a federal submission.
 [[p1821.past_performance]]

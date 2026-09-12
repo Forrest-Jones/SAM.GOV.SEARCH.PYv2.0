@@ -28,7 +28,7 @@ import re
 from datetime import date, datetime
 
 import proposal
-from company import filled_rows
+from company import filled_rows, held_credentials, satisfies
 
 MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 
@@ -373,21 +373,46 @@ def build_start_here(opp, company, blanks_left, attachments, failed, gates=()):
         "",    ]
 
     if gates:
+        # Resolved against what is on file, so the common case needs no
+        # thought at all. Only an exact match counts: a credential in the
+        # same field as the requirement is not the requirement.
+        resolved = [(gate, satisfies(company, gate)) for gate in gates]
+        blocked = [gate for gate, holder in resolved if holder is None]
+
         lines += [
-            "> **Before you spend an hour on this, answer these.** The solicitation",
-            "> text asks for the following. These are pass/fail: no proposal writing",
-            "> substitutes for a qualification the business does not hold.",
+            "> **This one is pass/fail before anything else.** The solicitation text",
+            "> asks for the qualifications below. No amount of proposal writing",
+            "> substitutes for one the business does not hold.",
             "",
         ]
-        for gate in gates:
-            lines.append(f"> - Do you have **{gate}**?")
-        lines += [
-            ">",
-            "> If any answer is no, this one is over — stop here and take the next",
-            "> packet. Answering no costs you five minutes; finding out after you",
-            "> have written the proposal costs you the week.",
-            "",
-        ]
+        for gate, holder in resolved:
+            if holder:
+                who = f"{holder['label']} — {holder['holder']}"
+                if holder["identifier"]:
+                    who += f" ({holder['identifier']})"
+                lines.append(f"> - Needs **{gate}** — on file: {who}. **Covered.**")
+            else:
+                lines.append(f"> - Needs **{gate}** — nothing on file covers this. **Do you have it?**")
+        lines += [">", ""]
+
+        if blocked:
+            lines += [
+                "> Nothing on file answers the requirement(s) marked above. If you",
+                "> cannot produce it, this one is over — stop here and take the next",
+                "> packet. Five minutes now, or the whole week after the proposal is",
+                "> written.",
+                ">",
+                "> If you do hold it, add it to `credentials` in `company.toml` and",
+                "> every future packet answers this by itself.",
+                "",
+            ]
+        else:
+            lines += [
+                "> Every stated qualification is covered by a credential on file.",
+                "> Cite it in the technical volume — evaluators score what you show",
+                "> them, not what you have.",
+                "",
+            ]
 
     lines += [
         "**3. Price it.** Open `02-price-sheet.csv`. Your rates are already in it"

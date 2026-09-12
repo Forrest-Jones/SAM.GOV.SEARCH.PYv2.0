@@ -137,6 +137,73 @@ def missing_fields(company):
     return required, leverage
 
 
+# Credentials the business actually holds, and which pass/fail gate each
+# one answers. The mapping is deliberately narrow, because the expensive
+# mistake is the generous one.
+#
+# An Enrolled Agent is a real federal credential — IRS-licensed under
+# Circular 230, with unlimited representation rights before the IRS — and
+# it satisfies NOTHING on the CPA line. Attest and audit work, and any
+# opinion on financial statements, is reserved to CPAs licensed by a state
+# board of accountancy. An EA answering a "licensed CPA" requirement would
+# be a false representation on a federal submission, so "ea" appears in
+# this table with its own gate and never touches the CPA one.
+CREDENTIAL_SATISFIES = {
+    "cpa": "a licensed CPA or CPA firm",
+    "pe": "a licensed Professional Engineer",
+    "clearance": "a security clearance or facility clearance",
+    "state_license": "a state contractor or professional license",
+    "osha_nfpa": "documented OSHA / NFPA safety training for the crew",
+    "iso_assessor": "accredited assessor or auditor competence for a named standard",
+    "other_cert": "a named third-party certification",
+    # Held, useful, and answers no gate above. Present so it can be cited
+    # where it IS the qualification — tax preparation and IRS
+    # representation — rather than being quietly treated as an audit
+    # credential.
+    "ea": None,
+}
+
+CREDENTIAL_LABELS = {
+    "cpa": "Certified Public Accountant (state-licensed)",
+    "ea": "Enrolled Agent (IRS, Circular 230)",
+    "pe": "Professional Engineer",
+    "clearance": "Security / facility clearance",
+    "state_license": "State contractor or professional license",
+    "osha_nfpa": "OSHA / NFPA confined-space or safety training",
+    "iso_assessor": "Accredited assessor for a named standard",
+    "other_cert": "Third-party certification",
+}
+
+
+def held_credentials(company):
+    """Real credential entries on file: kind, holder, identifier, expiry."""
+    out = []
+    for row in company.get("credentials") or []:
+        kind = str(row.get("kind") or "").strip().lower()
+        if kind and _is_filled(row.get("holder")):
+            out.append({
+                "kind": kind,
+                "label": CREDENTIAL_LABELS.get(kind, kind),
+                "holder": str(row.get("holder")).strip(),
+                "identifier": str(row.get("identifier") or "").strip(),
+                "expires": str(row.get("expires") or "").strip(),
+            })
+    return out
+
+
+def satisfies(company, gate):
+    """The credential on file that answers this gate, or None.
+
+    Only an exact mapping counts. Nothing is inferred from adjacency: a
+    credential in the same field as the requirement is not the
+    requirement.
+    """
+    for credential in held_credentials(company):
+        if CREDENTIAL_SATISFIES.get(credential["kind"]) == gate:
+            return credential
+    return None
+
+
 # A malformed identifier is worse than a blank one: a blank is obviously
 # unfinished, while a typo'd UEI reaches a contracting officer looking
 # legitimate and identifies nobody. Format only — whether the value is
