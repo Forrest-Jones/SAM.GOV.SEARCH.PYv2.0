@@ -1,0 +1,32 @@
+# Render Blueprint. In Render: New -> Blueprint -> point at this repo.
+# Set the secret values (marked sync: false) in the dashboard afterwards —
+# they are deliberately not stored in this file.
+services:
+  - type: web
+    name: contract-finder
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt -r webapp/requirements.txt
+    startCommand: gunicorn --chdir webapp app:app --bind 0.0.0.0:$PORT --timeout 300
+    healthCheckPath: /healthz
+    envVars:
+      - key: PUBLIC_DEPLOY
+        value: "1"
+      - key: DATA_DIR
+        value: /var/data
+      # --- set these in the Render dashboard, not here ---
+      - key: APP_PASSWORD          # required: gates the site
+        sync: false
+      - key: SAM_API_KEY           # required: your SAM.gov API key
+        sync: false
+      - key: GMAIL_USER            # optional: email digests
+        sync: false
+      - key: GMAIL_APP_PASSWORD    # optional: email digests
+        sync: false
+    # Render's free plan has no persistent disk, so /var/data is wiped on
+    # every redeploy: seen-notice history, review packets and settings all
+    # reset. To keep them, move to a paid instance and uncomment:
+    # disk:
+    #   name: contract-finder-data
+    #   mountPath: /var/data
+    #   sizeGB: 1

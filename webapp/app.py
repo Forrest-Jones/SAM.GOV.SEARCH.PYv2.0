@@ -23,6 +23,7 @@ into the Setup screen the first time you open the page, and everything
 else (search, review packets, settings) happens by clicking around.
 """
 
+import hmac
 import json
 import os
 import re
@@ -35,11 +36,18 @@ sys.path.insert(0, REPO_ROOT)
 
 import find_opportunities as core  # noqa: E402
 
-SETTINGS_PATH = os.path.join(REPO_ROOT, "settings.json")
-ENV_LOCAL_PATH = os.path.join(REPO_ROOT, ".env.local")
-LAST_RESULTS_PATH = os.path.join(REPO_ROOT, "last_results.json")
-DB_PATH = os.path.join(REPO_ROOT, core.DEFAULT_DB_PATH)
-DRAFTS_DIR = os.path.join(REPO_ROOT, core.DEFAULT_DRAFTS_DIR)
+# Everything the app writes lives under DATA_DIR. Locally that's just the
+# repo, but a deployed host's filesystem is wiped on every redeploy, so
+# point DATA_DIR at a mounted volume there or the seen-notices history,
+# review packets, and settings all reset. See DEPLOY.md.
+DATA_DIR = os.environ.get("DATA_DIR", REPO_ROOT)
+os.makedirs(DATA_DIR, exist_ok=True)
+
+SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
+ENV_LOCAL_PATH = os.path.join(DATA_DIR, ".env.local")
+LAST_RESULTS_PATH = os.path.join(DATA_DIR, "last_results.json")
+DB_PATH = os.path.join(DATA_DIR, core.DEFAULT_DB_PATH)
+DRAFTS_DIR = os.path.join(DATA_DIR, core.DEFAULT_DRAFTS_DIR)
 
 DEFAULT_SETTINGS = {
     "company_name": "Proverbs 1821 Consulting LLC",
@@ -114,6 +122,41 @@ load_env_file(ENV_LOCAL_PATH)
 app = Flask(__name__, static_folder="static", static_url_path="")
 
 
+@app.before_request
+def require_password():
+    """Password-gates the whole app when APP_PASSWORD is set.
+
+    Unset (the local default) leaves the app open, which is fine when it's
+    only listening on 127.0.0.1. A deployed copy is reachable by anyone
+    who finds the URL, and it holds a live SAM.gov key and this business's
+    pipeline — so a deploy without APP_PASSWORD refuses to serve rather
+    than quietly publishing all of it.
+    """
+    if request.path == "/healthz":
+        return None  # platform health checks don't carry credentials
+
+    expected = os.environ.get("APP_PASSWORD")
+
+    if not expected:
+        if os.environ.get("PUBLIC_DEPLOY") == "1":
+            return (
+                "APP_PASSWORD is not set. Refusing to serve a public deployment "
+                "with no password — set APP_PASSWORD in this host's environment "
+                "variables and redeploy.",
+                500,
+            )
+        return None
+
+    auth = request.authorization
+    if auth and hmac.compare_digest(auth.password or "", expected):
+        return None
+    return (
+        "Sign in required.",
+        401,
+        {"WWW-Authenticate": 'Basic realm="Contract Finder"'},
+    )
+
+
 def load_settings():
     settings = dict(DEFAULT_SETTINGS)
     if os.path.exists(SETTINGS_PATH):
@@ -150,6 +193,11 @@ def serialize_result(pts, reasons, opp):
         "deadline": (opp.get("responseDeadLine") or "")[:10] or None,
         "link": opp.get("uiLink"),
     }
+
+
+@app.route("/healthz")
+def healthz():
+    return jsonify({"ok": True})
 
 
 @app.route("/")

@@ -1,0 +1,36 @@
+# Fly.io config. Run `fly launch --no-deploy` once to claim an app name,
+# then `fly deploy`. Secrets go in with `fly secrets set`, never in here.
+app = "contract-finder"
+primary_region = "dfw"  # Dallas — closest Fly region to Houston
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  PUBLIC_DEPLOY = "1"
+  DATA_DIR = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.http_checks]
+    [[http_service.http_checks.checks]]
+      path = "/healthz"
+      interval = "30s"
+      timeout = "5s"
+
+# Fly volumes persist across deploys, so unlike Render's free tier this
+# keeps seen-notice history, review packets and settings. Create it once:
+#   fly volumes create contract_finder_data --size 1 --region dfw
+[[mounts]]
+  source = "contract_finder_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
