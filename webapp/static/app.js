@@ -161,6 +161,41 @@
     const sol = facts.find(([k]) => /solicitation/i.test(k));
     desk.solicitation = sol ? sol[1] : "";
 
+    // The pass/fail qualification block is a blockquote in the checklist,
+    // and the facts parser above only reads table rows — so without this
+    // the single most important thing on the page (a requirement the
+    // business cannot meet) would be invisible in the browser and visible
+    // only to someone reading the raw file.
+    const quoted = (d.start_here || "").split("\n")
+      .filter((line) => line.startsWith(">"))
+      .map((line) => line.replace(/^>\s?/, ""));
+    const gates = $("packet-gates");
+    if (quoted.length) {
+      const covered = quoted.some((l) => l.includes("Covered."));
+      const blocked = quoted.some((l) => l.includes("nothing on file covers this"));
+      gates.hidden = false;
+      gates.className = "notice " + (blocked ? "notice-stop" : covered ? "notice-ok" : "notice-warn");
+      // Markdown hard-wraps at the source line. Rendering one paragraph
+      // per line reads as loose, disconnected fragments, so lines are
+      // rejoined into paragraphs on blank lines and bullets kept apart.
+      const blocks = [];
+      let para = [];
+      const flush = () => { if (para.length) { blocks.push(para.join(" ")); para = []; } };
+      quoted.forEach((line) => {
+        const t = line.trim();
+        if (!t) { flush(); return; }
+        if (t.startsWith("- ")) { flush(); blocks.push(t); return; }
+        para.push(t);
+      });
+      flush();
+      gates.innerHTML = blocks.map((block) => block.startsWith("- ")
+        ? '<p class="gate-item">' + inlineMd(block.slice(2)) + "</p>"
+        : "<p>" + inlineMd(block) + "</p>").join("");
+    } else {
+      gates.hidden = true;
+      gates.innerHTML = "";
+    }
+
     $("packet-attachments").innerHTML = (d.attachments || []).length
       ? d.attachments.map((a) =>
           '<a class="attachment" target="_blank" rel="noopener" href="' +

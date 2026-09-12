@@ -364,3 +364,9 @@ h3.blank-section { margin: 22px 0 8px; font-size: 14px; text-transform: uppercas
 }
 .blank-hint { margin: 0 0 12px; font-size: 13px; color: #6b4e00;
   background: #fff8e1; border-left: 3px solid #ffe082; padding: 7px 10px; border-radius: 0 5px 5px 0; }
+.notice-stop { background: #fdecea; border: 1px solid #f5b7b1; color: #7b241c; }
+.notice-ok { background: #eafaf1; border: 1px solid #a9dfbf; color: #145a32; }
+#packet-gates p { margin: 0 0 7px; }
+#packet-gates p:last-child { margin-bottom: 0; }
+#packet-gates p.gate-item { padding-left: 14px; border-left: 3px solid currentColor;
+  font-size: 15px; margin: 10px 0; }
