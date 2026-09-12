@@ -585,3 +585,108 @@ def test_a_current_packet_costs_no_api_call(tmp_path):
     assert packet.needs_work(OPP, dict(company, phone="+1-000"), root) is True
     os.remove(os.path.join(packet.packet_dir(OPP, root), "02-price-sheet.csv"))
     assert packet.needs_work(OPP, company, root) is True
+
+
+# ---------- what cannot be bid ----------
+
+def test_a_sources_sought_notice_is_not_biddable():
+    import find_opportunities as fo
+    # The live trap: HQMC "M95494-26-SSN-ADCFAS" got a full priced packet,
+    # cover email and all, for a notice whose own text says in capitals
+    # that it is not a solicitation of any kind.
+    reason = fo.not_biddable_reason({"type": "Sources Sought"})
+    assert reason and "capability statement" in reason
+
+
+def test_real_solicitation_types_are_biddable():
+    import find_opportunities as fo
+    for good in ("Solicitation", "Combined Synopsis/Solicitation",
+                 "combined synopsis/solicitation"):
+        assert fo.not_biddable_reason({"type": good}) is None, good
+
+
+def test_award_and_presolicitation_notices_are_not_biddable():
+    import find_opportunities as fo
+    assert fo.not_biddable_reason({"type": "Award Notice"})
+    assert fo.not_biddable_reason({"type": "Presolicitation"})
+
+
+def test_an_unknown_type_is_left_biddable():
+    import find_opportunities as fo
+    # SAM adds notice types over time. Hiding a real solicitation because
+    # of a label we have not seen is the worse failure.
+    assert fo.not_biddable_reason({"type": "Some Future Notice Type"}) is None
+    assert fo.not_biddable_reason({}) is None
+
+
+def test_basetype_is_used_when_type_is_absent():
+    import find_opportunities as fo
+    assert fo.not_biddable_reason({"baseType": "Sources Sought"})
+
+
+def test_the_batch_refuses_to_packet_an_unbiddable_notice(tmp_path):
+    ranked = [(9, "why", dict(OPP, noticeId="ss1", type="Sources Sought")),
+              (8, "why", dict(OPP, noticeId="ok1", type="Solicitation"))]
+    built, skipped = _batch(3, ranked, str(tmp_path))
+    assert len(built) == 1
+    assert len(skipped) == 1
+    assert "capability statement" in skipped[0][1]
+
+
+# ---------- credential gates ----------
+
+def test_a_cpa_requirement_is_caught():
+    # Verbatim from the NAFI Audit RFQ that cost a day before anyone read
+    # far enough into the attachment to find it.
+    gates = packet.credential_gates(
+        "requires the services of an independent Certified Public Accountant "
+        "firm or licensed CPA to perform financial statement audits")
+    assert gates == ["a licensed CPA or CPA firm"]
+
+
+def test_a_clearance_requirement_is_caught():
+    assert packet.credential_gates(
+        "All personnel shall hold a TS/SCI clearance") == [
+        "a security clearance or facility clearance"]
+    assert packet.credential_gates("A facility clearance (FCL) is required")
+
+
+def test_ordinary_work_trips_no_gate():
+    assert packet.credential_gates(
+        "The contractor shall provide monthly bookkeeping and reconciliation.") == []
+    assert packet.credential_gates("") == []
+    assert packet.credential_gates(None) == []
+
+
+def test_several_gates_are_all_reported():
+    gates = packet.credential_gates(
+        "Work shall be sealed by a Professional Engineer and performed by "
+        "cleared personnel holding a SECRET clearance.")
+    assert len(gates) == 2
+
+
+def test_the_gates_reach_the_checklist_where_the_decision_is_made(tmp_path):
+    out, _, _ = packet.build_packet(
+        OPP,
+        "The Government requires an independent CPA firm to perform the audit.",
+        FILLED, str(tmp_path), 4, "")
+    text = open(os.path.join(out, "00-START-HERE.md")).read()
+    assert "a licensed CPA or CPA firm" in text
+    assert "pass/fail" in text
+    assert "costs you the week" in text
+
+
+def test_a_packet_with_no_gates_says_nothing_about_them(tmp_path):
+    out, _, _ = packet.build_packet(
+        OPP, "The contractor shall provide monthly bookkeeping.",
+        FILLED, str(tmp_path), 4, "")
+    text = open(os.path.join(out, "00-START-HERE.md")).read()
+    assert "pass/fail" not in text
+
+
+def test_the_notice_type_is_recorded_in_the_checklist(tmp_path):
+    out, _, _ = packet.build_packet(
+        dict(OPP, type="Combined Synopsis/Solicitation"), "", FILLED,
+        str(tmp_path), 4, "")
+    assert "Combined Synopsis/Solicitation" in open(
+        os.path.join(out, "00-START-HERE.md")).read()

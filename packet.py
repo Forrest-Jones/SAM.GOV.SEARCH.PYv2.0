@@ -36,6 +36,46 @@ META_NAME = ".packet-meta.json"
 GENERATED = ("00-START-HERE.md", "01-proposal.md", "02-price-sheet.csv", "03-quote-email.txt")
 
 
+# Requirements that decide the bid before anything else does. The NAFI
+# audit RFQ asked for "an independent CPA firm or licensed CPA" — a
+# requirement no amount of proposal writing satisfies, buried on page two
+# of an attachment. Found late it costs a week; found here it costs
+# nothing. Deliberately phrased as questions, because the tool cannot know
+# what the business holds — only that this one has to be answered first.
+CREDENTIAL_GATES = (
+    ("a licensed CPA or CPA firm",
+     r"(?:licensed|independent|certified)\s+(?:certified\s+)?public\s+accountant"
+     r"|\bCPA\s+(?:firm|license)|licensed\s+CPA"),
+    ("a licensed Professional Engineer",
+     r"\bprofessional\s+engineer\b|\bP\.?E\.?\s+(?:license|stamp|seal)"),
+    ("a security clearance or facility clearance",
+     r"(?:secret|top\s+secret|ts/sci)\s*(?:level\s*)?clearance"
+     r"|facility\s+clearance|\bFCL\b|cleared\s+personnel"),
+    ("a state contractor or professional license",
+     r"licensed\s+in\s+the\s+state|state\s+contractor'?s?\s+licen"),
+    ("a named third-party certification",
+     r"\bISO\s*\d{4,5}\b|certified\s+industrial\s+hygienist"
+     r"|certified\s+safety\s+professional|\bPMP\b\s+certif"),
+)
+
+
+def credential_gates(*texts):
+    """Which hard qualification requirements appear in the solicitation.
+
+    Keyword matching, so it over-reports rather than under-reports: a
+    false alarm costs one reading, a miss costs a week of proposal work on
+    something that could never be won.
+    """
+    blob = " ".join(t for t in texts if t)
+    if not blob:
+        return []
+    found = []
+    for label, pattern in CREDENTIAL_GATES:
+        if re.search(pattern, blob, re.IGNORECASE):
+            found.append(label)
+    return found
+
+
 def _deadline_parts(opp):
     """(iso date string, days remaining or None)."""
     raw = opp.get("responseDeadLine") or ""
@@ -290,7 +330,7 @@ def fetch_attachments(opp, dest_dir, session=None, log=print):
     return got, failed
 
 
-def build_start_here(opp, company, blanks_left, attachments, failed):
+def build_start_here(opp, company, blanks_left, attachments, failed, gates=()):
     deadline, days = _deadline_parts(opp)
     when = f"{deadline}"
     if days is not None:
@@ -309,6 +349,7 @@ def build_start_here(opp, company, blanks_left, attachments, failed):
         "| | |",
         "|---|---|",
         f"| **Due** | **{when}** |",
+        f"| Notice type | {opp.get('type') or opp.get('baseType') or 'not stated'} |",
         f"| Solicitation | {opp.get('solicitationNumber') or opp.get('noticeId') or '-'} |",
         f"| Agency | {opp.get('fullParentPathName') or '-'} |",
         f"| Set-aside | {opp.get('typeOfSetAsideDescription') or 'None (full and open)'} |",
@@ -324,7 +365,26 @@ def build_start_here(opp, company, blanks_left, attachments, failed):
         "**2. Go or no-go.** Can you actually perform this work, at this place, by",
         "this date? If no, delete this folder and add a line to `skip_keywords` in",
         "`company.toml` so it never reaches you again.",
-        "",
+        "",    ]
+
+    if gates:
+        lines += [
+            "> **Before you spend an hour on this, answer these.** The solicitation",
+            "> text asks for the following. These are pass/fail: no proposal writing",
+            "> substitutes for a qualification the business does not hold.",
+            "",
+        ]
+        for gate in gates:
+            lines.append(f"> - Do you have **{gate}**?")
+        lines += [
+            ">",
+            "> If any answer is no, this one is over — stop here and take the next",
+            "> packet. Answering no costs you five minutes; finding out after you",
+            "> have written the proposal costs you the week.",
+            "",
+        ]
+
+    lines += [
         "**3. Price it.** Open `02-price-sheet.csv`. Your rates are already in it"
         + (f" ({len(rate_card)} categories)" if rate_card else " — no rate card on file yet")
         + ". Enter **hours** only; the extended column totals itself.",
@@ -471,7 +531,10 @@ def build_packet(opp, description_text, company, root, score=None, reasons="", s
     if "00-START-HERE.md" in replaceable:
         path = os.path.join(out, "00-START-HERE.md")
         with open(path, "w") as f:
-            f.write(build_start_here(opp, company, blanks_left, got, failed))
+            f.write(build_start_here(
+                opp, company, blanks_left, got, failed,
+                gates=credential_gates(description_text, opp.get("description")),
+            ))
         written["00-START-HERE.md"] = _file_hash(path)
 
     # Files we deliberately left alone keep the hashes they had, so a later

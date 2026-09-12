@@ -279,6 +279,49 @@ SMALL_BUSINESS_IMPLYING_CERTS = frozenset(CERTIFICATION_HINTS) - {"small_busines
 
 DEFAULT_HELD_CERTS = ("small_business", "wosb", "edwosb")
 
+# Not everything posted on SAM.gov can be bid, and the difference is not
+# visible in the title. A Sources Sought Notice is market research: it says
+# so in capitals in its own text, it has no line items and no award, and
+# responding means sending a capability statement. Building a priced quote
+# and a cover email for one is worse than useless — it invites sending a
+# price to someone who cannot accept it.
+BIDDABLE_NOTICE_TYPES = frozenset({
+    "solicitation",
+    "combined synopsis/solicitation",
+})
+
+NOT_BIDDABLE_REASONS = {
+    "sources sought": "market research only — respond with a capability statement, not a priced quote",
+    "presolicitation": "advance notice — the solicitation itself has not been issued yet",
+    "special notice": "informational notice, not a solicitation",
+    "award notice": "already awarded to someone else",
+    "justification": "justification for an award already decided",
+    "intent to bundle requirements (dod-funded)": "notice of intent, not a solicitation",
+    "sale of surplus property": "property sale, not a services contract",
+    "foreign government standard": "informational notice, not a solicitation",
+}
+
+
+def notice_type(opp):
+    """The notice's type as SAM.gov labels it, e.g. "Sources Sought"."""
+    return (opp.get("type") or opp.get("baseType") or "").strip()
+
+
+def not_biddable_reason(opp):
+    """None when this notice can actually be bid, otherwise why it cannot.
+
+    An unrecognised or missing type is treated as biddable: the API adds
+    types over time, and silently hiding real solicitations would be a
+    worse failure than showing an odd one.
+    """
+    label = notice_type(opp)
+    if not label:
+        return None
+    key = label.lower()
+    if key in BIDDABLE_NOTICE_TYPES:
+        return None
+    return NOT_BIDDABLE_REASONS.get(key)
+
 
 def normalize_set_aside(text):
     """Flattens SAM.gov's inconsistent set-aside phrasing to one comparable
@@ -830,7 +873,7 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
             # profile does not really match, which is worse than producing
             # fewer than the target.
             break
-        why = skip_reason(company, opp)
+        why = not_biddable_reason(opp) or skip_reason(company, opp)
         if why:
             skipped.append((opp, why))
             continue
@@ -994,6 +1037,9 @@ def main():
         set_aside = opp.get("typeOfSetAsideDescription") or "no set-aside"
 
         print(f"[{pts}] {opp.get('title')}")
+        kind = notice_type(opp) or "type not stated"
+        blocked = not_biddable_reason(opp)
+        print(f"     {kind}{' — NOT BIDDABLE: ' + blocked if blocked else ''}")
         print(f"     NAICS {opp.get('naicsCode')} | PSC {opp.get('classificationCode')} | {set_aside}")
         print(f"     {city}, {state} | deadline {deadline_str}")
         if reasons:
