@@ -20,6 +20,14 @@
 
 * { box-sizing: border-box; }
 
+/* Several elements below are toggled via the `hidden` attribute (setup
+   screen, modal backdrop, summary cards) but also carry a class that
+   sets `display` unconditionally (flex/grid) for when they're shown.
+   Both rules have equal specificity, so without this, the later class
+   rule wins over the browser's default `[hidden]{display:none}` and the
+   element renders — and blocks clicks — even while "hidden". */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);

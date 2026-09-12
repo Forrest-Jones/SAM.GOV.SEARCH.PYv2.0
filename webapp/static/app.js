@@ -273,7 +273,11 @@
   }
 
   function linkify(text) {
-    return escapeHtml(text).replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    // draft lines like "- **NAICS:** 541213  **PSC:** R710" have a second
+    // bold marker after the one renderDraftContent already peeled off as
+    // the label, so this still needs to catch **...** in the remainder.
+    const bolded = escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    return bolded.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
   }
 
   // ---------------- Settings ----------------
