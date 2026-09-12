@@ -46,22 +46,33 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
 ENV_LOCAL_PATH = os.path.join(DATA_DIR, ".env.local")
-LAST_RESULTS_PATH = os.path.join(DATA_DIR, "last_results.json")
-DB_PATH = os.path.join(DATA_DIR, core.DEFAULT_DB_PATH)
-DRAFTS_DIR = os.path.join(DATA_DIR, core.DEFAULT_DRAFTS_DIR)
-PROPOSALS_DIR = os.path.join(DATA_DIR, "proposals")
-NOTICES_DIR = os.path.join(DATA_DIR, "notices")
 
-DEFAULT_SETTINGS = {
+# Per-profile paths. The two businesses keep separate seen-notice history,
+# review packets and cached results, so switching profiles in the UI shows
+# one business's pipeline rather than both interleaved.
+def db_path_for(profile):
+    return os.path.join(DATA_DIR, f"state-{profile}.sqlite3")
+
+
+def drafts_dir_for(profile):
+    return os.path.join(DATA_DIR, core.DEFAULT_DRAFTS_DIR, profile)
+
+
+def proposals_dir_for(profile):
+    return os.path.join(DATA_DIR, "proposals", profile)
+
+
+def notices_dir_for(profile):
+    return os.path.join(DATA_DIR, "notices", profile)
+
+
+def last_results_path_for(profile):
+    return os.path.join(DATA_DIR, f"last_results-{profile}.json")
+
+
+# Settings shared across both businesses: one company, one inbox.
+DEFAULT_SHARED = {
     "company_name": "Proverbs 1821 Consulting LLC",
-    "naics_codes": core.DEFAULT_NAICS,
-    "certifications": ["wosb", "edwosb"],
-    "posted_days": 45,
-    "deadline_min_days": 7,
-    "deadline_max_days": 60,
-    "draft_min_score": 4,
-    "show_ineligible": False,
-    "generate_drafts": True,
     "notify_email": core.DEFAULT_TO_EMAIL,
     "send_email": True,
     # Fills the offeror/cover-letter sections of a proposal draft. Anything
@@ -69,6 +80,26 @@ DEFAULT_SETTINGS = {
     # guessed at — these are facts that go on a federal submission.
     "company_profile": dict(proposal_builder.DEFAULT_COMPANY_PROFILE),
 }
+
+# Settings that differ per business.
+PER_PROFILE_KEYS = (
+    "naics_codes", "certifications", "posted_days", "deadline_min_days",
+    "deadline_max_days", "draft_min_score", "show_ineligible", "generate_drafts",
+)
+
+
+def default_profile_settings(profile):
+    spec = core.PROFILES[profile]
+    return {
+        "naics_codes": list(spec["naics"]),
+        "certifications": ["wosb", "edwosb"],
+        "posted_days": 45,
+        "deadline_min_days": 7,
+        "deadline_max_days": 60,
+        "draft_min_score": spec["draft_min_score"],
+        "show_ineligible": False,
+        "generate_drafts": True,
+    }
 
 
 def load_env_file(path):
@@ -164,17 +195,67 @@ def require_password():
     )
 
 
-def load_settings():
-    settings = dict(DEFAULT_SETTINGS)
-    if os.path.exists(SETTINGS_PATH):
-        with open(SETTINGS_PATH) as f:
-            settings.update(json.load(f))
+def load_store():
+    """The whole settings file: shared keys plus one block per profile.
+
+    A pre-profiles settings.json was a flat dict; it gets migrated into the
+    p1821 block rather than discarded, since that's the business those
+    settings described."""
+    store = {
+        **DEFAULT_SHARED,
+        "active_profile": core.DEFAULT_PROFILE,
+        "profiles": {p: default_profile_settings(p) for p in core.PROFILES},
+    }
+    if not os.path.exists(SETTINGS_PATH):
+        return store
+
+    with open(SETTINGS_PATH) as f:
+        saved = json.load(f)
+
+    if "profiles" not in saved:
+        for key in DEFAULT_SHARED:
+            if key in saved:
+                store[key] = saved[key]
+        migrated = {k: saved[k] for k in PER_PROFILE_KEYS if k in saved}
+        store["profiles"][core.DEFAULT_PROFILE].update(migrated)
+        return store
+
+    for key in DEFAULT_SHARED:
+        if key in saved:
+            store[key] = saved[key]
+    if saved.get("active_profile") in core.PROFILES:
+        store["active_profile"] = saved["active_profile"]
+    for profile, block in (saved.get("profiles") or {}).items():
+        if profile in store["profiles"] and isinstance(block, dict):
+            store["profiles"][profile].update(
+                {k: v for k, v in block.items() if k in PER_PROFILE_KEYS}
+            )
+    return store
+
+
+def save_store(store):
+    with open(SETTINGS_PATH, "w") as f:
+        json.dump(store, f, indent=2)
+
+
+def load_settings(profile=None):
+    """Flattened view for one profile: shared keys plus that profile's own."""
+    store = load_store()
+    profile = profile if profile in core.PROFILES else store["active_profile"]
+    settings = {key: store[key] for key in DEFAULT_SHARED}
+    settings.update(store["profiles"][profile])
+    settings["profile"] = profile
     return settings
 
 
-def save_settings(settings):
-    with open(SETTINGS_PATH, "w") as f:
-        json.dump(settings, f, indent=2)
+def requested_profile():
+    """Profile for this request: ?profile= or JSON body, else the active one."""
+    candidate = request.args.get("profile")
+    if not candidate and request.is_json:
+        candidate = (request.get_json(silent=True) or {}).get("profile")
+    if candidate in core.PROFILES:
+        return candidate
+    return load_store()["active_profile"]
 
 
 def credential_status():
@@ -236,9 +317,13 @@ def api_credentials():
 
 @app.route("/api/settings", methods=["GET"])
 def api_get_settings():
-    settings = load_settings()
+    profile = requested_profile()
     return jsonify({
-        "settings": settings,
+        "settings": load_settings(profile),
+        "active_profile": profile,
+        "profiles": [
+            {"key": key, "label": spec["label"]} for key, spec in core.PROFILES.items()
+        ],
         "certification_options": [
             {"key": key, "label": info["label"]} for key, info in core.CERTIFICATION_HINTS.items()
         ],
@@ -248,7 +333,15 @@ def api_get_settings():
 @app.route("/api/settings", methods=["POST"])
 def api_save_settings():
     body = request.get_json(force=True) or {}
-    settings = load_settings()
+    store = load_store()
+    profile = requested_profile()
+    if body.get("switch_to") in core.PROFILES:
+        store["active_profile"] = body["switch_to"]
+        save_store(store)
+        return jsonify({"settings": load_settings(store["active_profile"]),
+                        "active_profile": store["active_profile"]})
+
+    settings = {**{k: store[k] for k in DEFAULT_SHARED}, **store["profiles"][profile]}
 
     if "company_name" in body:
         settings["company_name"] = str(body["company_name"]).strip() or settings["company_name"]
@@ -287,8 +380,12 @@ def api_save_settings():
                 profile[key] = str(body["company_profile"][key]).strip()
         settings["company_profile"] = profile
 
-    save_settings(settings)
-    return jsonify({"settings": settings})
+    for key in DEFAULT_SHARED:
+        store[key] = settings[key]
+    store["profiles"][profile] = {k: settings[k] for k in PER_PROFILE_KEYS}
+    save_store(store)
+    settings["profile"] = profile
+    return jsonify({"settings": settings, "active_profile": store["active_profile"]})
 
 
 @app.route("/api/search", methods=["POST"])
@@ -297,9 +394,11 @@ def api_search():
     if not api_key:
         return jsonify({"ok": False, "error": "no_api_key"}), 400
 
-    settings = load_settings()
+    profile = requested_profile()
+    settings = load_settings(profile)
     if not settings["naics_codes"]:
         return jsonify({"ok": False, "error": "no_naics_codes"}), 400
+    spec = core.PROFILES[profile]
 
     cfg = {
         "naics_codes": settings["naics_codes"],
@@ -311,8 +410,12 @@ def api_search():
         "held_certs": settings["certifications"],
         "include_restricted": settings["show_ineligible"],
         "include_expired": False,
-        "db_path": DB_PATH,
-        "drafts_dir": DRAFTS_DIR,
+        "keywords": spec["keywords"],
+        "priority_psc": spec["priority_psc"],
+        "home_states": spec["home_states"],
+        "profile_label": spec["label"],
+        "db_path": db_path_for(profile),
+        "drafts_dir": drafts_dir_for(profile),
         "draft_min_score": settings["draft_min_score"],
         "generate_drafts": settings["generate_drafts"],
         "to_email": settings["notify_email"],
@@ -335,12 +438,13 @@ def api_search():
 
     # Stash the raw notice (plus the description already fetched during the
     # search) so "Build proposal draft" can run later without another API call.
-    os.makedirs(NOTICES_DIR, exist_ok=True)
+    notices_dir = notices_dir_for(profile)
+    os.makedirs(notices_dir, exist_ok=True)
     for pts, reasons, opp in result["new_ones"]:
         nid = opp.get("noticeId")
         if not nid or not re.match(r"^[A-Za-z0-9_.-]+$", nid):
             continue
-        with open(os.path.join(NOTICES_DIR, f"{nid}.json"), "w") as f:
+        with open(os.path.join(notices_dir, f"{nid}.json"), "w") as f:
             json.dump({
                 "opp": opp,
                 "score": pts,
@@ -354,19 +458,22 @@ def api_search():
         "new_notice_ids": list(new_ids),
         "excluded_restricted": result["excluded_restricted"],
         "excluded_expired": result["excluded_expired"],
+        "excluded_supplies": result["excluded_supplies"],
         "draft_count": len(result["draft_paths"]),
         "emailed": result["emailed"],
         "log": log_lines,
     }
-    with open(LAST_RESULTS_PATH, "w") as f:
+    response["profile"] = profile
+    with open(last_results_path_for(profile), "w") as f:
         json.dump(response, f)
     return jsonify(response)
 
 
 @app.route("/api/opportunities", methods=["GET"])
 def api_last_opportunities():
-    if os.path.exists(LAST_RESULTS_PATH):
-        with open(LAST_RESULTS_PATH) as f:
+    cached = last_results_path_for(requested_profile())
+    if os.path.exists(cached):
+        with open(cached) as f:
             return jsonify(json.load(f))
     return jsonify({"ok": True, "ranked": [], "new_notice_ids": [], "excluded_restricted": 0, "draft_count": 0, "emailed": False, "log": []})
 
@@ -381,19 +488,20 @@ def api_build_proposal(notice_id):
     returns its text — it does not and cannot submit anything."""
     if not NOTICE_ID_RE.match(notice_id):
         return jsonify({"ok": False, "error": "bad_notice_id"}), 400
-    notice_path = os.path.join(NOTICES_DIR, f"{notice_id}.json")
+    profile = requested_profile()
+    notice_path = os.path.join(notices_dir_for(profile), f"{notice_id}.json")
     if not os.path.exists(notice_path):
         return jsonify({"ok": False, "error": "notice_not_cached"}), 404
 
     with open(notice_path) as f:
         cached = json.load(f)
 
-    settings = load_settings()
+    settings = load_settings(profile)
     path = proposal_builder.write_proposal(
         cached["opp"],
         cached.get("description"),
         settings.get("company_profile") or {},
-        PROPOSALS_DIR,
+        proposals_dir_for(profile),
         score=cached.get("score"),
         reasons=cached.get("reasons") or "",
     )
@@ -409,13 +517,14 @@ def api_build_proposal(notice_id):
 
 @app.route("/api/proposals", methods=["GET"])
 def api_list_proposals():
-    if not os.path.isdir(PROPOSALS_DIR):
+    proposals_dir = proposals_dir_for(requested_profile())
+    if not os.path.isdir(proposals_dir):
         return jsonify({"proposals": []})
     out = []
-    for filename in sorted(os.listdir(PROPOSALS_DIR)):
+    for filename in sorted(os.listdir(proposals_dir)):
         if not filename.endswith(".md"):
             continue
-        with open(os.path.join(PROPOSALS_DIR, filename)) as f:
+        with open(os.path.join(proposals_dir, filename)) as f:
             content = f.read()
         first = content.split("\n", 1)[0]
         out.append({
@@ -430,7 +539,7 @@ def api_list_proposals():
 def api_get_proposal(filename):
     if not DRAFT_FILENAME_RE.match(filename):
         return jsonify({"ok": False, "error": "not_found"}), 404
-    path = os.path.join(PROPOSALS_DIR, filename)
+    path = os.path.join(proposals_dir_for(requested_profile()), filename)
     if not os.path.exists(path):
         return jsonify({"ok": False, "error": "not_found"}), 404
     with open(path) as f:
@@ -440,14 +549,15 @@ def api_get_proposal(filename):
 def draft_path_for(filename):
     if not DRAFT_FILENAME_RE.match(filename):
         return None
-    path = os.path.join(DRAFTS_DIR, filename)
+    path = os.path.join(drafts_dir_for(requested_profile()), filename)
     return path if os.path.exists(path) else None
 
 
 def cached_notice_ids():
-    if not os.path.isdir(NOTICES_DIR):
+    notices_dir = notices_dir_for(requested_profile())
+    if not os.path.isdir(notices_dir):
         return []
-    return [f[:-5] for f in os.listdir(NOTICES_DIR) if f.endswith(".json")]
+    return [f[:-5] for f in os.listdir(notices_dir) if f.endswith(".json")]
 
 
 def notice_id_for_draft(filename, notice_ids):
@@ -460,14 +570,15 @@ def notice_id_for_draft(filename, notice_ids):
 
 @app.route("/api/drafts", methods=["GET"])
 def api_list_drafts():
-    if not os.path.isdir(DRAFTS_DIR):
+    drafts_dir = drafts_dir_for(requested_profile())
+    if not os.path.isdir(drafts_dir):
         return jsonify({"drafts": []})
     notice_ids = cached_notice_ids()
     drafts = []
-    for filename in sorted(os.listdir(DRAFTS_DIR)):
+    for filename in sorted(os.listdir(drafts_dir)):
         if not filename.endswith(".md"):
             continue
-        path = os.path.join(DRAFTS_DIR, filename)
+        path = os.path.join(drafts_dir_for(requested_profile()), filename)
         with open(path) as f:
             lines = f.read().splitlines()
         title = lines[0].lstrip("# ").strip() if lines else filename

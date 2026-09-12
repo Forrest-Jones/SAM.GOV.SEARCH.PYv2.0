@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 """
-SAM.gov Opportunity Finder — Proverbs 1821 Consulting LLC (tax / accounting / evaluation lanes)
+SAM.gov Opportunity Finder
 
-Pulls open SAM.gov solicitations, sources-sought, and presolicitations
-under the NAICS set that matches:
-  - Lane 1: Installation tax center support (Randy White performs)
-  - Lane 2: Accounting / tax remediation task orders (Randy leads)
-  - Lane 3: Third-party program evaluation (Forrest / Blackwater Evaluation)
+Pulls open SAM.gov solicitations, sources-sought and presolicitations for
+one business profile at a time (see PROFILES):
+
+  --profile p1821  Proverbs 1821 Consulting — tax, accounting, evaluation
+      Lane 1: Installation tax center support (Randy White performs)
+      Lane 2: Accounting / tax remediation task orders (Randy leads)
+      Lane 3: Third-party program evaluation (Forrest / Blackwater Evaluation)
+
+  --profile ares   Ares Robotics — waste, remediation, machinery, structural
+
+Both sets of NAICS codes are on the same SAM.gov registration, but the work
+has nothing in common, so each profile keeps its own codes, keywords, PSCs,
+score threshold, state file (state-<profile>.sqlite3) and drafts folder
+(drafts/<profile>/). Searching them together buried a WOSB financial-analysis
+RFP among salt-bath maintenance jobs.
 
 Runs entirely on your machine (or in the scheduled GitHub Action — see
-.github/workflows/daily-search.yml). Claude's sandbox can't reach
-api.sam.gov (egress proxy returns host_not_allowed), so nothing here is
-called from Claude's side.
-
-Ares Robotics' separate NAICS set (562998, 562910, 562211, 811310,
-333998 / PSC F108, J039) is NOT included here. Say the word if you want
-a --profile flag to switch between the two, or a second script.
+.github/workflows/daily-search.yml, which runs both profiles). Claude's
+sandbox can't reach api.sam.gov (egress proxy returns host_not_allowed), so
+nothing here is called from Claude's side.
 
 This tool finds and triages opportunities and drafts a review scaffold
 for the promising ones. It never submits anything. SAM.gov has no API
@@ -36,16 +42,19 @@ SETUP
 
 OPTIONS
 -------
+  --profile NAME        Which business to search: p1821 (default) or ares
   --posted-days N       How many days back to search postings (default 45)
   --deadline-min N      Skip anything closing sooner than N days (default 7)
   --deadline-max N      Skip anything closing later than N days (default 60)
-  --naics CODE[,CODE]   Override the default NAICS list
+  --naics CODE[,CODE]   Override the profile's NAICS list
   --csv PATH            Also write full ranked results to a CSV file
   --limit N             Max results per NAICS call (default 100)
   --max-retries N       Retry attempts per API call on 429/5xx/network error (default 4)
-  --db PATH             SQLite state file tracking previously-seen notices (default state.sqlite3)
-  --drafts-dir PATH     Where to write review scaffolds for new high scorers (default drafts)
-  --draft-min-score N   Minimum score to generate a draft scaffold (default 4)
+  --db PATH             State file of previously-seen notices (default state-<profile>.sqlite3)
+  --drafts-dir PATH     Where review scaffolds go (default drafts/<profile>)
+  --draft-min-score N   Minimum score for a scaffold (default: the profile's own)
+  --include-supplies    Also show supply/equipment buys (digit-prefixed PSC)
+  --include-expired     Also show notices whose deadline has passed
   --no-drafts           Skip draft generation entirely
   --include-restricted-set-asides
                         Also show set-asides you're not certified for (8(a), HUBZone,
@@ -127,6 +136,62 @@ DEFAULT_NAICS = [
 # R407, F108 and J039 are from the registration audit. (Z2AZ was pulled
 # before entry, so it is deliberately absent.)
 PRIORITY_PSC = {"R710", "B505", "R499", "R407", "F108", "J039"}
+
+# The registration covers two businesses whose work has nothing in common:
+# professional services (tax, accounting, evaluation) and industrial trades
+# (waste, remediation, machinery, structural). Searching them together put a
+# WOSB financial-analysis RFP and a salt-bath maintenance job in one
+# undifferentiated pile of 25 packets, scored by one model tuned for the
+# former. Each profile gets its own codes, keywords, PSCs, threshold, state
+# file and drafts folder, so a run surfaces one business at a time.
+PROFILES = {
+    "p1821": {
+        "label": "Proverbs 1821 Consulting — tax, accounting, evaluation",
+        "naics": [
+            "541211",  # Offices of Certified Public Accountants
+            "541213",  # Tax Preparation Services
+            "541219",  # Other Accounting Services
+            "541611",  # Admin & General Management Consulting
+            "541612",  # HR Consulting
+            "541613",  # Marketing Consulting
+            "541614",  # Logistics Consulting
+            "541618",  # Other Management Consulting
+            "541620",  # Environmental Consulting (serves both profiles)
+            "541690",  # Other Scientific & Technical Consulting
+            "541720",  # R&D in Social Sciences & Humanities
+            "541990",  # Other Professional/Scientific/Technical Services
+        ],
+        "priority_psc": {"R710", "B505", "R499", "R407"},
+        "keywords": [
+            "tax", "vita", "evaluation", "accounting", "financial",
+            "audit", "irs", "compliance", "remediation",
+        ],
+        "home_states": {"TX"},
+        "draft_min_score": 4,
+    },
+    "ares": {
+        "label": "Ares Robotics — waste, remediation, machinery, structural",
+        "naics": [
+            "562211",  # Hazardous Waste Treatment & Disposal
+            "562910",  # Remediation Services
+            "562998",  # All Other Misc. Waste Management
+            "811310",  # Commercial & Industrial Machinery Repair
+            "333998",  # All Other General Purpose Machinery Mfg
+            "238190",  # Other Building Exterior Contractors (welding/structural)
+            "541620",  # Environmental Consulting (serves both profiles)
+        ],
+        "priority_psc": {"F108", "J039"},
+        "keywords": [
+            "remediation", "hazardous waste", "environmental", "abatement",
+            "decontamination", "demolition", "welding", "structural",
+        ],
+        "home_states": {"TX"},
+        # Higher bar: these codes return far more volume than the
+        # professional-services ones, most of it small maintenance jobs.
+        "draft_min_score": 5,
+    },
+}
+DEFAULT_PROFILE = "p1821"
 NOTICE_TYPES = "p,k,r"  # presolicitation, combined synopsis/solicitation, sources sought
 
 # Title keywords worth a point each (capped at 2). The first group serves the
@@ -364,7 +429,15 @@ def days_until_deadline(opp):
         return None
 
 
-def score(opp, deadline_min, deadline_max, held_certs=DEFAULT_HELD_CERTS):
+def score(opp, deadline_min, deadline_max, held_certs=DEFAULT_HELD_CERTS,
+          keywords=None, priority_psc=None, home_states=None):
+    """Triage score for one notice. keywords/priority_psc/home_states come
+    from the active profile; the module-level defaults keep direct callers
+    and the CLI's --naics override working without one."""
+    keywords = KEYWORDS if keywords is None else keywords
+    priority_psc = PRIORITY_PSC if priority_psc is None else priority_psc
+    home_states = HOME_STATES if home_states is None else home_states
+
     pts = 0
     reasons = []
 
@@ -380,21 +453,21 @@ def score(opp, deadline_min, deadline_max, held_certs=DEFAULT_HELD_CERTS):
         pts += 2
         reasons.append(f"{days_left}d to deadline")
 
-    if opp.get("classificationCode") in PRIORITY_PSC:
+    if opp.get("classificationCode") in priority_psc:
         pts += 1
         reasons.append("PSC match")
 
     title = (opp.get("title") or "").lower()
-    hits = sum(1 for kw in KEYWORDS if kw in title)
+    hits = sum(1 for kw in keywords if kw in title)
     if hits:
         pts += min(hits, 2)
         reasons.append(f"{hits} keyword match" + ("es" if hits > 1 else ""))
 
     pop = opp.get("placeOfPerformance") or {}
     state = (pop.get("state") or {}).get("code")
-    if state in HOME_STATES:
+    if state in home_states:
         pts += 1
-        reasons.append("TX")
+        reasons.append(state)
 
     return pts, ", ".join(reasons)
 
@@ -514,11 +587,14 @@ def write_draft(opp, pts, reasons, elig, description_text, drafts_dir):
     return path
 
 
-def send_email_digest(new_ones, to_addr, from_addr, app_password):
+def send_email_digest(new_ones, to_addr, from_addr, app_password, profile_label=None):
     import smtplib
     from email.mime.text import MIMEText
 
-    lines = [f"{len(new_ones)} new SAM.gov opportunity(ies) for Proverbs 1821 Consulting:\n"]
+    # Two profiles now email the same inbox, so the subject and body have to
+    # say which business the notices belong to.
+    who = profile_label or "Proverbs 1821 Consulting"
+    lines = [f"{len(new_ones)} new SAM.gov opportunity(ies) — {who}:\n"]
     for pts, reasons, opp in new_ones:
         lines.append(f"[{pts}] {opp.get('title')}")
         lines.append(f"  NAICS {opp.get('naicsCode')} | deadline {(opp.get('responseDeadLine') or '-')[:10]}")
@@ -529,7 +605,7 @@ def send_email_digest(new_ones, to_addr, from_addr, app_password):
     body = "\n".join(lines)
 
     msg = MIMEText(body)
-    msg["Subject"] = f"SAM.gov: {len(new_ones)} new opportunity(ies)"
+    msg["Subject"] = f"SAM.gov: {len(new_ones)} new for {who}"
     msg["From"] = from_addr
     msg["To"] = to_addr
 
@@ -591,7 +667,12 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
 
     ranked = []
     for opp in filtered:
-        pts, reasons = score(opp, cfg["deadline_min"], cfg["deadline_max"], held_certs)
+        pts, reasons = score(
+            opp, cfg["deadline_min"], cfg["deadline_max"], held_certs,
+            keywords=cfg.get("keywords"),
+            priority_psc=cfg.get("priority_psc"),
+            home_states=cfg.get("home_states"),
+        )
         ranked.append((pts, reasons, opp))
     ranked.sort(key=lambda r: r[0], reverse=True)
 
@@ -618,7 +699,10 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
 
     emailed = False
     if new_ones and cfg["send_email"] and cfg.get("from_email") and cfg.get("app_password"):
-        send_email_digest(new_ones, cfg["to_email"], cfg["from_email"], cfg["app_password"])
+        send_email_digest(
+            new_ones, cfg["to_email"], cfg["from_email"], cfg["app_password"],
+            profile_label=cfg.get("profile_label"),
+        )
         emailed = True
 
     return {
@@ -634,17 +718,24 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Pull and rank SAM.gov opportunities for P1821's tax/eval lanes.")
+    ap = argparse.ArgumentParser(description="Pull and rank SAM.gov opportunities for one business profile.")
+    ap.add_argument("--profile", choices=sorted(PROFILES), default=DEFAULT_PROFILE,
+                    help="which business to search: " + " | ".join(
+                        f"{k} ({v['label']})" for k, v in PROFILES.items()))
     ap.add_argument("--posted-days", type=int, default=45)
     ap.add_argument("--deadline-min", type=int, default=7)
     ap.add_argument("--deadline-max", type=int, default=60)
-    ap.add_argument("--naics", type=str, default=",".join(DEFAULT_NAICS))
+    ap.add_argument("--naics", type=str, default=None,
+                    help="override the profile's NAICS list")
     ap.add_argument("--csv", type=str, default=None)
     ap.add_argument("--limit", type=int, default=100)
     ap.add_argument("--max-retries", type=int, default=4)
-    ap.add_argument("--db", type=str, default=DEFAULT_DB_PATH)
-    ap.add_argument("--drafts-dir", type=str, default=DEFAULT_DRAFTS_DIR)
-    ap.add_argument("--draft-min-score", type=int, default=4)
+    ap.add_argument("--db", type=str, default=None,
+                    help="default: state-<profile>.sqlite3")
+    ap.add_argument("--drafts-dir", type=str, default=None,
+                    help="default: drafts/<profile>")
+    ap.add_argument("--draft-min-score", type=int, default=None,
+                    help="default: the profile's own threshold")
     ap.add_argument("--no-drafts", action="store_true")
     ap.add_argument("--include-restricted-set-asides", action="store_true")
     ap.add_argument("--include-expired", action="store_true",
@@ -667,8 +758,18 @@ def main():
     if args.email and not (from_addr and app_password):
         sys.exit("--email set but GMAIL_USER / GMAIL_APP_PASSWORD are not in the environment")
 
+    profile = PROFILES[args.profile]
+    print(f"Profile: {args.profile} — {profile['label']}", file=sys.stderr)
+
     cfg = {
-        "naics_codes": [c.strip() for c in args.naics.split(",") if c.strip()],
+        "naics_codes": (
+            [c.strip() for c in args.naics.split(",") if c.strip()]
+            if args.naics else list(profile["naics"])
+        ),
+        "profile_label": profile["label"],
+        "keywords": profile["keywords"],
+        "priority_psc": profile["priority_psc"],
+        "home_states": profile["home_states"],
         "posted_days": args.posted_days,
         "deadline_min": args.deadline_min,
         "deadline_max": args.deadline_max,
@@ -678,9 +779,12 @@ def main():
         "include_restricted": args.include_restricted_set_asides,
         "include_expired": args.include_expired,
         "include_supplies": args.include_supplies,
-        "db_path": args.db,
-        "drafts_dir": args.drafts_dir,
-        "draft_min_score": args.draft_min_score,
+        "db_path": args.db or f"state-{args.profile}.sqlite3",
+        "drafts_dir": args.drafts_dir or os.path.join(DEFAULT_DRAFTS_DIR, args.profile),
+        "draft_min_score": (
+            args.draft_min_score if args.draft_min_score is not None
+            else profile["draft_min_score"]
+        ),
         "generate_drafts": not args.no_drafts,
         "to_email": args.to,
         "from_email": from_addr,
@@ -748,7 +852,11 @@ def main():
                 ])
         print(f"Wrote {args.csv}", file=sys.stderr)
 
-    print(f"{len(result['new_ones'])} notice(s) new since last run (tracked in {args.db})", file=sys.stderr)
+    print(
+        f"{len(result['new_ones'])} notice(s) new since last run "
+        f"(tracked in {cfg['db_path']})",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":

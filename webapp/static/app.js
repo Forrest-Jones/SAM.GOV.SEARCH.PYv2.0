@@ -2,6 +2,7 @@
   "use strict";
 
   const state = {
+    activeProfile: null,
     settings: null,
     certOptions: [],
     naicsCodes: [],
@@ -15,8 +16,13 @@
 
   function $(id) { return document.getElementById(id); }
 
+  function withProfile(path) {
+    if (!state.activeProfile) return path;
+    return path + (path.includes("?") ? "&" : "?") + "profile=" + encodeURIComponent(state.activeProfile);
+  }
+
   async function api(path, options) {
-    const resp = await fetch(path, Object.assign({
+    const resp = await fetch(withProfile(path), Object.assign({
       headers: { "Content-Type": "application/json" },
     }, options));
     const data = await resp.json().catch(() => ({}));
@@ -381,10 +387,41 @@
   async function loadSettings() {
     const data = await api("/api/settings");
     state.settings = data.settings;
+    state.activeProfile = data.active_profile;
+    state.profiles = data.profiles || [];
     state.certOptions = data.certification_options;
     state.naicsCodes = data.settings.naics_codes.slice();
+    renderProfileSwitch();
     renderSettingsForm();
     renderCredentialStatus();
+  }
+
+  function renderProfileSwitch() {
+    const sel = $("profile-switch");
+    if (!sel || !state.profiles.length) return;
+    sel.innerHTML = state.profiles
+      .map((p) => `<option value="${escapeAttr(p.key)}"${p.key === state.activeProfile ? " selected" : ""}>${escapeHtml(p.label)}</option>`)
+      .join("");
+    if (!sel.dataset.wired) {
+      sel.dataset.wired = "1";
+      sel.addEventListener("change", async () => {
+        // Persist the choice, then reload everything: results, packets and
+        // settings are all per-business.
+        await api("/api/settings", {
+          method: "POST",
+          body: JSON.stringify({ switch_to: sel.value }),
+        });
+        state.activeProfile = sel.value;
+        $("summary-cards").hidden = true;
+        $("dashboard-preview").innerHTML = "";
+        $("opportunities-list").innerHTML = "";
+        $("drafts-list").innerHTML = "";
+        $("search-status").textContent = "";
+        await loadSettings();
+        await loadLastOpportunities();
+        loadDrafts();
+      });
+    }
   }
 
   function renderSettingsForm() {

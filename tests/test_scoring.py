@@ -5,7 +5,9 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from find_opportunities import (  # noqa: E402
+    DEFAULT_NAICS,
     KEYWORDS,
+    PROFILES,
     classify_set_aside,
     days_until_deadline,
     eligibility,
@@ -224,3 +226,61 @@ def test_keywords_exclude_terms_that_matched_parts_orders():
 def test_keywords_still_cover_the_environmental_service_lane():
     for term in ("remediation", "environmental", "abatement"):
         assert term in KEYWORDS
+
+
+# ---------- profiles ----------
+# The two businesses share a registration but not a scoring model: searching
+# them together buried a WOSB financial-analysis RFP among salt-bath
+# maintenance jobs.
+
+def test_both_profiles_exist_with_required_keys():
+    assert set(PROFILES) == {"p1821", "ares"}
+    for spec in PROFILES.values():
+        for key in ("label", "naics", "priority_psc", "keywords", "home_states", "draft_min_score"):
+            assert key in spec, key
+
+
+def test_profiles_cover_every_registered_code():
+    covered = set()
+    for spec in PROFILES.values():
+        covered |= set(spec["naics"])
+    assert covered == set(DEFAULT_NAICS)
+
+
+def test_profiles_split_professional_from_industrial():
+    p = set(PROFILES["p1821"]["naics"])
+    a = set(PROFILES["ares"]["naics"])
+    assert {"541211", "541213", "541219"} <= p
+    assert {"562998", "811310", "238190"} <= a
+    # Environmental consulting legitimately serves both lanes.
+    assert p & a == {"541620"}
+
+
+def test_ares_holds_a_higher_draft_bar_than_p1821():
+    # Industrial codes return far more volume, mostly small maintenance jobs.
+    assert PROFILES["ares"]["draft_min_score"] > PROFILES["p1821"]["draft_min_score"]
+
+
+def test_score_uses_the_profile_keywords_not_the_module_default():
+    ares = PROFILES["ares"]
+    opp = make_opp(title="Hazardous Waste Disposal and Decontamination", classificationCode="F108")
+    _, ares_reasons = score(opp, 7, 60, WOSB_HOLDER,
+                            keywords=ares["keywords"],
+                            priority_psc=ares["priority_psc"],
+                            home_states=ares["home_states"])
+    assert "keyword match" in ares_reasons
+    assert "PSC match" in ares_reasons
+
+    p1821 = PROFILES["p1821"]
+    _, p_reasons = score(opp, 7, 60, WOSB_HOLDER,
+                         keywords=p1821["keywords"],
+                         priority_psc=p1821["priority_psc"],
+                         home_states=p1821["home_states"])
+    # F108 is an Ares PSC, so the professional-services profile must not
+    # award it a PSC point.
+    assert "PSC match" not in p_reasons
+
+
+def test_score_reports_the_matched_home_state():
+    _, reasons = score(make_opp(), 7, 60, WOSB_HOLDER, home_states={"TX"})
+    assert "TX" in reasons

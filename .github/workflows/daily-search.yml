@@ -21,18 +21,32 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Run opportunity search
+      # Both businesses live on the same registration but the work has nothing
+      # in common, so each profile is searched separately and gets its own
+      # scoring, threshold, state file, drafts folder and email digest.
+      - name: Search — Proverbs 1821 (tax / accounting / evaluation)
         env:
           SAM_API_KEY: ${{ secrets.SAM_API_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-        run: python3 find_opportunities.py
+        run: python3 find_opportunities.py --profile p1821
+
+      - name: Search — Ares Robotics (waste / remediation / machinery)
+        # Runs even if the first profile failed, so one failing search can't
+        # silently hide the other business's opportunities.
+        if: always()
+        env:
+          SAM_API_KEY: ${{ secrets.SAM_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python3 find_opportunities.py --profile ares
 
       - name: Commit updated state and drafts
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add state.sqlite3 drafts/
+          git add -A state-*.sqlite3 drafts/
           git diff --cached --quiet && echo "nothing new to commit" && exit 0
           git commit -m "chore: daily search $(date -u +%Y-%m-%d)"
           # A search takes minutes, so main can move while it runs — a push
