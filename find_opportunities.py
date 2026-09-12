@@ -82,16 +82,17 @@ API_URL = "https://api.sam.gov/opportunities/v2/search"
 # Every NAICS code in this entity's SAM.gov registration (CAGE 22ND2),
 # assembled from the registration audit's four events.
 #
+# Registrant confirmed 9/12/26: every code below is live on the registration.
 # The audit's open question — whether the 8/19/26 update replaced or merely
-# supplemented the 541-series — is resolved: it ADDED. The registration has
-# only ever grown, never shrunk, so these are codes actually carried today,
-# not just a defensive search net. (Confirmed by the registrant, 9/12/26.)
+# supplemented the 541-series — is answered: it ADDED. The list has only ever
+# grown, never shrunk. The 9/9/26 set went in, and 541211 is on file despite
+# not appearing in the audit trail. So this is the registration, not a
+# defensive search net.
 #
-# Two items still worth confirming against sam.gov -> Entity Management ->
-# Assertions before a bid leans on them: the 9/9/26 set was recorded as
-# recommended but never confirmed as entered, and 541211 never appeared in
-# the audit at all. Searching them costs nothing either way; certifying size
-# standard or set-aside status against them does.
+# Still per-solicitation work, unchanged by that: a registered NAICS code does
+# not by itself establish that the business is under the size standard for a
+# given solicitation's code. Check the SBA size table for the code the
+# solicitation actually cites before representing size on a bid.
 DEFAULT_NAICS = [
     # --- Initial registration, ~7/7/26 ---
     "541611",  # Admin & General Management Consulting (was primary)
@@ -110,15 +111,14 @@ DEFAULT_NAICS = [
     "562211",  # Hazardous Waste Treatment & Disposal
     "811310",  # Commercial & Industrial Machinery Repair
     "333998",  # All Other General Purpose Machinery Mfg (corrected from 333999)
-    # --- Recommended 9/9/26 — still unconfirmed as entered ---
+    # --- Added 9/9/26 (recommended then, confirmed entered 9/12/26) ---
     "541213",  # Tax Preparation Services
     "541219",  # Other Accounting Services
     "238190",  # Other Building Exterior Contractors — raised as a maybe for
                # the welder's structural work. A construction trade, so expect
                # this to be the noisiest code in the set.
-    # --- Not in the registration audit, carried over from the original script.
-    # Kept because it is already producing relevant work: the Coast Guard
-    # Academy NAFI audit came in on this code. ---
+    # --- On file, though it never appeared in the audit trail. Already
+    # producing work: the Coast Guard Academy NAFI audit came in on it. ---
     "541211",  # Offices of Certified Public Accountants
 ]
 
