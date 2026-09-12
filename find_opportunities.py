@@ -79,11 +79,63 @@ import requests
 
 API_URL = "https://api.sam.gov/opportunities/v2/search"
 
-DEFAULT_NAICS = ["541213", "541219", "541211", "541611", "541720"]
-PRIORITY_PSC = {"R710", "B505", "R499"}
+# Every NAICS code that has appeared in this entity's SAM.gov registration
+# history (CAGE 22ND2), from the registration audit. Searching a code the
+# registration doesn't currently carry costs only a little noise; MISSING one
+# costs opportunities, so this is deliberately the union of all four
+# registration events rather than a guess at today's state.
+#
+# This is a SEARCH list, not proof of registration. The audit left one
+# question open: whether the 8/19/26 update replaced or merely supplemented
+# the 541-series. If it replaced them, only the five industrial codes plus
+# 541620/541618 are on file today. Size standards and set-aside
+# representations depend on the real registration, so confirm against
+# sam.gov -> Entity Management -> Assertions before certifying a bid.
+DEFAULT_NAICS = [
+    # --- Initial registration, ~7/7/26 ---
+    "541611",  # Admin & General Management Consulting (was primary)
+    "541618",  # Other Management Consulting
+    "541990",  # Other Professional/Scientific/Technical Services
+    "541720",  # R&D in Social Sciences & Humanities
+    # --- Found live in the record 7/27/26 (the flagged discrepancy) ---
+    "541613",  # Marketing Consulting (was showing as primary)
+    "541612",  # HR Consulting
+    "541614",  # Logistics Consulting
+    "541620",  # Environmental Consulting (retained through the 8/19 update)
+    "541690",  # Other Scientific & Technical Consulting
+    # --- Update submitted 7/27/26, confirmed live 8/19/26 (Ares Robotics) ---
+    "562998",  # All Other Misc. Waste Management (new primary)
+    "562910",  # Remediation Services
+    "562211",  # Hazardous Waste Treatment & Disposal
+    "811310",  # Commercial & Industrial Machinery Repair
+    "333998",  # All Other General Purpose Machinery Mfg (corrected from 333999)
+    # --- Recommended 9/9/26, not confirmed as entered ---
+    "541213",  # Tax Preparation Services
+    "541219",  # Other Accounting Services
+    "238190",  # Other Building Exterior Contractors — raised as a maybe for
+               # the welder's structural work. A construction trade, so expect
+               # this to be the noisiest code in the set.
+    # --- Not in the registration audit, carried over from the original script.
+    # Kept because it is already producing relevant work: the Coast Guard
+    # Academy NAFI audit came in on this code. ---
+    "541211",  # Offices of Certified Public Accountants
+]
+
+# PSC codes worth a point. R710/B505/R499 came from the original script;
+# R407, F108 and J039 are from the registration audit. (Z2AZ was pulled
+# before entry, so it is deliberately absent.)
+PRIORITY_PSC = {"R710", "B505", "R499", "R407", "F108", "J039"}
 NOTICE_TYPES = "p,k,r"  # presolicitation, combined synopsis/solicitation, sources sought
 
-KEYWORDS = ["tax", "vita", "evaluation", "accounting", "financial", "audit", "irs"]
+# Title keywords worth a point each (capped at 2). The first group serves the
+# tax/accounting/evaluation lanes; the second was added alongside the
+# industrial NAICS codes, since without it those notices never score high
+# enough to generate a review packet.
+KEYWORDS = [
+    "tax", "vita", "evaluation", "accounting", "financial", "audit", "irs",
+    "waste", "remediation", "hazardous", "environmental", "machinery",
+    "repair", "welding", "disposal", "abatement",
+]
 HOME_STATES = {"TX"}  # small bonus only — best current template (McConnell AFB) is in KS
 
 # Strings SAM.gov actually uses to mean "no set-aside, open to everyone".
