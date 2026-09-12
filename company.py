@@ -160,9 +160,19 @@ def format_warnings(company):
 
 def skip_reason(company, opp):
     """Why the conveyor belt should not build a packet for this notice,
-    or None. Driven entirely by skip_psc / skip_keywords in company.toml,
-    so teaching the belt to stop producing work you don't perform is a
-    one-line edit rather than a code change."""
+    or None. Driven entirely by packet_naics / skip_psc / skip_keywords in
+    company.toml, so teaching the belt to stop producing work you don't
+    perform is a one-line edit rather than a code change."""
+    # A registration can carry more codes than the business can actually
+    # perform, and the search deliberately covers all of them — you should
+    # still see everything in the digest. This narrows only which ones get
+    # a bid packet built, so nothing is hidden and nothing unwinnable is
+    # prepared. Empty means every registered code is fair game.
+    allowed = [str(c).strip() for c in (company.get("packet_naics") or []) if str(c).strip()]
+    naics = str(opp.get("naicsCode") or "").strip()
+    if allowed and naics and naics not in allowed:
+        return f"NAICS {naics} is outside packet_naics (still shown in the digest)"
+
     psc = (opp.get("classificationCode") or "").upper()
     for blocked in company.get("skip_psc") or []:
         if psc and psc == str(blocked).upper():

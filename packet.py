@@ -53,6 +53,11 @@ CREDENTIAL_GATES = (
      r"|facility\s+clearance|\bFCL\b|cleared\s+personnel"),
     ("a state contractor or professional license",
      r"licensed\s+in\s+the\s+state|state\s+contractor'?s?\s+licen"),
+    ("documented OSHA / NFPA safety training for the crew",
+     r"OSHA\s*(?:and|/|&)?\s*NFPA|\b(?:29\s*CFR\s*)?1910\.146\b"
+     r"|competent\s+person|qualified\s+person\s+as\s+defined"),
+    ("accredited assessor or auditor competence for a named standard",
+     r"ISO/IEC\s*17025|ISO\s*17025|accreditation\s+body|lead\s+assessor"),
     ("a named third-party certification",
      r"\bISO\s*\d{4,5}\b|certified\s+industrial\s+hygienist"
      r"|certified\s+safety\s+professional|\bPMP\b\s+certif"),

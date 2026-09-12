@@ -53,6 +53,30 @@ address    = "12103 Hawthorne Dr, Montgomery, TX 77356"
 # should believe you can do it.
 capability_statement = ""
 
+# Which of your registered NAICS codes should get a bid packet built.
+#
+# The search still covers every code on your registration and the digest
+# still shows you everything — this only decides where the conveyor belt
+# spends effort. It exists because a registration is broader than a
+# capability: 541620 surfaced a confined-space assessment needing
+# OSHA/NFPA-trained crews, and 541720 surfaced an Army history office BPA
+# wanting archival finding aids and exhibit samples. Both real, both
+# biddable, neither one this firm's work.
+#
+# Leave the list empty to build packets for every code.
+packet_naics = [
+  "541211",   # CPA offices — note: much of this needs a CPA licence
+  "541213",   # tax preparation
+  "541219",   # other accounting services
+  "541611",   # administrative & general management consulting
+  "541612",   # HR consulting
+  "541613",   # marketing consulting
+  "541614",   # process, physical distribution & logistics consulting
+  "541618",   # other management consulting
+  "541690",   # other scientific & technical consulting
+  "541990",   # all other professional, scientific & technical services
+]
+
 # ONLY real, verifiable contracts. A plausible-sounding invented
 # reference is a false statement on a federal submission.
 [[p1821.past_performance]]

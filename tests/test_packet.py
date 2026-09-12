@@ -20,7 +20,7 @@ OPP = {
     "title": "Confined Space Assessment",
     "solicitationNumber": "12445826Q0091",
     "fullParentPathName": "AGRICULTURE, DEPARTMENT OF",
-    "naicsCode": "541620",
+    "naicsCode": "541219",
     "classificationCode": "R428",
     "typeOfSetAsideDescription": "Small Business Set Aside - Total",
     "responseDeadLine": "2026-09-22T14:00:00-04:00",
@@ -690,3 +690,64 @@ def test_the_notice_type_is_recorded_in_the_checklist(tmp_path):
         str(tmp_path), 4, "")
     assert "Combined Synopsis/Solicitation" in open(
         os.path.join(out, "00-START-HERE.md")).read()
+
+
+def test_safety_training_requirements_are_caught():
+    # Missed on the first pass: the USDA confined-space PWS says the
+    # contractor "shall provide service personnel with OSHA and NFPA
+    # confined space" qualifications. Not a licence, but just as pass/fail
+    # for a firm that does not employ trained confined-space assessors.
+    assert packet.credential_gates(
+        "The contractor shall provide service personnel with OSHA and NFPA "
+        "confined space training") == [
+        "documented OSHA / NFPA safety training for the crew"]
+    assert packet.credential_gates("assessment per 29 CFR 1910.146")
+    assert packet.credential_gates("a competent person shall evaluate each space")
+
+
+def test_named_standard_assessor_requirements_are_caught():
+    assert packet.credential_gates(
+        "vendor shall audit the laboratory against ISO/IEC 17025") == [
+        "accredited assessor or auditor competence for a named standard"]
+
+
+def test_the_new_patterns_do_not_fire_on_office_work():
+    # These run on every packet, so a false positive on ordinary
+    # professional services would train the user to ignore the block.
+    for benign in (
+        "Provide monthly bookkeeping, payroll processing and reconciliation.",
+        "The contractor shall prepare quarterly financial reports.",
+        "Administrative support including scheduling and correspondence.",
+    ):
+        assert packet.credential_gates(benign) == [], benign
+
+
+# ---------- which codes get packets ----------
+
+def test_packet_naics_narrows_packets_without_hiding_anything():
+    cfg = {"packet_naics": ["541219", "541611"]}
+    assert company_mod.skip_reason(cfg, {"naicsCode": "541611"}) is None
+    reason = company_mod.skip_reason(cfg, {"naicsCode": "541620"})
+    assert reason and "still shown in the digest" in reason
+
+
+def test_an_empty_packet_naics_allows_every_code():
+    assert company_mod.skip_reason({"packet_naics": []}, {"naicsCode": "541620"}) is None
+    assert company_mod.skip_reason({}, {"naicsCode": "541620"}) is None
+
+
+def test_a_notice_with_no_naics_is_not_dropped_by_the_allow_list():
+    # Missing data must not silently discard a real solicitation.
+    assert company_mod.skip_reason({"packet_naics": ["541219"]}, {}) is None
+
+
+def test_the_shipped_allow_list_matches_the_profile_it_belongs_to():
+    import find_opportunities as fo
+    company = company_mod.load_company("p1821")
+    allowed = set(company.get("packet_naics") or [])
+    assert allowed, "p1821 should ship an allow-list"
+    registered = set(fo.PROFILES["p1821"]["naics"])
+    assert allowed <= registered, "cannot build packets for codes not registered"
+    # The two codes that produced real but unperformable work are excluded.
+    assert "541620" not in allowed
+    assert "541720" not in allowed
