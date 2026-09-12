@@ -273,11 +273,27 @@ CERTIFICATION_HINTS = {
 
 # Every program above is a small-business program, so holding any of them
 # means the business qualifies for a generic small-business set-aside too.
-# Without this, a WOSB-only profile would treat every "Small Business Set
-# Aside - Total" notice as ineligible and hide it.
+# Without this, a profile holding only WOSB would read every "Small
+# Business Set Aside - Total" notice as ineligible and hide it.
 SMALL_BUSINESS_IMPLYING_CERTS = frozenset(CERTIFICATION_HINTS) - {"small_business"}
 
-DEFAULT_HELD_CERTS = ("small_business", "wosb", "edwosb")
+# What is actually held today. Small-business status is self-certified in
+# SAM.gov against the size standard for the NAICS code; every other program
+# in the table above requires a certification the business does not have.
+#
+# WOSB and EDWOSB are deliberately absent. The business is male-owned as of
+# September 2026, with an ownership transition to a woman owner planned but
+# not executed. WOSB is no longer self-certifiable: FAR 19.15 requires the
+# offeror to be certified in SBA's system at the time of quote submission,
+# and the set-aside notices say so in their own text. Listing it here would
+# put a false certification on federal submissions and score restricted
+# work as winnable.
+#
+# When the transition completes AND the SBA certification is issued, add
+# "wosb" (and "edwosb" if the economic-disadvantage criteria are met) to
+# this tuple and to the webapp's default certifications. Nothing else needs
+# to change — the eligibility logic already handles both.
+DEFAULT_HELD_CERTS = ("small_business",)
 
 # Not everything posted on SAM.gov can be bid, and the difference is not
 # visible in the title. A Sources Sought Notice is market research: it says

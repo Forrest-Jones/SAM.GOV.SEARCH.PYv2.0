@@ -101,7 +101,10 @@ def default_profile_settings(profile):
     spec = core.PROFILES[profile]
     return {
         "naics_codes": list(spec["naics"]),
-        "certifications": ["wosb", "edwosb"],
+        # Only what is actually held. WOSB/EDWOSB require an SBA
+        # certification the business does not have yet — see
+        # DEFAULT_HELD_CERTS in find_opportunities.py.
+        "certifications": list(core.DEFAULT_HELD_CERTS),
         "posted_days": 45,
         "deadline_min_days": 7,
         "deadline_max_days": 60,

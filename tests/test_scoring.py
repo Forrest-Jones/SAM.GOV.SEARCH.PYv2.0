@@ -5,6 +5,7 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from find_opportunities import (  # noqa: E402
+    DEFAULT_HELD_CERTS,
     DEFAULT_NAICS,
     KEYWORDS,
     PROFILES,
@@ -161,6 +162,44 @@ def test_generic_small_business_set_aside_still_classifies_as_generic():
         opp = make_opp(typeOfSetAsideDescription=text)
         assert classify_set_aside(opp) == {"small_business"}, text
         assert eligibility(opp, WOSB_HOLDER) == "eligible_set_aside", text
+
+
+def test_the_default_certification_set_does_not_claim_wosb():
+    # The business is male-owned as of September 2026, with an ownership
+    # transition planned but not executed. WOSB is not self-certifiable:
+    # FAR 19.15 requires certification in SBA's system at the time of
+    # quote submission. Claiming it would be a false certification on a
+    # federal submission, so it must not be in the defaults.
+    assert "wosb" not in DEFAULT_HELD_CERTS
+    assert "edwosb" not in DEFAULT_HELD_CERTS
+    assert DEFAULT_HELD_CERTS == ("small_business",)
+
+
+def test_wosb_set_asides_are_restricted_by_default():
+    for text in (
+        "SBA Certified Women-Owned Small Business (WOSB) Program Set-Aside (FAR 19.15)",
+        "SBA Certified Women-Owned Small Business (WOSB) Program Sole Source (FAR 19.15)",
+        "Women-Owned Small Business Set-Aside",
+        "Economically Disadvantaged Women-Owned Small Business (EDWOSB) Set-Aside",
+    ):
+        opp = make_opp(typeOfSetAsideDescription=text)
+        assert eligibility(opp) == "restricted", text
+
+
+def test_generic_small_business_work_is_still_ours_by_default():
+    # The point of removing WOSB is not to exclude everything: a small
+    # business self-certifies its size in SAM.gov, so these remain open.
+    for text in (REAL_TOTAL_SB, "Total Small Business Set-Aside"):
+        assert eligibility(make_opp(typeOfSetAsideDescription=text)) == "eligible_set_aside", text
+    assert eligibility(make_opp(typeOfSetAsideDescription=REAL_NO_SET_ASIDE)) == "full_open"
+
+
+def test_a_wosb_set_aside_scores_nothing_by_default():
+    # It must not merely be labelled restricted — it must stop earning the
+    # set-aside points that put it at the top of the digest.
+    wosb = make_opp(typeOfSetAsideDescription=REAL_WOSB_SOLE_SOURCE)
+    points, reasons = score(wosb, 7, 60)
+    assert "eligible" not in reasons
 
 
 def test_unrecognized_set_aside_is_flagged_not_assumed():

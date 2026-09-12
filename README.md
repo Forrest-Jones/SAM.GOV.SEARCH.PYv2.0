@@ -126,7 +126,11 @@ server if you deploy.
 
 Set-aside notices are classified three ways:
 
-- **eligible_set_aside** — total small business, WOSB, or EDWOSB
+- **eligible_set_aside** — reserved for a program the business actually
+  holds. Today that is generic small business only: WOSB and EDWOSB
+  require an SBA certification the business does not have yet, and FAR
+  19.15 requires that certification to be in place at the time the quote
+  is submitted, so those notices read as restricted
   set-asides. Scored with a bonus.
 - **unknown_set_aside** — some other set-aside type the script doesn't
   recognize. Shown, but flagged "verify eligibility" instead of scored
