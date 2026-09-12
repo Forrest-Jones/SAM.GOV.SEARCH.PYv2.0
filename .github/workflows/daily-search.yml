@@ -7,10 +7,16 @@ on:
     # GitHub cron is UTC only and does not follow daylight saving, so a single
     # entry drifts by an hour twice a year. Both times below are fired, and the
     # gate step keeps only the one that is actually 10:00 in America/Chicago:
-    #   15:00 UTC = 10:00 CDT (summer) / 09:00 CST (winter)
-    #   16:00 UTC = 11:00 CDT (summer) / 10:00 CST (winter)
-    - cron: "0 15 * * *"
-    - cron: "0 16 * * *"
+    #   15:xx UTC = 10:xx CDT (summer) / 09:xx CST (winter)
+    #   16:xx UTC = 11:xx CDT (summer) / 10:xx CST (winter)
+    #
+    # Minute 17, not 0, on purpose. GitHub's own docs name the start of every
+    # hour as a high-load window where the schedule event gets delayed or
+    # dropped, and a 15:00 entry is queued behind everyone else's :00 cron.
+    # An odd minute off the hour is far more likely to fire on time, and the
+    # gate below only looks at the hour, so 10:17 local is still "10:00".
+    - cron: "17 15 * * *"
+    - cron: "17 16 * * *"
   workflow_dispatch: {}
 
 permissions:
