@@ -132,12 +132,27 @@ NOTICE_TYPES = "p,k,r"  # presolicitation, combined synopsis/solicitation, sourc
 # tax/accounting/evaluation lanes; the second was added alongside the
 # industrial NAICS codes, since without it those notices never score high
 # enough to generate a review packet.
+#
+# Kept deliberately narrow. An earlier version added "repair", "machinery"
+# and "disposal", which scored commodity purchases ("43 Filter Element
+# Fluid", "Grease Tank Pumping") high enough to generate review packets —
+# a keyword has to describe the WORK, not merely appear near it.
 KEYWORDS = [
     "tax", "vita", "evaluation", "accounting", "financial", "audit", "irs",
-    "waste", "remediation", "hazardous", "environmental", "machinery",
-    "repair", "welding", "disposal", "abatement",
+    "remediation", "hazardous waste", "environmental", "abatement",
 ]
 HOME_STATES = {"TX"}  # small bonus only — best current template (McConnell AFB) is in KS
+
+# Product Service Codes are letter-prefixed for services (R499, B505, F108,
+# J039) and digit-prefixed for supplies and equipment (4330, 4730). This
+# business sells services, so digit-prefixed notices are parts buys and get
+# dropped by default. Adding the industrial NAICS codes pulled in dozens of
+# them — filter elements, strainer elements, parts kits — because a
+# small-business set-aside parts buy in Texas with a near deadline scores
+# just as well as real services work.
+def is_supply_notice(opp):
+    psc = (opp.get("classificationCode") or "").strip()
+    return bool(psc) and psc[0].isdigit()
 
 # Strings SAM.gov actually uses to mean "no set-aside, open to everyone".
 # The API sends these as literal text rather than an empty field, so without
@@ -556,8 +571,12 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
 
     excluded_restricted = 0
     excluded_expired = 0
+    excluded_supplies = 0
     filtered = []
     for opp in all_opps.values():
+        if is_supply_notice(opp) and not cfg.get("include_supplies"):
+            excluded_supplies += 1
+            continue
         if eligibility(opp, held_certs) == "restricted" and not cfg["include_restricted"]:
             excluded_restricted += 1
             continue
@@ -605,6 +624,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
         "ranked": ranked,
         "excluded_restricted": excluded_restricted,
         "excluded_expired": excluded_expired,
+        "excluded_supplies": excluded_supplies,
         "new_ones": new_ones,
         "draft_paths": draft_paths,
         "descriptions": descriptions,
@@ -628,6 +648,8 @@ def main():
     ap.add_argument("--include-restricted-set-asides", action="store_true")
     ap.add_argument("--include-expired", action="store_true",
                     help="also show notices whose response deadline has already passed")
+    ap.add_argument("--include-supplies", action="store_true",
+                    help="also show supply/equipment buys (digit-prefixed PSC), not just services")
     ap.add_argument("--certs", type=str, default=",".join(DEFAULT_HELD_CERTS),
                     help=f"certifications held, comma-separated from: {','.join(CERTIFICATION_HINTS)}")
     ap.add_argument("--email", action="store_true")
@@ -654,6 +676,7 @@ def main():
         "held_certs": [c.strip() for c in args.certs.split(",") if c.strip()],
         "include_restricted": args.include_restricted_set_asides,
         "include_expired": args.include_expired,
+        "include_supplies": args.include_supplies,
         "db_path": args.db,
         "drafts_dir": args.drafts_dir,
         "draft_min_score": args.draft_min_score,
@@ -669,6 +692,12 @@ def main():
 
     scored = sum(1 for r in ranked if r[0] > 0)
     print(f"\n{len(ranked)} unique notices, {scored} scored above zero", file=sys.stderr)
+    if result["excluded_supplies"]:
+        print(
+            f"{result['excluded_supplies']} excluded (supply/equipment buys, not services — "
+            f"use --include-supplies to see them)",
+            file=sys.stderr,
+        )
     if result["excluded_expired"]:
         print(
             f"{result['excluded_expired']} excluded (response deadline already passed — "

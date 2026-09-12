@@ -5,9 +5,11 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from find_opportunities import (  # noqa: E402
+    KEYWORDS,
     classify_set_aside,
     days_until_deadline,
     eligibility,
+    is_supply_notice,
     normalize_set_aside,
     score,
     slugify,
@@ -188,3 +190,37 @@ def test_slugify_handles_punctuation_and_length():
     assert slugify("Tax & Accounting: Support, Services!") == "tax-accounting-support-services"
     assert slugify(None) == "opportunity"
     assert len(slugify("x" * 200)) <= 50
+
+
+# ---------- services vs. supply buys ----------
+# Regression: adding the industrial NAICS codes pulled in dozens of commodity
+# purchases ("43 Filter Element Fluid", "47 Strainer Element Sedim", "43 Parts
+# Kit Fluid Pressu"), which generated review packets for parts orders. PSCs are
+# digit-prefixed for supplies and letter-prefixed for services.
+
+def test_digit_prefixed_psc_is_a_supply_buy():
+    assert is_supply_notice(make_opp(classificationCode="4330")) is True
+    assert is_supply_notice(make_opp(classificationCode="4730")) is True
+
+
+def test_letter_prefixed_psc_is_a_service():
+    for psc in ("R499", "B505", "F108", "J039", "R710", "S208"):
+        assert is_supply_notice(make_opp(classificationCode=psc)) is False
+
+
+def test_missing_psc_is_not_treated_as_a_supply_buy():
+    # No PSC at all shouldn't silently drop a notice — several real service
+    # notices in the live run came back with classificationCode None.
+    assert is_supply_notice(make_opp(classificationCode=None)) is False
+    assert is_supply_notice(make_opp(classificationCode="")) is False
+
+
+def test_keywords_exclude_terms_that_matched_parts_orders():
+    # "repair"/"machinery"/"disposal" scored commodity buys as real work.
+    for term in ("repair", "machinery", "disposal"):
+        assert term not in KEYWORDS
+
+
+def test_keywords_still_cover_the_environmental_service_lane():
+    for term in ("remediation", "environmental", "abatement"):
+        assert term in KEYWORDS

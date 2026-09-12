@@ -33,5 +33,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add state.sqlite3 drafts/
-          git diff --cached --quiet || git commit -m "chore: daily search $(date -u +%Y-%m-%d)"
-          git push
+          git diff --cached --quiet && echo "nothing new to commit" && exit 0
+          git commit -m "chore: daily search $(date -u +%Y-%m-%d)"
+          # A search takes minutes, so main can move while it runs — a push
+          # straight from the checked-out SHA then fails "fetch first" and the
+          # results are lost. Rebase onto whatever landed meanwhile, and retry
+          # in case something lands during the rebase itself.
+          for attempt in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            echo "push attempt $attempt failed; retrying"
+            sleep 5
+          done
+          echo "could not push search results after 3 attempts" >&2
+          exit 1
