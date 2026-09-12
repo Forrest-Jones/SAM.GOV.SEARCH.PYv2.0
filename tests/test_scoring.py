@@ -128,6 +128,41 @@ def test_sdvosb_does_not_read_as_vosb():
     assert eligibility(opp, ["vosb"]) == "restricted"
 
 
+def test_vosb_set_aside_is_not_read_as_a_generic_small_business_set_aside():
+    # Verbatim from a live SAM.gov run (notice: "Repair Bonham Walk-in
+    # Freezer"). Every program's official name contains the words "small
+    # business", so this string also matched the generic small-business hint
+    # and the notice was reported as eligible to a WOSB-only holder.
+    opp = make_opp(typeOfSetAsideDescription=(
+        "Veteran-Owned Small Business Set-Aside "
+        "(specific to Department of Veterans Affairs)"))
+    assert classify_set_aside(opp) == {"vosb"}
+    assert eligibility(opp, WOSB_HOLDER) == "restricted"
+    assert eligibility(opp, ["vosb"]) == "eligible_set_aside"
+
+
+def test_named_program_set_asides_never_fall_back_to_generic_small_business():
+    # The same shadowing applies to every program whose spelled-out name ends
+    # in "Small Business Set-Aside", not just the VA's veteran-owned wording.
+    for text, expected in [
+        ("Service-Disabled Veteran-Owned Small Business Set-Aside", "sdvosb"),
+        ("HUBZone Small Business Set-Aside", "hubzone"),
+        ("8(a) Small Business Set-Aside", "8a"),
+    ]:
+        opp = make_opp(typeOfSetAsideDescription=text)
+        assert classify_set_aside(opp) == {expected}, text
+        assert eligibility(opp, WOSB_HOLDER) == "restricted", text
+
+
+def test_generic_small_business_set_aside_still_classifies_as_generic():
+    # The fix above must not swallow the real generic case, which is the one
+    # a WOSB holder is genuinely entitled to bid.
+    for text in (REAL_TOTAL_SB, "Total Small Business Set-Aside"):
+        opp = make_opp(typeOfSetAsideDescription=text)
+        assert classify_set_aside(opp) == {"small_business"}, text
+        assert eligibility(opp, WOSB_HOLDER) == "eligible_set_aside", text
+
+
 def test_unrecognized_set_aside_is_flagged_not_assumed():
     opp = make_opp(typeOfSetAsideDescription="Some Future Set-Aside Program")
     assert classify_set_aside(opp) == set()

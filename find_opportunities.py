@@ -307,6 +307,15 @@ def classify_set_aside(opp):
         if any(hint in normalized for hint in info["hints"]):
             matched.add(key)
 
+    # Every specific program's name contains the words "small business", so
+    # "Veteran-Owned Small Business Set-Aside" also matches the generic
+    # small-business hint and would read as open to any small business. A
+    # notice reserved for a named program is reserved for that program only,
+    # so the generic key is dropped whenever a specific one matched.
+    specific = matched - {"small_business"}
+    if specific:
+        matched = specific
+
     # "service disabled veteran owned" also contains "veteran owned", so a
     # SDVOSB notice would otherwise look like a VOSB one as well.
     if "sdvosb" in matched:
