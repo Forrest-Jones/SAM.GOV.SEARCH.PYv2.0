@@ -781,6 +781,13 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
 
 
 def main():
+    # Progress and summary lines go to stderr, the ranked list to stdout.
+    # Redirected to a file (a CI log), stdout is block-buffered and flushes
+    # only at exit, so the whole list lands after every stderr line and the
+    # counts end up buried mid-log instead of under the results they
+    # describe. Line buffering keeps the two streams in real order.
+    sys.stdout.reconfigure(line_buffering=True)
+
     ap = argparse.ArgumentParser(description="Pull and rank SAM.gov opportunities for one business profile.")
     ap.add_argument("--profile", choices=sorted(PROFILES), default=DEFAULT_PROFILE,
                     help="which business to search: " + " | ".join(
