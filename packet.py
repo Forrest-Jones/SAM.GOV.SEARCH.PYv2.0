@@ -401,8 +401,21 @@ def build_packet(opp, description_text, company, root, score=None, reasons="", s
 
     if existing:
         meta = _read_meta(out)
-        replaceable = untouched_files(out, meta)
-        if meta.get("company_fingerprint") == fingerprint or not replaceable:
+        # A file that is not on disk is nobody's work, so it is always the
+        # tool's to write. This is not hypothetical: *.csv in .gitignore
+        # kept every price sheet out of the repo, so a fresh checkout on a
+        # CI runner had a packet whose centrepiece was simply absent and
+        # whose recorded hashes said everything was accounted for.
+        missing = {n for n in GENERATED if not os.path.exists(os.path.join(out, n))}
+        same_facts = meta.get("company_fingerprint") == fingerprint
+
+        if same_facts:
+            replaceable, status = missing, ("repaired" if missing else "kept")
+        else:
+            replaceable = untouched_files(out, meta) | missing
+            status = "refreshed" if replaceable == set(GENERATED) else "partial"
+
+        if not replaceable:
             # The drafts are current or yours, but the government's own
             # documents are neither — if they are missing from disk that is
             # pure loss, so fetch them even when nothing else changes.
@@ -410,7 +423,6 @@ def build_packet(opp, description_text, company, root, score=None, reasons="", s
             if (opp.get("resourceLinks") or []) and not has_downloads(attachments_dir):
                 fetch_attachments(opp, attachments_dir, session=session)
             return out, meta.get("blanks_left"), "kept"
-        status = "refreshed" if replaceable == set(GENERATED) else "partial"
     else:
         replaceable = set(GENERATED)
         status = "new"
@@ -450,10 +462,83 @@ def build_packet(opp, description_text, company, root, score=None, reasons="", s
     with open(os.path.join(out, META_NAME), "w") as f:
         json.dump(
             {"company_fingerprint": fingerprint, "blanks_left": blanks_left,
-             "built": date.today().isoformat(), "files": merged},
+             "built": date.today().isoformat(),
+             # Recorded so closed packets can have their attachments pruned
+             # without re-querying the API for a notice that has expired.
+             "deadline": _deadline_parts(opp)[0],
+             "files": merged},
             f, indent=2,
         )
     return out, blanks_left, status
+
+
+def _packet_deadline(out):
+    """The packet's response deadline, from its metadata, falling back to
+    the date printed in its own checklist for packets written before the
+    metadata carried one."""
+    recorded = _read_meta(out).get("deadline")
+    if recorded and recorded != "unknown":
+        return recorded
+    try:
+        with open(os.path.join(out, "00-START-HERE.md")) as f:
+            match = re.search(r"\*\*Due\*\* \| \*\*(\d{4}-\d{2}-\d{2})", f.read())
+            return match.group(1) if match else None
+    except OSError:
+        return None
+
+
+def prune_closed_packets(root, grace_days=7, today=None):
+    """Deletes the downloaded attachments of packets whose deadline has
+    passed, keeping the paperwork itself.
+
+    Attachments are the bulk of the repository by a wide margin — one
+    notice brought back 35MB, including a 15MB drawing set — and they are
+    worthless the moment the solicitation closes. Without this the store
+    grows without bound and clones get slower every day. The markdown and
+    the manifest stay, so the record of what was prepared, and the URLs to
+    re-fetch from, survive.
+    """
+    today = today or date.today()
+    freed, pruned = 0, []
+    if not os.path.isdir(root):
+        return pruned, freed
+
+    for name in sorted(os.listdir(root)):
+        out = os.path.join(root, name)
+        attachments = os.path.join(out, "attachments")
+        if not os.path.isdir(attachments):
+            continue
+        deadline = _packet_deadline(out)
+        if not deadline:
+            continue
+        try:
+            closed = datetime.strptime(deadline, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if (today - closed).days <= grace_days:
+            continue
+
+        removed = 0
+        for f in os.listdir(attachments):
+            if f == "MANIFEST.txt":
+                continue
+            path = os.path.join(attachments, f)
+            try:
+                freed += os.path.getsize(path)
+                os.remove(path)
+                removed += 1
+            except OSError:
+                pass
+        if removed:
+            with open(os.path.join(attachments, "PRUNED.txt"), "w") as f:
+                f.write(
+                    f"Deadline {deadline} has passed, so the {removed} downloaded "
+                    f"file(s) here were removed on {today.isoformat()} to keep the "
+                    "repository small.\n\nMANIFEST.txt still lists every URL if you "
+                    "need them back.\n"
+                )
+            pruned.append((name, deadline, removed))
+    return pruned, freed
 
 
 def write_batch_index(built, skipped, root, profile_label):

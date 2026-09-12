@@ -835,6 +835,13 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
         left = "-" if blanks_left is None else f"{blanks_left} blanks left"
         log(f"  packet [{status}] {os.path.basename(out)} — {left}")
 
+    # Attachments are the bulk of the store and are worthless once the
+    # solicitation closes, so closed packets give theirs up here.
+    pruned, freed = packet.prune_closed_packets(packets_root)
+    if pruned:
+        log(f"  pruned attachments from {len(pruned)} closed packet(s), "
+            f"freeing {freed / 1048576:.1f} MB")
+
     index = packet.write_batch_index(built, skipped, packets_root, profile["label"])
     log(f"\n{len(built)} packet(s) ready — start here: {index}")
     if skipped:

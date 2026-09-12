@@ -393,3 +393,88 @@ def test_the_price_sheet_is_not_gitignored():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     rules = open(os.path.join(root, ".gitignore")).read()
     assert "!packets/**/*.csv" in rules
+
+
+# ---------- a generated file that is simply absent ----------
+
+def test_a_missing_generated_file_is_rewritten(tmp_path):
+    # The live failure: *.csv in .gitignore meant the price sheet was never
+    # committed, so a fresh CI checkout had a packet with no price sheet at
+    # all — while its recorded hashes claimed everything was accounted for.
+    out, _, _ = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    priced = os.path.join(out, "02-price-sheet.csv")
+    os.remove(priced)
+
+    _, _, status = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    assert status == "repaired"
+    assert os.path.exists(priced), "a missing price sheet must come back"
+    assert "Senior Safety Assessor" in open(priced).read()
+
+
+def test_repairing_a_missing_file_leaves_your_edits_alone(tmp_path):
+    out, _, _ = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    draft = os.path.join(out, "01-proposal.md")
+    with open(draft, "w") as f:
+        f.write("MY EDITED DRAFT")
+    os.remove(os.path.join(out, "02-price-sheet.csv"))
+
+    _, _, status = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    assert status == "repaired"
+    assert open(draft).read() == "MY EDITED DRAFT"
+
+
+# ---------- pruning closed packets ----------
+
+def test_closed_packets_give_up_their_attachments(tmp_path):
+    from datetime import date, timedelta
+    url = "https://sam.gov/x/download"
+    opp = dict(OPP, resourceLinks=[url])
+    session = FakeSession({url: {"content-disposition": 'attachment; filename="PWS.pdf"'}})
+    out, _, _ = packet.build_packet(opp, "", FILLED, str(tmp_path), 4, "", session=session)
+    pws = os.path.join(out, "attachments", "PWS.pdf")
+    assert os.path.exists(pws)
+
+    # OPP closes 2026-09-22; well past it plus the grace period.
+    pruned, freed = packet.prune_closed_packets(
+        str(tmp_path), grace_days=7, today=date(2026, 10, 15))
+    assert len(pruned) == 1
+    assert not os.path.exists(pws)
+    # The paperwork and the record of what was there both survive.
+    assert os.path.exists(os.path.join(out, "01-proposal.md"))
+    assert os.path.exists(os.path.join(out, "attachments", "MANIFEST.txt"))
+    assert "MANIFEST.txt still lists every URL" in open(
+        os.path.join(out, "attachments", "PRUNED.txt")).read()
+
+
+def test_open_packets_keep_their_attachments(tmp_path):
+    from datetime import date
+    url = "https://sam.gov/x/download"
+    opp = dict(OPP, resourceLinks=[url])
+    session = FakeSession({url: {"content-disposition": 'attachment; filename="PWS.pdf"'}})
+    out, _, _ = packet.build_packet(opp, "", FILLED, str(tmp_path), 4, "", session=session)
+
+    pruned, freed = packet.prune_closed_packets(
+        str(tmp_path), grace_days=7, today=date(2026, 9, 20))
+    assert pruned == []
+    assert freed == 0
+    assert os.path.exists(os.path.join(out, "attachments", "PWS.pdf"))
+
+
+def test_a_packet_inside_the_grace_period_is_left_alone(tmp_path):
+    from datetime import date
+    url = "https://sam.gov/x/download"
+    opp = dict(OPP, resourceLinks=[url])
+    session = FakeSession({url: {"content-disposition": 'attachment; filename="PWS.pdf"'}})
+    out, _, _ = packet.build_packet(opp, "", FILLED, str(tmp_path), 4, "", session=session)
+
+    # Three days past the 2026-09-22 deadline: a debrief or a late
+    # modification is still plausible, so nothing is thrown away yet.
+    pruned, _ = packet.prune_closed_packets(
+        str(tmp_path), grace_days=7, today=date(2026, 9, 25))
+    assert pruned == []
+    assert os.path.exists(os.path.join(out, "attachments", "PWS.pdf"))
+
+
+def test_pruning_an_empty_or_missing_tray_is_harmless(tmp_path):
+    assert packet.prune_closed_packets(str(tmp_path / "nope")) == ([], 0)
+    assert packet.prune_closed_packets(str(tmp_path)) == ([], 0)

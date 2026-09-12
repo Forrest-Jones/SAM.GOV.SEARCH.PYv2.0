@@ -188,8 +188,21 @@ every file it wrote. On the next run:
 - **facts changed, some files edited** — only the untouched files are
   refreshed; a price sheet you have worked on is never overwritten
 
-`INDEX.md` shows which happened per packet: `new`, `refreshed`, `partial`
-or `kept`.
+- **a generated file is missing** — rewritten, whatever the facts say. A
+  file that is not on disk is nobody's work.
+
+`INDEX.md` shows which happened per packet: `new`, `refreshed`, `partial`,
+`repaired` or `kept`.
+
+### Repository size
+
+The solicitation attachments are almost all of the bytes — one waste-
+disposal notice brought back 35MB including a 15MB drawing set — and they
+are worthless the moment the notice closes. So a week after a packet's
+deadline passes, its downloaded files are deleted and a `PRUNED.txt` notes
+what went. The markdown and `MANIFEST.txt` stay, so the record of what you
+prepared and the URLs to re-fetch from both survive. Without this the tray
+would grow by tens of megabytes a day forever.
 
 ### What it will not do
 
