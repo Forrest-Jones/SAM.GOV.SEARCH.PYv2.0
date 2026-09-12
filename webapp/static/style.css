@@ -314,3 +314,53 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   max-width: 320px;
   cursor: pointer;
 }
+
+/* ---------- Bid Desk ---------- */
+.notice { padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.5; }
+.notice-warn { background: #fff8e1; border: 1px solid #ffe082; color: #6b4e00; }
+.notice-info { background: #e8f4fd; border: 1px solid #b3d9f2; color: #0b4a6f; }
+.notice code { background: rgba(0,0,0,.06); padding: 1px 5px; border-radius: 4px; }
+
+.packet-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px 20px; margin: 12px 0 24px; }
+.fact { display: flex; gap: 10px; font-size: 14px; border-bottom: 1px solid #eee; padding: 6px 0; }
+.fact-k { color: #666; min-width: 120px; }
+.fact-v { font-weight: 500; word-break: break-word; }
+
+ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: step; }
+.step { background: #fff; border: 1px solid #e3e3e3; border-radius: 10px;
+  padding: 18px 20px; margin-bottom: 16px; }
+.step h2 { margin: 0 0 4px; font-size: 17px; }
+.go-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.row-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+.attachment-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+a.attachment { display: block; padding: 9px 12px; border: 1px solid #ddd; border-radius: 7px;
+  text-decoration: none; color: #16558f; background: #fafafa; font-size: 14px; }
+a.attachment:hover { background: #f0f6fc; border-color: #b3d9f2; }
+
+.price-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+.price-table th, .price-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; }
+.price-table tfoot th { border-top: 2px solid #ddd; border-bottom: none; font-size: 15px; }
+.price-table input { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 5px; font: inherit; }
+.price-table input.narrow { max-width: 110px; }
+.price-table td.ext { font-variant-numeric: tabular-nums; white-space: nowrap; }
+#price-total { font-variant-numeric: tabular-nums; }
+
+h3.blank-section { margin: 22px 0 8px; font-size: 14px; text-transform: uppercase;
+  letter-spacing: .04em; color: #777; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+.blank-field { margin-bottom: 14px; }
+.blank-field label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.blank-context { margin: 0 0 5px; font-size: 12px; color: #888; font-family: ui-monospace, monospace; }
+.blank-field input, .blank-field textarea { width: 100%; padding: 8px 10px;
+  border: 1px solid #ddd; border-radius: 6px; font: inherit; }
+.email-box { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
+.btn-small { padding: 7px 12px; font-size: 13px; }
+
+@media (max-width: 600px) {
+  .price-table input.narrow { max-width: none; }
+  .fact { flex-direction: column; gap: 2px; }
+}
+.blank-hint { margin: 0 0 12px; font-size: 13px; color: #6b4e00;
+  background: #fff8e1; border-left: 3px solid #ffe082; padding: 7px 10px; border-radius: 0 5px 5px 0; }

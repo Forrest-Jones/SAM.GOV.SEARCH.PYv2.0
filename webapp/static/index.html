@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Contract Finder</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
   <div id="setup-screen" class="setup-screen" hidden>
@@ -28,6 +29,7 @@
       <nav class="tabs">
         <button class="tab-btn active" data-tab="dashboard">Home</button>
         <button class="tab-btn" data-tab="opportunities">Contracts</button>
+        <button class="tab-btn" data-tab="packets">Bid Desk</button>
         <button class="tab-btn" data-tab="drafts">Review Packets</button>
         <button class="tab-btn" data-tab="settings">Settings</button>
       </nav>
@@ -67,6 +69,78 @@
         <p class="muted">Best matches first. Click a card for details.</p>
         <div id="opportunities-list" class="card-list"></div>
         <p id="opportunities-empty" class="muted" hidden>No contracts found yet — go to Home and click "Find New Contracts".</p>
+      </section>
+
+      <!-- BID DESK -->
+      <section id="tab-packets" class="tab-panel">
+        <div id="packet-list-view">
+          <h1>Bid Desk</h1>
+          <p class="muted">Everything that can be prepared for you already has been. What's left is the part only you can do: decide to bid, set the price, sign it.</p>
+          <div id="factbank-banner" class="notice" hidden></div>
+          <div id="packets-list" class="card-list"></div>
+          <p id="packets-empty" class="muted" hidden>No bid packets yet. They're built automatically each morning for your best matches.</p>
+        </div>
+
+        <div id="packet-detail-view" hidden>
+          <button id="packet-back" class="btn btn-secondary btn-small">&larr; Back to Bid Desk</button>
+          <h1 id="packet-title"></h1>
+          <div id="packet-facts" class="packet-facts"></div>
+
+          <ol class="steps">
+            <li class="step" id="step-read">
+              <h2>1. Read it</h2>
+              <p class="field-help">The government's own documents. Everything you have to answer is in here.</p>
+              <div id="packet-attachments" class="attachment-list"></div>
+            </li>
+
+            <li class="step" id="step-go">
+              <h2>2. Go or no-go</h2>
+              <p class="field-help">Can you perform this work, at this place, by this date? Nothing else matters until this is a yes.</p>
+              <div class="go-row">
+                <button id="packet-go" class="btn btn-primary btn-small">Yes — I'm bidding this</button>
+                <button id="packet-nogo" class="btn btn-secondary btn-small">No — not for us</button>
+                <span id="packet-go-state" class="muted"></span>
+              </div>
+            </li>
+
+            <li class="step" id="step-price">
+              <h2>3. Price it</h2>
+              <p class="field-help">Your rates are already here. Enter hours — the totals compute as you type. This stays your number; nothing is guessed.</p>
+              <table id="price-table" class="price-table">
+                <thead><tr><th>Labor category</th><th>Unit</th><th>Rate</th><th>Hours / Qty</th><th>Extended</th></tr></thead>
+                <tbody></tbody>
+                <tfoot><tr><th colspan="4">Total</th><th id="price-total">—</th></tr></tfoot>
+              </table>
+              <div class="row-actions">
+                <button id="price-add-row" class="btn btn-secondary btn-small">+ Add a line</button>
+                <button id="price-save" class="btn btn-primary btn-small">Save price sheet</button>
+                <span id="price-saved" class="muted"></span>
+              </div>
+            </li>
+
+            <li class="step" id="step-fill">
+              <h2>4. Fill in what's left</h2>
+              <p class="field-help">One box per blank, grouped by where it appears. Blank boxes stay blank — nothing is invented on your behalf.</p>
+              <p id="blanks-count" class="muted"></p>
+              <div id="blanks-form"></div>
+              <div class="row-actions">
+                <button id="blanks-save" class="btn btn-primary">Save answers</button>
+                <span id="blanks-saved" class="muted"></span>
+              </div>
+            </li>
+
+            <li class="step" id="step-send">
+              <h2>5. Send it</h2>
+              <p class="field-help">Addressed and written. Check the submission method against the solicitation before you send — that's the most common way a good quote gets thrown out.</p>
+              <textarea id="packet-email" class="email-box" rows="18" readonly></textarea>
+              <div class="row-actions">
+                <button id="email-copy" class="btn btn-secondary btn-small">Copy email text</button>
+                <a id="proposal-download" class="btn btn-secondary btn-small" download>Download the proposal</a>
+                <span id="email-copied" class="muted"></span>
+              </div>
+            </li>
+          </ol>
+        </div>
       </section>
 
       <!-- DRAFTS -->

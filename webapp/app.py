@@ -23,18 +23,23 @@ into the Setup screen the first time you open the page, and everything
 else (search, review packets, settings) happens by clicking around.
 """
 
+import csv
 import hmac
 import json
 import os
 import re
 import sys
+from datetime import date, datetime
 
 from flask import Flask, jsonify, request, send_from_directory
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO_ROOT)
 
+import company as fact_bank  # noqa: E402
+import fillable  # noqa: E402
 import find_opportunities as core  # noqa: E402
+import packet as packet_builder  # noqa: E402
 import proposal as proposal_builder  # noqa: E402
 
 # Everything the app writes lives under DATA_DIR. Locally that's just the
@@ -64,6 +69,10 @@ def proposals_dir_for(profile):
 
 def notices_dir_for(profile):
     return os.path.join(DATA_DIR, "notices", profile)
+
+
+def packets_dir_for(profile):
+    return os.path.join(DATA_DIR, "packets", profile)
 
 
 def last_results_path_for(profile):
@@ -293,6 +302,11 @@ def healthz():
 @app.route("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
+
+
+@app.route("/favicon.svg")
+def favicon():
+    return send_from_directory(app.static_folder, "favicon.svg")
 
 
 @app.route("/api/status")
@@ -566,6 +580,264 @@ def notice_id_for_draft(filename, notice_ids):
     filename rather than splitting on the first '-'."""
     matches = [nid for nid in notice_ids if filename.startswith(nid + "-")]
     return max(matches, key=len) if matches else None
+
+
+PACKET_FOLDER_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+PACKET_FILES = {
+    "start_here": "00-START-HERE.md",
+    "proposal": "01-proposal.md",
+    "price": "02-price-sheet.csv",
+    "email": "03-quote-email.txt",
+}
+
+
+def packet_path(folder, name=None):
+    """Resolves a packet folder (and optionally a file inside it) under the
+    current profile's tray, refusing anything that escapes it."""
+    if not PACKET_FOLDER_RE.match(folder or "") or ".." in folder:
+        return None
+    root = os.path.realpath(packets_dir_for(requested_profile()))
+    out = os.path.realpath(os.path.join(root, folder))
+    if not out.startswith(root + os.sep) or not os.path.isdir(out):
+        return None
+    if name is None:
+        return out
+    target = os.path.realpath(os.path.join(out, name))
+    return target if target.startswith(out + os.sep) else None
+
+
+def parse_price_sheet(path):
+    """The price sheet as rows the browser can edit. Formulas are dropped:
+    the browser computes extended values live, and a stored "=C5*D5" is
+    meaningless to it."""
+    rows = []
+    if not os.path.exists(path):
+        return rows
+    with open(path, newline="") as f:
+        for record in csv.reader(f):
+            if len(record) >= 5 and record[0] and record[0] not in ("Labor category", "TOTAL"):
+                rows.append({
+                    "category": record[0], "unit": record[1] or "hr",
+                    "rate": record[2], "hours": record[3],
+                })
+            elif len(record) >= 5 and record[1] == "hr" and not record[0]:
+                rows.append({"category": "", "unit": "hr", "rate": record[2], "hours": record[3]})
+    return rows
+
+
+def write_price_rows(path, title, solicitation, rows):
+    """Writes the sheet back with live formulas restored, so it still opens
+    as a working spreadsheet outside the browser."""
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([f"PRICE SHEET — {title}"])
+        w.writerow([f"Solicitation: {solicitation}"])
+        w.writerow([])
+        w.writerow(["Labor category", "Unit", "Rate", "Hours / Qty", "Extended"])
+        first = 5
+        for i, row in enumerate(rows, start=first):
+            w.writerow([row.get("category", ""), row.get("unit") or "hr",
+                        row.get("rate", ""), row.get("hours", ""), f"=C{i}*D{i}"])
+        last = first + len(rows) - 1
+        w.writerow([])
+        w.writerow(["TOTAL", "", "", "", f"=SUM(E{first}:E{last})" if rows else ""])
+    return path
+
+
+def packet_summary(folder, path):
+    """Everything the tray list needs, read off disk rather than from the
+    index file, so a packet edited by hand still reports honestly."""
+    proposal_path = os.path.join(path, PACKET_FILES["proposal"])
+    text = ""
+    if os.path.exists(proposal_path):
+        with open(proposal_path) as f:
+            text = f.read()
+    meta = {}
+    meta_path = os.path.join(path, ".packet-meta.json")
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+        except ValueError:
+            meta = {}
+
+    deadline = meta.get("deadline") or ""
+    days = None
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", deadline):
+        days = (datetime.strptime(deadline, "%Y-%m-%d").date() - date.today()).days
+
+    title = ""
+    start_here = os.path.join(path, PACKET_FILES["start_here"])
+    if os.path.exists(start_here):
+        with open(start_here) as f:
+            title = f.readline().lstrip("# ").strip()
+
+    attachments = []
+    att_dir = os.path.join(path, "attachments")
+    if os.path.isdir(att_dir):
+        attachments = sorted(f for f in os.listdir(att_dir)
+                             if f not in ("MANIFEST.txt", "PRUNED.txt"))
+
+    return {
+        "folder": folder,
+        "title": title or folder,
+        "deadline": deadline or None,
+        "days": days,
+        "blanks": fillable.progress(text) if text else None,
+        "attachments": len(attachments),
+        "built": meta.get("built"),
+    }
+
+
+@app.route("/api/packets", methods=["GET"])
+def api_list_packets():
+    """The tray, soonest deadline first."""
+    root = packets_dir_for(requested_profile())
+    if not os.path.isdir(root):
+        return jsonify({"packets": []})
+    out = []
+    for folder in sorted(os.listdir(root)):
+        path = os.path.join(root, folder)
+        if os.path.isdir(path) and os.path.exists(os.path.join(path, PACKET_FILES["start_here"])):
+            out.append(packet_summary(folder, path))
+    out.sort(key=lambda p: (p["deadline"] or "9999-99-99"))
+    return jsonify({"packets": out})
+
+
+@app.route("/api/packets/<folder>", methods=["GET"])
+def api_get_packet(folder):
+    """One packet, opened for work: the checklist, the blanks as an
+    addressable list, the price rows, the cover email and the
+    solicitation's own documents."""
+    path = packet_path(folder)
+    if not path:
+        return jsonify({"ok": False, "error": "not_found"}), 404
+
+    def read(name):
+        target = os.path.join(path, name)
+        if not os.path.exists(target):
+            return ""
+        with open(target) as f:
+            return f.read()
+
+    proposal_text = read(PACKET_FILES["proposal"])
+    summary = packet_summary(folder, path)
+    att_dir = os.path.join(path, "attachments")
+    attachments = []
+    if os.path.isdir(att_dir):
+        for name in sorted(os.listdir(att_dir)):
+            if name in ("MANIFEST.txt", "PRUNED.txt"):
+                continue
+            attachments.append({
+                "name": name,
+                "size": os.path.getsize(os.path.join(att_dir, name)),
+            })
+
+    return jsonify({
+        "ok": True,
+        "summary": summary,
+        "start_here": read(PACKET_FILES["start_here"]),
+        "proposal": proposal_text,
+        "blanks": fillable.blanks(proposal_text),
+        "price_rows": parse_price_sheet(os.path.join(path, PACKET_FILES["price"])),
+        "email": read(PACKET_FILES["email"]),
+        "attachments": attachments,
+        "manifest": read(os.path.join("attachments", "MANIFEST.txt")),
+    })
+
+
+@app.route("/api/packets/<folder>/fill", methods=["POST"])
+def api_fill_packet(folder):
+    """Writes answers into the packet's own markdown.
+
+    There is no separate copy of the document: the file on disk stays the
+    single source of truth, so what you see on GitHub, in the folder and in
+    the browser can never disagree.
+    """
+    path = packet_path(folder, PACKET_FILES["proposal"])
+    if not path or not os.path.exists(path):
+        return jsonify({"ok": False, "error": "not_found"}), 404
+
+    answers = (request.get_json(silent=True) or {}).get("answers") or {}
+    with open(path) as f:
+        text = f.read()
+    try:
+        updated = fillable.fill(text, answers)
+    except fillable.FillMismatch as e:
+        # The page was rendered against a different version of the file.
+        # Refusing is the whole point: a price written into the wrong field
+        # on a federal submission is not a cosmetic bug.
+        return jsonify({"ok": False, "error": "stale", "detail": str(e)}), 409
+
+    with open(path, "w") as f:
+        f.write(updated)
+    return jsonify({
+        "ok": True,
+        "blanks": fillable.blanks(updated),
+        "remaining": fillable.progress(updated),
+        "proposal": updated,
+    })
+
+
+@app.route("/api/packets/<folder>/price", methods=["POST"])
+def api_save_price(folder):
+    path = packet_path(folder, PACKET_FILES["price"])
+    if not path:
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    body = request.get_json(silent=True) or {}
+    rows = body.get("rows") or []
+    summary = packet_summary(folder, packet_path(folder))
+    write_price_rows(path, summary["title"], body.get("solicitation") or "", rows)
+
+    # The proposal carries its own price table. Left alone it would show two
+    # dozen bare blanks labelled "category", "hours", "$rate" — a second,
+    # worse copy of the sheet just filled in. One price, entered once.
+    proposal_path = packet_path(folder, PACKET_FILES["proposal"])
+    remaining = None
+    if proposal_path and os.path.exists(proposal_path):
+        with open(proposal_path) as f:
+            text = f.read()
+        updated = fillable.write_price_table(text, rows)
+        with open(proposal_path, "w") as f:
+            f.write(updated)
+        remaining = fillable.progress(updated)
+        blanks = fillable.blanks(updated)
+    else:
+        blanks = []
+
+    return jsonify({"ok": True, "rows": parse_price_sheet(path),
+                    "blanks": blanks, "remaining": remaining})
+
+
+@app.route("/api/packets/<folder>/file/<path:name>", methods=["GET"])
+def api_packet_file(folder, name):
+    """Serves a packet file — including the solicitation's own attachments,
+    so the PWS can be opened from the page instead of hunted for on disk."""
+    base = packet_path(folder)
+    if not base:
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    target = packet_path(folder, name)
+    if not target or not os.path.isfile(target):
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    return send_from_directory(os.path.dirname(target), os.path.basename(target))
+
+
+@app.route("/api/factbank", methods=["GET"])
+def api_factbank():
+    """What the fact bank still lacks, so the page can say why blanks keep
+    reappearing instead of leaving the user to wonder."""
+    profile = requested_profile()
+    company = fact_bank.load_company(profile)
+    required, leverage = fact_bank.missing_fields(company)
+    return jsonify({
+        "profile": profile,
+        "required_missing": required,
+        "leverage_missing": leverage,
+        "format_warnings": fact_bank.format_warnings(company),
+        "past_performance": len(fact_bank.filled_rows(company, "past_performance")),
+        "rate_card": len(fact_bank.filled_rows(company, "rate_card")),
+        "ready": not required,
+    })
 
 
 @app.route("/api/drafts", methods=["GET"])

@@ -69,8 +69,272 @@
         btn.classList.add("active");
         $("tab-" + btn.dataset.tab).classList.add("active");
         if (btn.dataset.tab === "drafts") loadDrafts();
+        if (btn.dataset.tab === "packets") loadPackets();
       });
     });
+  }
+
+  // ---------------- Bid Desk ----------------
+
+  const desk = { folder: null, blanks: [], rows: [], solicitation: "" };
+
+  function money(n) {
+    return "$" + (Math.round(n * 100) / 100).toLocaleString(undefined, {
+      minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function urgency(days) {
+    if (days === null || days === undefined) return { cls: "badge-low", text: "no deadline listed" };
+    if (days < 0) return { cls: "badge-low", text: "closed" };
+    if (days <= 3) return { cls: "badge-great", text: days + " days left" };
+    if (days <= 10) return { cls: "badge-good", text: days + " days left" };
+    return { cls: "badge-maybe", text: days + " days left" };
+  }
+
+  async function loadPackets() {
+    $("packet-detail-view").hidden = true;
+    $("packet-list-view").hidden = false;
+
+    const fb = await api("/api/factbank");
+    const banner = $("factbank-banner");
+    if (fb.required_missing && fb.required_missing.length) {
+      banner.hidden = false;
+      banner.className = "notice notice-warn";
+      banner.innerHTML = "<strong>Your business details aren't complete yet.</strong> " +
+        "Until they are, every packet repeats the same blanks: " +
+        fb.required_missing.map(escapeHtml).join(", ") +
+        ". Fill them once in <code>company.toml</code> and they fill themselves forever after.";
+    } else if (fb.leverage_missing && fb.leverage_missing.length) {
+      banner.hidden = false;
+      banner.className = "notice notice-info";
+      banner.innerHTML = "<strong>Ready to submit.</strong> These would still save you work on " +
+        "every packet: " + fb.leverage_missing.map(escapeHtml).join(", ") + ".";
+    } else {
+      banner.hidden = true;
+    }
+
+    const data = await api("/api/packets");
+    const list = $("packets-list");
+    list.innerHTML = "";
+    const packets = data.packets || [];
+    $("packets-empty").hidden = packets.length > 0;
+
+    packets.forEach((p) => {
+      const u = urgency(p.days);
+      const card = document.createElement("div");
+      card.className = "opp-card";
+      card.innerHTML =
+        '<div class="opp-head"><span class="opp-title">' + escapeHtml(p.title) + "</span>" +
+        '<span class="badge ' + u.cls + '">' + u.text + "</span></div>" +
+        '<div class="opp-meta">Due ' + escapeHtml(p.deadline || "—") +
+        " &middot; " + (p.blanks === null ? "—" : p.blanks) + " blanks left" +
+        " &middot; " + p.attachments + " document" + (p.attachments === 1 ? "" : "s") +
+        "</div>";
+      card.addEventListener("click", () => openPacket(p.folder));
+      list.appendChild(card);
+    });
+  }
+
+  async function openPacket(folder) {
+    const d = await api("/api/packets/" + encodeURIComponent(folder));
+    if (!d.ok) { alert("Could not open that packet."); return; }
+
+    desk.folder = folder;
+    desk.blanks = d.blanks || [];
+    desk.rows = d.price_rows || [];
+
+    $("packet-list-view").hidden = true;
+    $("packet-detail-view").hidden = false;
+    $("packet-title").textContent = d.summary.title;
+
+    // The facts table comes straight out of the checklist the tool wrote,
+    // so the page and the file can never tell different stories.
+    const facts = [];
+    (d.start_here || "").split("\n").forEach((line) => {
+      const m = line.match(/^\|\s*(?:\*\*)?([^|*]+?)(?:\*\*)?\s*\|\s*(?:\*\*)?(.+?)(?:\*\*)?\s*\|$/);
+      if (m && m[1].trim() !== "" && !/^-+$/.test(m[2])) facts.push([m[1].trim(), m[2].trim()]);
+    });
+    $("packet-facts").innerHTML = facts.map(([k, v]) =>
+      '<div class="fact"><span class="fact-k">' + escapeHtml(k) + "</span>" +
+      '<span class="fact-v">' + linkifyPlain(v) + "</span></div>").join("");
+
+    const sol = facts.find(([k]) => /solicitation/i.test(k));
+    desk.solicitation = sol ? sol[1] : "";
+
+    $("packet-attachments").innerHTML = (d.attachments || []).length
+      ? d.attachments.map((a) =>
+          '<a class="attachment" target="_blank" rel="noopener" href="' +
+          withProfile("/api/packets/" + encodeURIComponent(folder) + "/file/attachments/" + encodeURIComponent(a.name)) +
+          '">' + escapeHtml(a.name) + ' <span class="muted">' +
+          (a.size > 1048576 ? (a.size / 1048576).toFixed(1) + " MB" : Math.round(a.size / 1024) + " KB") +
+          "</span></a>").join("")
+      : '<p class="muted">No attachments came back for this notice — open the listing itself, some agencies post documents only in the notice body.</p>';
+
+    $("packet-email").value = d.email || "";
+    $("proposal-download").href = withProfile(
+      "/api/packets/" + encodeURIComponent(folder) + "/file/01-proposal.md");
+
+    renderPrice();
+    renderBlanks();
+  }
+
+  function renderPrice() {
+    const body = $("price-table").querySelector("tbody");
+    body.innerHTML = "";
+    desk.rows.forEach((row, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td><input data-i="' + i + '" data-f="category" value="' + escapeHtml(row.category || "") + '" /></td>' +
+        '<td><input class="narrow" data-i="' + i + '" data-f="unit" value="' + escapeHtml(row.unit || "hr") + '" /></td>' +
+        '<td><input class="narrow" data-i="' + i + '" data-f="rate" value="' + escapeHtml(row.rate || "") + '" /></td>' +
+        '<td><input class="narrow" data-i="' + i + '" data-f="hours" value="' + escapeHtml(row.hours || "") + '" /></td>' +
+        '<td class="ext">—</td>';
+      body.appendChild(tr);
+    });
+    body.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", () => {
+        const row = desk.rows[Number(input.dataset.i)];
+        row[input.dataset.f] = input.value;
+        recalc();
+      });
+    });
+    recalc();
+  }
+
+  function recalc() {
+    const body = $("price-table").querySelector("tbody");
+    let total = 0, any = false;
+    desk.rows.forEach((row, i) => {
+      const rate = parseFloat(String(row.rate || "").replace(/[^0-9.\-]/g, ""));
+      const qty = parseFloat(String(row.hours || "").replace(/[^0-9.\-]/g, ""));
+      const cell = body.children[i] && body.children[i].querySelector(".ext");
+      if (!cell) return;
+      if (isFinite(rate) && isFinite(qty)) {
+        const ext = rate * qty;
+        total += ext; any = true;
+        cell.textContent = money(ext);
+      } else {
+        cell.textContent = "—";
+      }
+    });
+    $("price-total").textContent = any ? money(total) : "—";
+  }
+
+  function renderBlanks() {
+    const form = $("blanks-form");
+    form.innerHTML = "";
+    $("blanks-count").textContent = desk.blanks.length
+      ? desk.blanks.length + " blank" + (desk.blanks.length === 1 ? "" : "s") + " left to fill."
+      : "Nothing left to fill. Every blank in this proposal has an answer.";
+
+    let section = null;
+    desk.blanks.forEach((b) => {
+      if (b.section !== section) {
+        section = b.section;
+        const h = document.createElement("h3");
+        h.className = "blank-section";
+        h.textContent = section || "Elsewhere in the document";
+        form.appendChild(h);
+        // These sections repeat the same facts on every bid, so filling
+        // them here is work you will redo forever. Say so once, here,
+        // where someone is about to do exactly that.
+        const hint = {
+          "6. Past performance": "These three references are the same on every bid. " +
+            "Put them in company.toml once and they fill themselves in from then on.",
+          "9. Insurance and bonding": "Also a company.toml fact — enter it once.",
+          "7. Price proposal": "Use the price table in step 3 above; saving it fills these.",
+        }[section];
+        if (hint) {
+          const note = document.createElement("p");
+          note.className = "blank-hint";
+          note.textContent = hint;
+          form.appendChild(note);
+        }
+      }
+      const wrap = document.createElement("div");
+      wrap.className = "blank-field";
+      const input = b.multiline
+        ? '<textarea rows="4" data-index="' + b.index + '"></textarea>'
+        : '<input type="text" data-index="' + b.index + '" />';
+      wrap.innerHTML =
+        '<label>' + escapeHtml(b.label) + "</label>" +
+        (b.context ? '<p class="blank-context">' + escapeHtml(b.context) + "</p>" : "") +
+        input;
+      form.appendChild(wrap);
+    });
+  }
+
+  async function saveBlanks() {
+    const answers = {};
+    $("blanks-form").querySelectorAll("[data-index]").forEach((el) => {
+      if (!el.value.trim()) return;
+      const b = desk.blanks.find((x) => x.index === Number(el.dataset.index));
+      answers[el.dataset.index] = { label: b ? b.label : "", value: el.value };
+    });
+    if (!Object.keys(answers).length) {
+      $("blanks-saved").textContent = "Nothing to save yet.";
+      return;
+    }
+    const res = await api("/api/packets/" + encodeURIComponent(desk.folder) + "/fill", {
+      method: "POST", body: JSON.stringify({ answers: answers }),
+    });
+    if (!res.ok) {
+      // A stale page is refused rather than writing an answer into the
+      // wrong blank, so say exactly that and reload the real state.
+      $("blanks-saved").textContent = res.error === "stale"
+        ? "This page was out of date, so nothing was written. Reloading."
+        : "Could not save.";
+      if (res.error === "stale") openPacket(desk.folder);
+      return;
+    }
+    desk.blanks = res.blanks || [];
+    renderBlanks();
+    $("blanks-saved").textContent = "Saved. " + res.remaining + " left.";
+  }
+
+  function wireBidDesk() {
+    $("packet-back").addEventListener("click", loadPackets);
+    $("blanks-save").addEventListener("click", saveBlanks);
+    $("price-add-row").addEventListener("click", () => {
+      desk.rows.push({ category: "", unit: "hr", rate: "", hours: "" });
+      renderPrice();
+    });
+    $("price-save").addEventListener("click", async () => {
+      const res = await api("/api/packets/" + encodeURIComponent(desk.folder) + "/price", {
+        method: "POST",
+        body: JSON.stringify({ rows: desk.rows, solicitation: desk.solicitation }),
+      });
+      if (!res.ok) { $("price-saved").textContent = "Could not save."; return; }
+      // Saving the price answers the proposal's whole price section, so the
+      // fill-in form below has to be redrawn or it shows blanks that are
+      // already answered.
+      $("price-saved").textContent = "Saved — and it filled the price section of your proposal.";
+      if (res.blanks) { desk.blanks = res.blanks; renderBlanks(); }
+    });
+    $("email-copy").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText($("packet-email").value);
+        $("email-copied").textContent = "Copied.";
+      } catch (e) {
+        $("packet-email").select();
+        $("email-copied").textContent = "Press Cmd/Ctrl+C to copy.";
+      }
+    });
+    $("packet-go").addEventListener("click", () => {
+      $("packet-go-state").textContent = "Bidding. Price it, fill the blanks, send it.";
+      $("step-price").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    $("packet-nogo").addEventListener("click", () => {
+      $("packet-go-state").textContent =
+        "Not bidding. Add a word from the title to skip_keywords in company.toml and work like it stops reaching you.";
+    });
+  }
+
+  function linkifyPlain(text) {
+    const safe = escapeHtml(text);
+    return safe.replace(/(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" target="_blank" rel="noopener">open</a>')
+      .replace(/([\w.+-]+@[\w.-]+\.\w+)/g, '<a href="mailto:$1">$1</a>');
   }
 
   // ---------------- Scoring labels ----------------
@@ -549,6 +813,7 @@
 
   function initApp() {
     wireTabs();
+    wireBidDesk();
     loadSettings();
     loadLastOpportunities();
   }
