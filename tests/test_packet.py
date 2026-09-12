@@ -893,3 +893,44 @@ def test_the_launcher_checks_every_import_not_just_flask():
     # ...and the install must be driven by whatever is missing, not by
     # Flask alone, which is the bug this pins.
     assert 'if [ -n "$missing" ]' in script
+
+
+# ---------- PSC families ----------
+
+def test_psc_prefixes_keep_field_work_out_of_the_tray():
+    # Live case: a gas leak survey at Luke AFB arrived coded NAICS 541990,
+    # the "all other professional services" junk drawer, and would have
+    # been prepared as a bid. Its PSC was H999 — inspection.
+    cfg = {"packet_psc_prefixes": ["R", "B"]}
+    assert company_mod.skip_reason(cfg, {"classificationCode": "R704"}) is None
+    assert company_mod.skip_reason(cfg, {"classificationCode": "B505"}) is None
+    for field_work in ("H999", "J041", "Z2AZ", "F108", "S222"):
+        assert company_mod.skip_reason(cfg, {"classificationCode": field_work}), field_work
+
+
+def test_an_empty_psc_prefix_list_allows_everything():
+    assert company_mod.skip_reason({"packet_psc_prefixes": []}, {"classificationCode": "H999"}) is None
+    assert company_mod.skip_reason({}, {"classificationCode": "H999"}) is None
+
+
+def test_a_notice_with_no_psc_is_not_dropped():
+    # Real notices come through with classificationCode absent; missing
+    # data must never discard a solicitation.
+    assert company_mod.skip_reason({"packet_psc_prefixes": ["R"]}, {}) is None
+    assert company_mod.skip_reason({"packet_psc_prefixes": ["R"]},
+                                   {"classificationCode": None}) is None
+
+
+def test_psc_matching_is_case_insensitive():
+    cfg = {"packet_psc_prefixes": ["r"]}
+    assert company_mod.skip_reason(cfg, {"classificationCode": "R704"}) is None
+
+
+def test_the_shipped_psc_filter_matches_the_profile_priorities():
+    import find_opportunities as fo
+    company = company_mod.load_company("p1821")
+    prefixes = company.get("packet_psc_prefixes") or []
+    assert prefixes, "p1821 should ship a PSC filter"
+    # Every PSC the profile already scores as a priority must survive it.
+    for psc in fo.PROFILES["p1821"]["priority_psc"]:
+        assert any(psc.upper().startswith(p.upper()) for p in prefixes), psc

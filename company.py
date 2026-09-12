@@ -263,6 +263,17 @@ def skip_reason(company, opp):
         return f"NAICS {naics} is outside packet_naics (still shown in the digest)"
 
     psc = (opp.get("classificationCode") or "").upper()
+
+    # NAICS says what industry the buyer filed under; PSC says what is
+    # actually being bought, and it is the sharper signal by a wide margin.
+    # A gas leak survey at Luke AFB — hoses, gauges, underground leak
+    # detection — arrived coded NAICS 541990, the "all other professional
+    # services" junk drawer, but its PSC was H999: inspection. Professional
+    # services live under R (support services) and B (special studies).
+    prefixes = [str(x).strip().upper() for x in (company.get("packet_psc_prefixes") or []) if str(x).strip()]
+    if prefixes and psc and not any(psc.startswith(pre) for pre in prefixes):
+        return f"PSC {psc} is outside packet_psc_prefixes (still shown in the digest)"
+
     for blocked in company.get("skip_psc") or []:
         if psc and psc == str(blocked).upper():
             return f"PSC {psc} is in skip_psc"

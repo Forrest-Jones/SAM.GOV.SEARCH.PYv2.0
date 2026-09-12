@@ -64,6 +64,10 @@ capability_statement = ""
 # biddable, neither one this firm's work.
 #
 # Leave the list empty to build packets for every code.
+#
+# The companion filter is packet_psc_prefixes below, and it does more work
+# than this one: NAICS says what industry the buyer filed under, PSC says
+# what is actually being bought.
 packet_naics = [
   "541211",   # CPA offices — note: much of this needs a CPA licence
   "541213",   # tax preparation
@@ -76,6 +80,23 @@ packet_naics = [
   "541690",   # other scientific & technical consulting
   "541990",   # all other professional, scientific & technical services
 ]
+
+# Which Product Service Code families should get a bid packet.
+#
+# Sharper than NAICS. A gas leak survey at Luke Air Force Base — hoses,
+# gauges, underground leak detection per 49 CFR 192 — came through coded
+# NAICS 541990, the "all other professional services" junk drawer, and
+# would have been prepared as a bid. Its PSC was H999: inspection.
+#
+#   R = support services (R704 audit, R710 financial, R499 other)
+#   B = special studies and analysis (B505, B521)
+#   H = quality control and inspection      <- field work
+#   J = maintenance and repair              <- field work
+#   Y, Z = construction                     <- field work
+#   F = natural resources and conservation  <- field work
+#
+# Empty means every PSC is fair game.
+packet_psc_prefixes = ["R", "B"]
 
 # Credentials the business actually holds. These answer the pass/fail
 # qualification questions a solicitation asks, so each packet can resolve
