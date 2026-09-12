@@ -378,6 +378,25 @@ def build_start_here(opp, company, blanks_left, attachments, failed):
     return "\n".join(lines)
 
 
+def needs_work(opp, company, root):
+    """Whether build_packet would actually write anything for this notice.
+
+    Lets the caller skip fetching the solicitation text for a packet that
+    is already current — one API call each, against a 1,000/day budget,
+    for a description nothing would use.
+    """
+    out = packet_dir(opp, root)
+    if not os.path.exists(os.path.join(out, "00-START-HERE.md")):
+        return True
+    meta = _read_meta(out)
+    if meta.get("company_fingerprint") != company_fingerprint(company):
+        return True
+    if any(not os.path.exists(os.path.join(out, n)) for n in GENERATED):
+        return True
+    attachments = os.path.join(out, "attachments")
+    return bool(opp.get("resourceLinks") or []) and not has_downloads(attachments)
+
+
 def build_packet(opp, description_text, company, root, score=None, reasons="", session=None):
     """Writes the whole folder. Returns (path, blanks_left, status).
 

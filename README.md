@@ -156,8 +156,20 @@ python3 company.py --profile p1821
 Then build a day's tray:
 
 ```bash
-python3 find_opportunities.py --profile p1821 --batch 10
+python3 find_opportunities.py --profile p1821 --batch 3
 ```
+
+`--batch N` means **N new packets**, not "packets for the top N". Packets
+already in the tray are revisited so they pick up new facts, but they do
+not count against the target — otherwise a stable top N would fill the
+quota with packets you already have and the tray would quietly stop
+growing. The walk also stops at the profile's own `draft_min_score`:
+fewer packets is better than packets for work that does not really match.
+
+The daily run is set to **3 a day**, all Proverbs 1821, while the process
+is being learned. Ares gets none until its registration details are in
+`company.toml` — its search still runs and its digest still arrives, so
+no opportunity is missed; only the paperwork waits.
 
 Each match becomes a folder under `packets/<profile>/`:
 

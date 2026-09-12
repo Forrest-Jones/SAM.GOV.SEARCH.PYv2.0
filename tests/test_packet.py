@@ -508,3 +508,80 @@ def test_p1821_is_submission_ready():
     # The eight fields without which a packet cannot be submitted at all.
     required, _ = company_mod.missing_fields(company_mod.load_company("p1821"))
     assert required == [], f"still missing: {required}"
+
+
+# ---------- the daily target ----------
+
+def _batch(count, ranked, root, tmpdescs=None):
+    """Runs the real batch stage with the network pre-empted: every notice
+    already has its description, and none has attachments, so no HTTP
+    happens."""
+    import find_opportunities as fo
+    profile = {"label": "Test profile", "draft_min_score": 3}
+    descriptions = tmpdescs if tmpdescs is not None else {
+        opp.get("noticeId"): "Scope: do the work." for _, _, opp in ranked}
+    return fo.build_batch(count, "p1821", profile, ranked, descriptions,
+                          "dummy-key", root, log=lambda m: None)
+
+
+def _ranked(n, score=5):
+    return [(score, "why", dict(OPP, noticeId=f"n{i}", title=f"Notice {i}")) for i in range(n)]
+
+
+def test_the_target_counts_new_packets_not_reused_ones(tmp_path):
+    # The bug this pins: counting reused packets meant a stable top 3 would
+    # fill the quota with packets you already had, and the tray would stop
+    # growing while every log line still looked healthy.
+    ranked = _ranked(10)
+    root = str(tmp_path)
+
+    first, _ = _batch(3, ranked, root)
+    assert sum(1 for b in first if b[3] == "new") == 3
+
+    second, _ = _batch(3, ranked, root)
+    new_second = [b for b in second if b[3] == "new"]
+    assert len(new_second) == 3, "a second run must still produce three NEW packets"
+    # ...and they must be different notices from the first run's.
+    assert {b[0] for b in new_second}.isdisjoint({b[0] for b in first})
+
+
+def test_low_scoring_notices_are_never_packeted_to_hit_the_target(tmp_path):
+    # Better to deliver fewer than the target than to prepare bids on work
+    # the profile does not really match.
+    ranked = _ranked(2, score=5) + _ranked(8, score=1)
+    built, _ = _batch(5, ranked, str(tmp_path))
+    assert sum(1 for b in built if b[3] == "new") == 2
+
+
+def test_the_target_is_a_ceiling_not_a_quota_to_fill(tmp_path):
+    built, _ = _batch(3, _ranked(1), str(tmp_path))
+    assert len(built) == 1
+
+
+def test_skip_rules_do_not_consume_the_target(tmp_path):
+    # A skipped notice should not cost you one of the day's three.
+    import company as cm
+    ranked = _ranked(5)
+    ranked[0][2]["title"] = "Foundation Repair at Building 7"
+    original = cm.skip_reason
+    cm.skip_reason = lambda c, o: "matches skip_keywords" if "Foundation" in (o.get("title") or "") else None
+    try:
+        built, skipped = _batch(3, ranked, str(tmp_path))
+    finally:
+        cm.skip_reason = original
+    assert len(skipped) == 1
+    assert sum(1 for b in built if b[3] == "new") == 3, "the skip must not cost a slot"
+
+
+def test_a_current_packet_costs_no_api_call(tmp_path):
+    # needs_work is what keeps a re-run from spending the description budget
+    # on packets that would not use it.
+    company = company_mod.load_company("p1821")
+    root = str(tmp_path)
+    assert packet.needs_work(OPP, company, root) is True
+    packet.build_packet(OPP, "Scope.", company, root, 4, "")
+    assert packet.needs_work(OPP, company, root) is False
+    # A changed fact bank, or a deleted file, makes it work again.
+    assert packet.needs_work(OPP, dict(company, phone="+1-000"), root) is True
+    os.remove(os.path.join(packet.packet_dir(OPP, root), "02-price-sheet.csv"))
+    assert packet.needs_work(OPP, company, root) is True

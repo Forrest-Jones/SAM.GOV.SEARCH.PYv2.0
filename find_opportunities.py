@@ -814,26 +814,46 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
 
     session.get = keyed_get
 
-    built, skipped = [], []
+    # The target is N NEW packets to work on, so only first-time builds count
+    # against it. Counting reused ones would mean a stable top N produces
+    # nothing ever again: the same packets would be recognised as current,
+    # fill the quota, and the tray would stop growing while appearing to
+    # work. Packets already in the tray are still visited so they pick up
+    # new facts or get repaired — they just do not consume the quota.
+    floor = profile["draft_min_score"]
+    built, skipped, fresh = [], [], 0
     for pts, reasons, opp in ranked:
-        if len(built) >= count:
+        if fresh >= count:
+            break
+        if pts < floor:
+            # Walking further down means preparing bids on work this
+            # profile does not really match, which is worse than producing
+            # fewer than the target.
             break
         why = skip_reason(company, opp)
         if why:
             skipped.append((opp, why))
             continue
-        nid = opp.get("noticeId")
-        description_text = descriptions.get(nid)
-        if description_text is None:
-            # Costs one call against the 1,000/day budget, and the packet is
-            # worth far more with the government's own words in it.
+
+        description_text = descriptions.get(opp.get("noticeId"))
+        if description_text is None and packet.needs_work(opp, company, packets_root):
+            # One call against the 1,000/day budget, and the packet is worth
+            # far more with the government's own words in it. Skipped for a
+            # packet that is already current, which would not use it.
             description_text = fetch_description(opp, api_key)
+
         out, blanks_left, status = packet.build_packet(
             opp, description_text, company, packets_root, pts, reasons, session=session,
         )
         built.append((out, opp, blanks_left, status))
+        if status == "new":
+            fresh += 1
         left = "-" if blanks_left is None else f"{blanks_left} blanks left"
         log(f"  packet [{status}] {os.path.basename(out)} — {left}")
+
+    if fresh < count:
+        log(f"  only {fresh} new packet(s) available at or above score {floor} "
+            f"(target was {count})")
 
     # Attachments are the bulk of the store and are worthless once the
     # solicitation closes, so closed packets give theirs up here.
@@ -843,7 +863,7 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
             f"freeing {freed / 1048576:.1f} MB")
 
     index = packet.write_batch_index(built, skipped, packets_root, profile["label"])
-    log(f"\n{len(built)} packet(s) ready — start here: {index}")
+    log(f"\n{fresh} new, {len(built) - fresh} existing — start here: {index}")
     if skipped:
         log(f"{len(skipped)} skipped by your skip_psc / skip_keywords rules")
     return built, skipped
