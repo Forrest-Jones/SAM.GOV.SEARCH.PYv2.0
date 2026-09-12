@@ -82,12 +82,12 @@ API_URL = "https://api.sam.gov/opportunities/v2/search"
 # Every NAICS code in this entity's SAM.gov registration (CAGE 22ND2),
 # assembled from the registration audit's four events.
 #
-# Registrant confirmed 9/12/26: every code below is live on the registration.
-# The audit's open question — whether the 8/19/26 update replaced or merely
-# supplemented the 541-series — is answered: it ADDED. The list has only ever
-# grown, never shrunk. The 9/9/26 set went in, and 541211 is on file despite
-# not appearing in the audit trail. So this is the registration, not a
-# defensive search net.
+# Registrant confirmed 9/12/26: every code below is live on the registration,
+# 541211 verified directly on the Assertions page. The audit's open question —
+# whether the 8/19/26 update replaced or merely supplemented the 541-series —
+# is answered: it ADDED. The list has only ever grown, never shrunk, and the
+# 9/9/26 set went in. So this list is the registration itself, not a
+# defensive search net, and nothing here is pending verification.
 #
 # Still per-solicitation work, unchanged by that: a registered NAICS code does
 # not by itself establish that the business is under the size standard for a
@@ -117,8 +117,9 @@ DEFAULT_NAICS = [
     "238190",  # Other Building Exterior Contractors — raised as a maybe for
                # the welder's structural work. A construction trade, so expect
                # this to be the noisiest code in the set.
-    # --- On file, though it never appeared in the audit trail. Already
-    # producing work: the Coast Guard Academy NAFI audit came in on it. ---
+    # --- Absent from the audit trail but present on the Assertions page
+    # (verified 9/12/26). Already producing work: the Coast Guard Academy
+    # NAFI audit came in on this code. ---
     "541211",  # Offices of Certified Public Accountants
 ]
 
