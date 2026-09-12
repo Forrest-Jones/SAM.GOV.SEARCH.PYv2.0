@@ -20,6 +20,7 @@ outcomes here are "a real value you entered" and "an obvious hole".
 """
 
 import os
+import re
 import sys
 import tomllib
 
@@ -136,6 +137,27 @@ def missing_fields(company):
     return required, leverage
 
 
+# A malformed identifier is worse than a blank one: a blank is obviously
+# unfinished, while a typo'd UEI reaches a contracting officer looking
+# legitimate and identifies nobody. Format only — whether the value is
+# really yours is between you and SAM.gov.
+FORMAT_RULES = (
+    ("uei", r"^[A-Z0-9]{12}$", "UEI should be exactly 12 letters/digits"),
+    ("cage", r"^[A-Z0-9]{5}$", "CAGE should be exactly 5 letters/digits"),
+    ("sam_registration_expires", r"^\d{4}-\d{2}-\d{2}$", "SAM expiry should be YYYY-MM-DD"),
+)
+
+
+def format_warnings(company):
+    """Values that are present but cannot be right."""
+    problems = []
+    for key, pattern, message in FORMAT_RULES:
+        value = str((company or {}).get(key) or "").strip()
+        if value and not re.match(pattern, value.upper()):
+            problems.append(f"{key}: {message} (got {value!r})")
+    return problems
+
+
 def skip_reason(company, opp):
     """Why the conveyor belt should not build a packet for this notice,
     or None. Driven entirely by skip_psc / skip_keywords in company.toml,
@@ -178,6 +200,13 @@ def readiness_report(profile, path=None):
         lines.append(f"  [ ] {label}")
     if not leverage:
         lines.append("  all entered")
+
+    problems = format_warnings(company)
+    if problems:
+        lines.append("")
+        lines.append("Values that look wrong:")
+        for problem in problems:
+            lines.append(f"  !! {problem}")
 
     pp = filled_rows(company, "past_performance")
     rc = filled_rows(company, "rate_card")

@@ -17,9 +17,9 @@
 [shared]
 # The person with authority to sign a binding offer. On a federal
 # response this must be a real person who can obligate the company.
-signatory_name  = ""
-signatory_title = ""
-phone           = ""
+signatory_name  = "Forrest Andrew Jones"
+signatory_title = "Owner / Managing Member"
+phone           = "(832) 562-1355"
 email           = "forrestjones2010@gmail.com"
 
 # Kept current so packets can state it rather than leaving a blank.
@@ -43,10 +43,10 @@ skip_keywords = []                # e.g. ["foundation repair", "roofing"]
 # Proverbs 1821 — tax, accounting, audit, evaluation
 # =====================================================================
 [p1821]
-legal_name = ""
-uei        = ""                   # 12 characters, from your SAM.gov registration
-cage       = ""                   # 5 characters
-address    = ""                   # street, city, state, ZIP as SAM has it
+legal_name = "Proverbs 1821 Consulting LLC"
+uei        = "GD83PAK36818"       # 12 characters, from your SAM.gov registration
+cage       = "22ND2"              # 5 characters
+address    = "12103 Hawthorne Dr, Montgomery, TX 77356"
 
 # 2-3 sentences. This is dropped into every cover letter, so write it
 # once, well: what you do, for whom, and why a contracting officer
@@ -75,6 +75,11 @@ rate     = ""
 # =====================================================================
 # Ares Robotics — waste, remediation, environmental, machinery
 # =====================================================================
+# NOT YET CONFIRMED. Ares is left blank on purpose rather than copying the
+# values above: if it trades under the same SAM registration then the UEI,
+# CAGE and legal name are identical, but if it is a separate entity then
+# copying them would put another company's identity on a federal
+# submission. Confirm which it is, then fill this in.
 [ares]
 legal_name = ""
 uei        = ""

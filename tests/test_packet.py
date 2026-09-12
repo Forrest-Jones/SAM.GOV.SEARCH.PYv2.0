@@ -478,3 +478,33 @@ def test_a_packet_inside_the_grace_period_is_left_alone(tmp_path):
 def test_pruning_an_empty_or_missing_tray_is_harmless(tmp_path):
     assert packet.prune_closed_packets(str(tmp_path / "nope")) == ([], 0)
     assert packet.prune_closed_packets(str(tmp_path)) == ([], 0)
+
+
+# ---------- identifier format ----------
+
+def test_a_well_formed_uei_and_cage_pass():
+    assert company_mod.format_warnings({"uei": "GD83PAK36818", "cage": "22ND2"}) == []
+
+
+def test_a_malformed_uei_is_flagged():
+    # Worse than a blank: a blank is obviously unfinished, a typo reaches a
+    # contracting officer looking legitimate and identifies nobody.
+    assert company_mod.format_warnings({"uei": "GD83PAK3681"})   # 11 chars
+    assert company_mod.format_warnings({"uei": "GD83-PAK36818"})  # punctuation
+    assert company_mod.format_warnings({"cage": "22ND"})          # 4 chars
+
+
+def test_a_blank_identifier_is_not_a_format_error():
+    # Blanks are already reported as missing; flagging them twice is noise.
+    assert company_mod.format_warnings({"uei": "", "cage": None}) == []
+
+
+def test_the_real_fact_bank_has_no_format_problems():
+    loaded = company_mod.load_company("p1821")
+    assert company_mod.format_warnings(loaded) == []
+
+
+def test_p1821_is_submission_ready():
+    # The eight fields without which a packet cannot be submitted at all.
+    required, _ = company_mod.missing_fields(company_mod.load_company("p1821"))
+    assert required == [], f"still missing: {required}"
