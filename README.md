@@ -83,9 +83,10 @@ pip install -r requirements.txt -r webapp/requirements.txt
 python3 webapp/app.py
 ```
 
-Then open **http://localhost:5000** in your browser. The first time,
-it'll ask you to paste your SAM.gov API key — after that, everything is
-click-based:
+Then open **http://localhost:8000** in your browser — the exact address
+is printed in the terminal when it starts, so you can copy it from
+there. The first time, it'll ask you to paste your SAM.gov API key —
+after that, everything is click-based:
 
 - **Home** — one big button to check for new contracts, with a quick
   summary of what it found
@@ -96,11 +97,30 @@ click-based:
 - **Settings** — your business categories (NAICS codes), certifications,
   timing, and email alerts, all as forms — no code required
 
-Why this isn't a hosted website you can visit from anywhere: it needs
-your SAM.gov API key (and optionally your Gmail app password) to work,
-and there's no safe way to hold those secrets in a page hosted on the
-open web without exposing them in the page's own code. Running it
-locally keeps them on your machine, same as the CLI always has.
+### "localhost isn't working"
+
+`localhost` means *this computer*. It only works on the machine that is
+actually running `python3 webapp/app.py` — not from your phone, and not
+if you haven't started the app yet. Two errors people hit:
+
+| What you see | What it means |
+|---|---|
+| **403 Forbidden / "not authorized"** on port 5000 | On macOS, AirPlay Receiver holds port 5000 and answers instead of us. That's why this app defaults to 8000. (Disable it under System Settings → General → AirDrop & Handoff if you want 5000 back.) |
+| **"Can't connect" / connection refused** | The app isn't running. Start it, leave that terminal window open, and try again. |
+
+Port 8000 also taken? `PORT=9000 python3 webapp/app.py`.
+
+### Hosting it as a real website
+
+Running locally is the simplest option and keeps your API key on your
+own machine. If you want a URL you can open from any device, deploy it
+to a real server host (Render, Railway, Fly.io — all have free tiers)
+and set `SAM_API_KEY`, `GMAIL_USER`, and `GMAIL_APP_PASSWORD` as that
+platform's environment variables. The key stays server-side, which is
+safe — the thing to avoid is a *static* host with no server, where the
+key would have to sit in browser-visible JavaScript. Use a production
+WSGI server (`gunicorn webapp.app:app`) rather than the Flask dev
+server if you deploy.
 
 ## Eligibility filtering
 

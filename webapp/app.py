@@ -10,7 +10,13 @@ from the internet unless you deliberately expose this port.
 Run it:
     pip install -r requirements.txt -r webapp/requirements.txt
     python3 webapp/app.py
-Then open http://localhost:5000 in your browser.
+Then open http://localhost:8000 in your browser (the address is printed
+on startup, so you can copy it straight from the terminal).
+
+Port 8000, not 5000: on macOS, AirPlay Receiver holds port 5000 and
+answers with a "403 Forbidden / not authorized" page, which looks like
+a broken app but is really the OS answering instead of us. Override
+with `PORT=9000 python3 webapp/app.py` if 8000 is taken too.
 
 No terminal commands needed after that — paste your SAM.gov API key
 into the Setup screen the first time you open the page, and everything
@@ -360,4 +366,9 @@ def api_toggle_draft_line(filename):
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    # 8000 rather than Flask's usual 5000: macOS AirPlay Receiver owns 5000
+    # and serves a 403 page there, which reads as "the app is broken".
+    port = int(os.environ.get("PORT", "8000"))
+    print(f"\n  Contract Finder is running — open this in your browser:\n\n      http://localhost:{port}\n")
+    print("  (Leave this window open while you use it. Press Ctrl+C to stop.)\n")
+    app.run(host="127.0.0.1", port=port, debug=False)
