@@ -335,7 +335,7 @@ def fetch_attachments(opp, dest_dir, session=None, log=print):
     return got, failed
 
 
-def build_start_here(opp, company, blanks_left, attachments, failed, gates=()):
+def build_start_here(opp, company, blanks_left, attachments, failed, gates=(), kind="bid"):
     deadline, days = _deadline_parts(opp)
     when = f"{deadline}"
     if days is not None:
@@ -363,7 +363,7 @@ def build_start_here(opp, company, blanks_left, attachments, failed, gates=()):
         f"| Contracting officer | {co_email} |",
         f"| Listing | {opp.get('uiLink') or '-'} |",
         "",
-        "## Your five steps",
+        "## Your five steps" if kind == "bid" else "## Your four steps",
         "",
         "**1. Read it.** Open the listing above and everything in `attachments/`.",
         "",
@@ -414,17 +414,44 @@ def build_start_here(opp, company, blanks_left, attachments, failed, gates=()):
                 "",
             ]
 
+    if kind == "capability":
+        # No pricing step exists for market research, and inventing one
+        # would be the whole category error this path was added to avoid.
+        lines += [
+            "**3. Answer their questions.** Open `01-capability-statement.md`. It is",
+            "already laid out the way this notice asks for it — cover page, company",
+            "profile, relevant experience, then the notice's own questions in the",
+            "notice's own order. Unanswered questions are the usual reason one of",
+            "these gets set aside.",
+            "",
+            f"There are **{blanks_left} blanks** to fill, marked `[[FILL: ...]]`.",
+            "",
+            "**4. Send it.** `02-response-email.txt` is addressed and written.",
+            "Confirm the submission method on the listing first.",
+            "",
+            "> **No price belongs in this response, and none is in it.** A market",
+            "> research reply is not an offer, commits you to nothing, and carries",
+            "> no certification risk. What it does is put the firm in the record",
+            "> the government reads while writing the solicitation — including the",
+            "> NAICS code, the PSC and the set-aside, all of which are still open",
+            "> while market research is running.",
+            "",
+        ]
+    else:
+        lines += [
+            "**3. Price it.** Open `02-price-sheet.csv`. Your rates are already in it"
+            + (f" ({len(rate_card)} categories)" if rate_card else " — no rate card on file yet")
+            + ". Enter **hours** only; the extended column totals itself.",
+            "",
+            f"**4. Tailor the draft.** `01-proposal.md` has **{blanks_left} blanks** left,"
+            " marked `[[FILL: ...]]`. Search for that string and work through them.",
+            "",
+            "**5. Send it.** `03-quote-email.txt` is addressed and written. Confirm the"
+            " submission method on the listing, sign the price sheet, send.",
+            "",
+        ]
+
     lines += [
-        "**3. Price it.** Open `02-price-sheet.csv`. Your rates are already in it"
-        + (f" ({len(rate_card)} categories)" if rate_card else " — no rate card on file yet")
-        + ". Enter **hours** only; the extended column totals itself.",
-        "",
-        f"**4. Tailor the draft.** `01-proposal.md` has **{blanks_left} blanks** left,"
-        " marked `[[FILL: ...]]`. Search for that string and work through them.",
-        "",
-        "**5. Send it.** `03-quote-email.txt` is addressed and written. Confirm the"
-        " submission method on the listing, sign the price sheet, send.",
-        "",
         "## Already done for you",
         "",
     ]
@@ -434,8 +461,10 @@ def build_start_here(opp, company, blanks_left, attachments, failed, gates=()):
         "Offeror identity, UEI, CAGE, signatory and insurance filled from the fact bank",
         f"Past performance: {len(refs)} reference(s) carried in from the fact bank"
         if refs else "Past performance: none on file yet — add real contracts to company.toml",
-        f"Price sheet seeded with {len(rate_card)} labor categories"
-        if rate_card else "Price sheet skeleton (add a rate card to company.toml to seed it)",
+        ("The notice's own questions pulled out and laid in its order"
+         if kind == "capability" else
+         (f"Price sheet seeded with {len(rate_card)} labor categories" if rate_card
+          else "Price sheet skeleton (add a rate card to company.toml to seed it)")),
         f"{len(attachments)} solicitation attachment(s) downloaded"
         if attachments else "Attachment manifest written",
         "Cover email drafted and addressed to the contracting officer",
@@ -451,18 +480,30 @@ def build_start_here(opp, company, blanks_left, attachments, failed, gates=()):
             " `attachments/MANIFEST.txt` for the URLs.",
         ]
 
+    lines += ["", "## Only you can do these", ""]
+    if kind == "capability":
+        lines += [
+            "- **The go/no-go call.** Capability is a judgment, not a keyword match.",
+            "- **The answers.** Every claim here is one the government may check,",
+            "  and vague capability statements are exactly what market research is",
+            "  screening out. Nothing is filled in on your behalf.",
+            "- **Sending it.** This writes a file. Submission is yours.",
+            "",
+        ]
+    else:
+        lines += [
+            "- **The go/no-go call.** Capability is a judgment, not a keyword match.",
+            "- **The price.** A price is a binding offer. Nothing here guesses one.",
+            "- **The signature.** It certifies your reps & certs are true. That is a",
+            "  legal act by a person with authority, and it is why this tool prepares",
+            "  a submission but never sends one.",
+            "",
+        ]
     lines += [
-        "",
-        "## Only you can do these",
-        "",
-        "- **The go/no-go call.** Capability is a judgment, not a keyword match.",
-        "- **The price.** A price is a binding offer. Nothing here guesses one.",
-        "- **The signature.** It certifies your reps & certs are true. That is a",
-        "  legal act by a person with authority, and it is why this tool prepares",
-        "  a submission but never sends one.",
-        "",
         "---",
-        f"_Packet built {date.today().isoformat()}. Draft, not a submission._",
+        (f"_Capability statement prepared {date.today().isoformat()}. "
+         "Not a bid, and not submitted._" if kind == "capability" else
+         f"_Packet built {date.today().isoformat()}. Draft, not a submission._"),
         "",
     ]
     return "\n".join(lines)
@@ -485,6 +526,72 @@ def needs_work(opp, company, root):
         return True
     attachments = os.path.join(out, "attachments")
     return bool(opp.get("resourceLinks") or []) and not has_downloads(attachments)
+
+
+def build_capability_response(opp, description_text, company, root,
+                              notice_kind="", session=None):
+    """A Sources Sought / RFI response folder: the capability statement, a
+    cover email, and the notice's own documents.
+
+    No price sheet, because there is no price to offer. Refusing to build
+    these at all was over-correcting: a market research notice in the
+    firm's exact line of work is often the best available opening, and for
+    a business with no federal past performance it may be the only one.
+    """
+    import capability
+
+    out = packet_dir(opp, root)
+    existing = os.path.exists(os.path.join(out, "00-START-HERE.md"))
+    fingerprint = company_fingerprint(company)
+
+    if existing:
+        meta = _read_meta(out)
+        missing = {n for n in ("00-START-HERE.md", "01-capability-statement.md")
+                   if not os.path.exists(os.path.join(out, n))}
+        if meta.get("company_fingerprint") == fingerprint and not missing:
+            return out, meta.get("blanks_left"), "kept"
+        if untouched_files(out, meta) == set() and not missing:
+            return out, meta.get("blanks_left"), "kept"
+
+    os.makedirs(out, exist_ok=True)
+    text = capability.build_capability_markdown(opp, description_text, company, notice_kind)
+    blanks_left = len(re.findall(r"\[\[FILL:", text))
+    written = {}
+
+    path = os.path.join(out, "01-capability-statement.md")
+    with open(path, "w") as f:
+        f.write(text)
+    written["01-capability-statement.md"] = _file_hash(path)
+
+    email_path = os.path.join(out, "02-response-email.txt")
+    with open(email_path, "w") as f:
+        f.write(build_quote_email(opp, company)
+                .replace("Quote from", "Capability statement from")
+                .replace("is pleased to submit the attached quote in response to",
+                         "is pleased to submit the attached capability statement in response to")
+                .replace("  - Price sheet, signed\n", "  - Capability statement\n")
+                .replace("The price sheet is signed by the authorized signatory.",
+                         "This is a market research response and contains no price."))
+    written["02-response-email.txt"] = _file_hash(email_path)
+
+    got, failed = fetch_attachments(opp, os.path.join(out, "attachments"), session=session)
+
+    start = os.path.join(out, "00-START-HERE.md")
+    with open(start, "w") as f:
+        f.write(build_start_here(
+            opp, company, blanks_left, got, failed,
+            gates=credential_gates(description_text, opp.get("description")),
+            kind="capability",
+        ))
+    written["00-START-HERE.md"] = _file_hash(start)
+
+    with open(os.path.join(out, META_NAME), "w") as f:
+        json.dump({"company_fingerprint": fingerprint, "blanks_left": blanks_left,
+                   "built": date.today().isoformat(),
+                   "deadline": _deadline_parts(opp)[0],
+                   "response_kind": "capability",
+                   "files": written}, f, indent=2)
+    return out, blanks_left, "new"
 
 
 def build_packet(opp, description_text, company, root, score=None, reasons="", session=None):

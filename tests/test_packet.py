@@ -624,13 +624,27 @@ def test_basetype_is_used_when_type_is_absent():
     assert fo.not_biddable_reason({"baseType": "Sources Sought"})
 
 
-def test_the_batch_refuses_to_packet_an_unbiddable_notice(tmp_path):
+def test_the_batch_never_prices_an_unbiddable_notice(tmp_path):
+    # A Sources Sought gets a capability statement instead of being
+    # dropped — it is often the best opening available — but it must never
+    # get a price sheet, which was the original category error.
     ranked = [(9, "why", dict(OPP, noticeId="ss1", type="Sources Sought")),
               (8, "why", dict(OPP, noticeId="ok1", type="Solicitation"))]
     built, skipped = _batch(3, ranked, str(tmp_path))
-    assert len(built) == 1
+    assert len(built) == 2
+    by_id = {os.path.basename(out).split("-")[0]: out for out, _, _, _ in built}
+    assert not os.path.exists(os.path.join(by_id["ss1"], "02-price-sheet.csv"))
+    assert os.path.exists(os.path.join(by_id["ss1"], "01-capability-statement.md"))
+    # The real solicitation still gets the full priced packet.
+    assert os.path.exists(os.path.join(by_id["ok1"], "02-price-sheet.csv"))
+
+
+def test_an_award_notice_is_still_dropped_entirely(tmp_path):
+    ranked = [(9, "why", dict(OPP, noticeId="aw1", type="Award Notice"))]
+    built, skipped = _batch(3, ranked, str(tmp_path))
+    assert built == []
     assert len(skipped) == 1
-    assert "capability statement" in skipped[0][1]
+    assert "already awarded" in skipped[0][1]
 
 
 # ---------- credential gates ----------

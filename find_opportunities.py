@@ -889,7 +889,14 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
             # profile does not really match, which is worse than producing
             # fewer than the target.
             break
-        why = not_biddable_reason(opp) or skip_reason(company, opp)
+        # A notice in the firm's own line of work is worth responding to even
+        # when it cannot be bid. Market research gets a capability statement;
+        # award notices and the rest still get nothing.
+        unbiddable = not_biddable_reason(opp)
+        capability_kind = notice_type(opp) if unbiddable and notice_type(opp).lower() in (
+            "sources sought", "special notice") else None
+
+        why = skip_reason(company, opp) or (unbiddable if not capability_kind else None)
         if why:
             skipped.append((opp, why))
             continue
@@ -901,14 +908,21 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
             # packet that is already current, which would not use it.
             description_text = fetch_description(opp, api_key)
 
-        out, blanks_left, status = packet.build_packet(
-            opp, description_text, company, packets_root, pts, reasons, session=session,
-        )
+        if capability_kind:
+            out, blanks_left, status = packet.build_capability_response(
+                opp, description_text, company, packets_root,
+                notice_kind=capability_kind, session=session,
+            )
+        else:
+            out, blanks_left, status = packet.build_packet(
+                opp, description_text, company, packets_root, pts, reasons, session=session,
+            )
         built.append((out, opp, blanks_left, status))
         if status == "new":
             fresh += 1
         left = "-" if blanks_left is None else f"{blanks_left} blanks left"
-        log(f"  packet [{status}] {os.path.basename(out)} — {left}")
+        label = "capability" if capability_kind else "packet"
+        log(f"  {label} [{status}] {os.path.basename(out)} — {left}")
 
     if fresh < count:
         log(f"  only {fresh} new packet(s) available at or above score {floor} "

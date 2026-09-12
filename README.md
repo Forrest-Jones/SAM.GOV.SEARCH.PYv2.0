@@ -220,6 +220,28 @@ what went. The markdown and `MANIFEST.txt` stay, so the record of what you
 prepared and the URLs to re-fetch from both survive. Without this the tray
 would grow by tens of megabytes a day forever.
 
+### Sources Sought and RFIs
+
+A Sources Sought notice is market research, not a solicitation — no line
+items, no award, and a priced quote in reply is a category error. The belt
+refuses to build a bid packet for one.
+
+It does build a **capability statement response**, because a market
+research notice in the firm's own line of work is often the best opening
+available, and for a business with no federal past performance it may be
+the only realistic one. Responding commits you to no price and carries no
+certification risk, and it puts the company in the record the government
+reads while writing the solicitation — including the NAICS code, the PSC
+and the set-aside, all of which are still open while market research runs.
+
+Those folders hold `01-capability-statement.md` (cover page, company
+profile, relevant experience, then the notice's own questions in the
+notice's own order) and `02-response-email.txt`. No price sheet, and the
+checklist has four steps instead of five.
+
+Award notices, justifications and property sales are still dropped
+outright — there is nothing to respond to.
+
 ### What it will not do
 
 - **Submit.** There is no SAM.gov submission API, and a federal offer
