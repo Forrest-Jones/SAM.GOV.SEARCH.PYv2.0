@@ -1,0 +1,9 @@
+Attachments listed on SAM.gov notice d8be86a7c0ac4ef8bc9f35a4132a5ea0
+Listing: https://sam.gov/workspace/contract/opp/d8be86a7c0ac4ef8bc9f35a4132a5ea0/view
+
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/1fead32d4b8144d2a923938df6190913/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/799ddf16ddba478fad46f7872a43baf2/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/de3b02a3857842fd9f4991a39a160a5e/download

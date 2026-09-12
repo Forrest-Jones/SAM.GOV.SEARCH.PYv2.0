@@ -1,0 +1,29 @@
+Attachments listed on SAM.gov notice 93efb9faa4284a6788db233d3aa59581
+Listing: https://sam.gov/workspace/contract/opp/93efb9faa4284a6788db233d3aa59581/view
+
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/1474a11a830e4d1fa3ae1c0de3fec032/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/1f1c20dbc9ab4b7dae0897e0dfb85bbc/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2847827ad7fe4a75a3c96f2e7179989a/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/5ba427f5e24a4eb491d1f88ea0cfa460/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/80ea38c8ec3b4e3f960f86658518ba3e/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8940c74826994ca89b55880606288909/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8c3b7c7813584ac0a51807c579f84e31/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/907688b40ec24a31bb543a37baa01a71/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cbaf32defd7541a28df836f04ffc2a2f/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d9137407497c47949cf10d305b2d677c/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e6fa27a6b71e4e6ba6de0bf6f7ee2400/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f05689985755482f95553a9cd438255c/download
+[downloaded] download
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f62ed116acb44c939db8fa1ab6ec3d99/download

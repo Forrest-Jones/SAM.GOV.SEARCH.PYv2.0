@@ -1,0 +1,37 @@
+To:      Bertha.Russell@gsa.gov
+Subject: 47QACA26R0306 — Quote from [[FILL: legal business name]] (UEI [[FILL: UEI]])
+
+Bertha D. Russell,
+
+[[FILL: legal business name]] is pleased to submit the attached quote in response to 47QACA26R0306,
+Risk Management, Financial Analysis and Administrative Support Services. We have reviewed the requirement in full and confirm our ability
+to perform within the stated period and place of performance.
+
+  Offeror:  [[FILL: legal business name]]
+  UEI:      [[FILL: UEI]]
+  CAGE:     [[FILL: CAGE]]
+  Contact:  [[FILL: signatory name]], [[FILL: title]] — [[FILL: phone]], forrestjones2010@gmail.com
+
+Attached:
+  - Price sheet, signed
+  - [[FILL: any other attachment the solicitation requires — check its
+    instructions paragraph before sending]]
+
+Our representations and certifications are current in SAM.gov.
+
+Please confirm receipt. We are available for any clarification you need
+before the 2026-09-21 closing.
+
+Respectfully,
+[[FILL: signatory name]]
+[[FILL: title]], [[FILL: legal business name]]
+[[FILL: phone]] | forrestjones2010@gmail.com
+
+--------------------------------------------------------------------
+BEFORE SENDING, CHECK:
+  [ ] This is the submission method the solicitation actually names.
+      Some require a portal, a specific form, or a different address.
+      Do not assume email.
+  [ ] The price sheet is signed by the authorized signatory.
+  [ ] Sent before 2026-09-21 — confirm the closing TIME and time zone.
+--------------------------------------------------------------------
