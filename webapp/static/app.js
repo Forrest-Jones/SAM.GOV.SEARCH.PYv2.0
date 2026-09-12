@@ -8,6 +8,11 @@
     lastOpportunities: [],
   };
 
+  const COMPANY_FIELDS = [
+    "legal_name", "uei", "cage", "address", "phone", "email",
+    "signatory_name", "signatory_title", "capability_statement",
+  ];
+
   function $(id) { return document.getElementById(id); }
 
   async function api(path, options) {
@@ -216,47 +221,95 @@
         <div class="opp-meta">${draft.checklist_done}/${draft.checklist_total} steps done</div>
         <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
       `;
-      card.addEventListener("click", () => openDraftModal(draft.filename));
+      card.addEventListener("click", () => openDraftModal(draft.filename, draft.notice_id));
       container.appendChild(card);
     });
   }
 
-  async function openDraftModal(filename) {
+  async function openDraftModal(filename, noticeId) {
     const result = await api("/api/drafts/" + encodeURIComponent(filename));
     if (!result.ok) return;
-    renderDraftContent(filename, result.content);
+    renderDraftContent(filename, result.content, noticeId);
     showModal();
   }
 
-  function renderDraftContent(filename, content) {
+  const isTableRow = (line) => line.trim().startsWith("|") && line.trim().endsWith("|");
+  const isTableDivider = (line) => /^\|[\s:|-]+\|$/.test(line.trim());
+  const tableCells = (line) => line.trim().slice(1, -1).split("|").map((c) => c.trim());
+
+  function renderDraftContent(filename, content, noticeId) {
     const lines = content.split("\n");
     const html = [];
     let inList = false;
-    lines.forEach((line, idx) => {
+    let inQuote = false;
+
+    const closeList = () => { if (inList) { html.push("</ul>"); inList = false; } };
+    const closeQuote = () => { if (inQuote) { html.push("</blockquote>"); inQuote = false; } };
+
+    for (let idx = 0; idx < lines.length; idx++) {
+      const line = lines[idx];
+
       const checklistMatch = line.match(/^- \[( |x|X)\] (.*)$/);
       if (checklistMatch) {
+        closeQuote();
         if (!inList) { html.push("<ul>"); inList = true; }
         const checked = checklistMatch[1].toLowerCase() === "x";
         html.push(`<li class="checklist-item"><label><input type="checkbox" data-line="${idx}" ${checked ? "checked" : ""}/> <span>${escapeHtml(checklistMatch[2])}</span></label></li>`);
-        return;
+        continue;
       }
-      if (inList) { html.push("</ul>"); inList = false; }
+      closeList();
 
-      if (line.startsWith("# ")) { html.push(`<h1>${escapeHtml(line.slice(2))}</h1>`); return; }
-      if (line.startsWith("## ")) { html.push(`<h2>${escapeHtml(line.slice(3))}</h2>`); return; }
+      // Markdown table: a run of | rows, with an optional |---| divider
+      // after the first, which marks that first row as the header.
+      if (isTableRow(line) && !isTableDivider(line)) {
+        closeQuote();
+        const headerRow = tableCells(line);
+        let cursor = idx + 1;
+        const hasHeader = cursor < lines.length && isTableDivider(lines[cursor]);
+        if (hasHeader) cursor++;
+        const bodyRows = [];
+        while (cursor < lines.length && isTableRow(lines[cursor]) && !isTableDivider(lines[cursor])) {
+          bodyRows.push(tableCells(lines[cursor]));
+          cursor++;
+        }
+        const cell = (c, tag) => `<${tag}>${inlineMd(c)}</${tag}>`;
+        html.push('<div class="table-scroll"><table>');
+        if (hasHeader) {
+          html.push("<thead><tr>" + headerRow.map((c) => cell(c, "th")).join("") + "</tr></thead>");
+        } else {
+          bodyRows.unshift(headerRow);
+        }
+        html.push("<tbody>" + bodyRows.map((r) => "<tr>" + r.map((c) => cell(c, "td")).join("") + "</tr>").join("") + "</tbody>");
+        html.push("</table></div>");
+        idx = cursor - 1;
+        continue;
+      }
+
+      if (line.startsWith(">")) {
+        if (!inQuote) { html.push("<blockquote>"); inQuote = true; }
+        html.push(`<p>${inlineMd(line.replace(/^>\s?/, ""))}</p>`);
+        continue;
+      }
+      closeQuote();
+
+      if (line.startsWith("### ")) { html.push(`<h3>${escapeHtml(line.slice(4))}</h3>`); continue; }
+      if (line.startsWith("## ")) { html.push(`<h2>${escapeHtml(line.slice(3))}</h2>`); continue; }
+      if (line.startsWith("# ")) { html.push(`<h1>${escapeHtml(line.slice(2))}</h1>`); continue; }
+      if (line.trim() === "---") { html.push("<hr />"); continue; }
       if (line.startsWith("- ")) {
         const boldMatch = line.match(/^- \*\*(.+?):\*\* (.*)$/);
         if (boldMatch) {
-          html.push(`<p><strong>${escapeHtml(boldMatch[1])}:</strong> ${linkify(boldMatch[2])}</p>`);
+          html.push(`<p><strong>${escapeHtml(boldMatch[1])}:</strong> ${inlineMd(boldMatch[2])}</p>`);
         } else {
-          html.push(`<p>${linkify(line.slice(2))}</p>`);
+          html.push(`<p>${inlineMd(line.slice(2))}</p>`);
         }
-        return;
+        continue;
       }
-      if (line.trim() === "") { return; }
-      html.push(`<p>${linkify(line)}</p>`);
-    });
-    if (inList) html.push("</ul>");
+      if (line.trim() === "") { continue; }
+      html.push(`<p>${inlineMd(line)}</p>`);
+    }
+    closeList();
+    closeQuote();
 
     $("modal-body").innerHTML = html.join("\n");
     $("modal-body").querySelectorAll('input[type="checkbox"]').forEach((box) => {
@@ -270,15 +323,58 @@
         if (res.ok) loadDrafts();
       });
     });
+
+    if (noticeId) {
+      const btn = document.createElement("button");
+      btn.className = "btn btn-primary";
+      btn.textContent = "📝 Build proposal draft";
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = "Building...";
+        const res = await api("/api/proposals/" + encodeURIComponent(noticeId), { method: "POST" });
+        btn.disabled = false;
+        btn.textContent = "📝 Build proposal draft";
+        if (res.ok) {
+          renderProposal(res);
+        } else {
+          const note = document.createElement("p");
+          note.className = "muted";
+          note.textContent = res.error === "notice_not_cached"
+            ? "This packet is from an older search, so the full notice isn't saved. Run a new search and proposal drafts will be available for anything new."
+            : "Couldn't build the draft.";
+          btn.after(note);
+        }
+      });
+      const hint = document.createElement("p");
+      hint.className = "muted";
+      hint.textContent = "Builds a cover letter, technical-approach outline matching this solicitation's own sections, a requirements table, and blank price/past-performance worksheets for you to fill in. Never submits anything.";
+      $("modal-body").append(hint, btn);
+    }
   }
 
-  function linkify(text) {
-    // draft lines like "- **NAICS:** 541213  **PSC:** R710" have a second
-    // bold marker after the one renderDraftContent already peeled off as
-    // the label, so this still needs to catch **...** in the remainder.
-    const bolded = escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    return bolded.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  function renderProposal(res) {
+    renderDraftContent(res.filename, res.content, null);
+    const banner = document.createElement("p");
+    banner.className = "muted";
+    banner.textContent = `Saved as ${res.filename} — ${res.blanks} blanks marked [[FILL: ...]] for you to complete. Nothing has been submitted.`;
+    $("modal-body").prepend(banner);
+    $("modal-backdrop").scrollTop = 0;
   }
+
+  function inlineMd(text) {
+    // Escape first, then apply inline markers. Draft lines like
+    // "- **NAICS:** 541213  **PSC:** R710" carry a second bold marker after
+    // the label renderDraftContent already peeled off, and proposal drafts
+    // use `code` spans and [[FILL: ...]] blanks that should stand out.
+    let out = escapeHtml(text);
+    out = out.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+    out = out.replace(/\[\[FILL:([^\]]*)\]\]/g, '<span class="fill-blank">$1</span>');
+    return out.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  }
+
+  // Kept as an alias: older call sites still say linkify().
+  const linkify = inlineMd;
 
   // ---------------- Settings ----------------
 
@@ -309,6 +405,12 @@
     $("draft-min-score").value = s.draft_min_score;
     $("send-email").checked = !!s.send_email;
     $("notify-email").value = s.notify_email;
+
+    const profile = s.company_profile || {};
+    COMPANY_FIELDS.forEach((key) => {
+      const el = $("cp-" + key);
+      if (el) el.value = profile[key] || "";
+    });
   }
 
   function renderNaicsChips() {
@@ -350,9 +452,16 @@
 
     const checkedCerts = Array.from($("cert-checkboxes").querySelectorAll("input:checked")).map((i) => i.value);
 
+    const companyProfile = {};
+    COMPANY_FIELDS.forEach((key) => {
+      const el = $("cp-" + key);
+      if (el) companyProfile[key] = el.value;
+    });
+
     await api("/api/settings", {
       method: "POST",
       body: JSON.stringify({
+        company_profile: companyProfile,
         naics_codes: state.naicsCodes,
         certifications: checkedCerts,
         show_ineligible: $("show-ineligible").checked,

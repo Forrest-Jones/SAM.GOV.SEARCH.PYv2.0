@@ -35,6 +35,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO_ROOT)
 
 import find_opportunities as core  # noqa: E402
+import proposal as proposal_builder  # noqa: E402
 
 # Everything the app writes lives under DATA_DIR. Locally that's just the
 # repo, but a deployed host's filesystem is wiped on every redeploy, so
@@ -48,6 +49,8 @@ ENV_LOCAL_PATH = os.path.join(DATA_DIR, ".env.local")
 LAST_RESULTS_PATH = os.path.join(DATA_DIR, "last_results.json")
 DB_PATH = os.path.join(DATA_DIR, core.DEFAULT_DB_PATH)
 DRAFTS_DIR = os.path.join(DATA_DIR, core.DEFAULT_DRAFTS_DIR)
+PROPOSALS_DIR = os.path.join(DATA_DIR, "proposals")
+NOTICES_DIR = os.path.join(DATA_DIR, "notices")
 
 DEFAULT_SETTINGS = {
     "company_name": "Proverbs 1821 Consulting LLC",
@@ -61,6 +64,10 @@ DEFAULT_SETTINGS = {
     "generate_drafts": True,
     "notify_email": core.DEFAULT_TO_EMAIL,
     "send_email": True,
+    # Fills the offeror/cover-letter sections of a proposal draft. Anything
+    # left blank shows up as a visible [[FILL: ...]] blank rather than being
+    # guessed at — these are facts that go on a federal submission.
+    "company_profile": dict(proposal_builder.DEFAULT_COMPANY_PROFILE),
 }
 
 
@@ -271,6 +278,13 @@ def api_save_settings():
         if "@" in email:
             settings["notify_email"] = email
 
+    if isinstance(body.get("company_profile"), dict):
+        profile = dict(settings.get("company_profile") or {})
+        for key in proposal_builder.DEFAULT_COMPANY_PROFILE:
+            if key in body["company_profile"]:
+                profile[key] = str(body["company_profile"][key]).strip()
+        settings["company_profile"] = profile
+
     save_settings(settings)
     return jsonify({"settings": settings})
 
@@ -316,6 +330,21 @@ def api_search():
     ranked_json = [serialize_result(pts, reasons, opp) for pts, reasons, opp in result["ranked"]]
     new_ids = {opp.get("noticeId") for _, _, opp in result["new_ones"]}
 
+    # Stash the raw notice (plus the description already fetched during the
+    # search) so "Build proposal draft" can run later without another API call.
+    os.makedirs(NOTICES_DIR, exist_ok=True)
+    for pts, reasons, opp in result["new_ones"]:
+        nid = opp.get("noticeId")
+        if not nid or not re.match(r"^[A-Za-z0-9_.-]+$", nid):
+            continue
+        with open(os.path.join(NOTICES_DIR, f"{nid}.json"), "w") as f:
+            json.dump({
+                "opp": opp,
+                "score": pts,
+                "reasons": reasons,
+                "description": result["descriptions"].get(nid),
+            }, f)
+
     response = {
         "ok": True,
         "ranked": ranked_json,
@@ -338,7 +367,70 @@ def api_last_opportunities():
     return jsonify({"ok": True, "ranked": [], "new_notice_ids": [], "excluded_restricted": 0, "draft_count": 0, "emailed": False, "log": []})
 
 
+NOTICE_ID_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 DRAFT_FILENAME_RE = re.compile(r"^[A-Za-z0-9_.-]+\.md$")
+
+
+@app.route("/api/proposals/<notice_id>", methods=["POST"])
+def api_build_proposal(notice_id):
+    """Builds a proposal draft for one cached notice. Writes a file and
+    returns its text — it does not and cannot submit anything."""
+    if not NOTICE_ID_RE.match(notice_id):
+        return jsonify({"ok": False, "error": "bad_notice_id"}), 400
+    notice_path = os.path.join(NOTICES_DIR, f"{notice_id}.json")
+    if not os.path.exists(notice_path):
+        return jsonify({"ok": False, "error": "notice_not_cached"}), 404
+
+    with open(notice_path) as f:
+        cached = json.load(f)
+
+    settings = load_settings()
+    path = proposal_builder.write_proposal(
+        cached["opp"],
+        cached.get("description"),
+        settings.get("company_profile") or {},
+        PROPOSALS_DIR,
+        score=cached.get("score"),
+        reasons=cached.get("reasons") or "",
+    )
+    with open(path) as f:
+        content = f.read()
+    return jsonify({
+        "ok": True,
+        "filename": os.path.basename(path),
+        "content": content,
+        "blanks": content.count("[[FILL:"),
+    })
+
+
+@app.route("/api/proposals", methods=["GET"])
+def api_list_proposals():
+    if not os.path.isdir(PROPOSALS_DIR):
+        return jsonify({"proposals": []})
+    out = []
+    for filename in sorted(os.listdir(PROPOSALS_DIR)):
+        if not filename.endswith(".md"):
+            continue
+        with open(os.path.join(PROPOSALS_DIR, filename)) as f:
+            content = f.read()
+        first = content.split("\n", 1)[0]
+        out.append({
+            "filename": filename,
+            "title": first.lstrip("# ").replace("Proposal Draft — ", "").strip(),
+            "blanks": content.count("[[FILL:"),
+        })
+    return jsonify({"proposals": out})
+
+
+@app.route("/api/proposals/<filename>", methods=["GET"])
+def api_get_proposal(filename):
+    if not DRAFT_FILENAME_RE.match(filename):
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    path = os.path.join(PROPOSALS_DIR, filename)
+    if not os.path.exists(path):
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    with open(path) as f:
+        return jsonify({"ok": True, "filename": filename, "content": f.read()})
 
 
 def draft_path_for(filename):
@@ -348,10 +440,25 @@ def draft_path_for(filename):
     return path if os.path.exists(path) else None
 
 
+def cached_notice_ids():
+    if not os.path.isdir(NOTICES_DIR):
+        return []
+    return [f[:-5] for f in os.listdir(NOTICES_DIR) if f.endswith(".json")]
+
+
+def notice_id_for_draft(filename, notice_ids):
+    """Drafts are named '<noticeId>-<slug>.md' and a notice ID can itself
+    contain hyphens, so match by longest cached ID that prefixes the
+    filename rather than splitting on the first '-'."""
+    matches = [nid for nid in notice_ids if filename.startswith(nid + "-")]
+    return max(matches, key=len) if matches else None
+
+
 @app.route("/api/drafts", methods=["GET"])
 def api_list_drafts():
     if not os.path.isdir(DRAFTS_DIR):
         return jsonify({"drafts": []})
+    notice_ids = cached_notice_ids()
     drafts = []
     for filename in sorted(os.listdir(DRAFTS_DIR)):
         if not filename.endswith(".md"):
@@ -365,6 +472,7 @@ def api_list_drafts():
         done = sum(1 for line in lines if line.strip().startswith("- [x]") or line.strip().startswith("- [X]"))
         drafts.append({
             "filename": filename,
+            "notice_id": notice_id_for_draft(filename, notice_ids),
             "title": title,
             "score_line": score_line.replace("- **Score:**", "").strip(),
             "checklist_done": done,

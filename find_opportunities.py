@@ -488,10 +488,15 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
     conn.close()
 
     draft_paths = []
+    descriptions = {}
     draft_candidates = [r for r in new_ones if r[0] >= cfg["draft_min_score"]]
     if draft_candidates and cfg["generate_drafts"]:
         for pts, reasons, opp in draft_candidates:
             description_text = fetch_description(opp, api_key)
+            if description_text:
+                # Kept so a proposal draft can reuse it instead of spending
+                # another call against the 1,000/day budget.
+                descriptions[opp.get("noticeId")] = description_text
             path = write_draft(
                 opp, pts, reasons, eligibility(opp, eligible_hints, restricted_hints),
                 description_text, cfg["drafts_dir"],
@@ -509,6 +514,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
         "excluded_restricted": excluded_restricted,
         "new_ones": new_ones,
         "draft_paths": draft_paths,
+        "descriptions": descriptions,
         "emailed": emailed,
     }
 

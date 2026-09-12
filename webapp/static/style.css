@@ -247,6 +247,48 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   border: none; background: var(--border); border-radius: 999px;
   width: 30px; height: 30px; cursor: pointer; font-size: 0.9rem;
 }
+/* Proposal drafts lean on tables (offeror info, requirements traceability,
+   price worksheet), so they get real table styling rather than raw pipes. */
+#modal-body table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.88rem;
+  margin: 10px 0;
+}
+#modal-body th, #modal-body td {
+  border: 1px solid var(--border);
+  padding: 6px 9px;
+  text-align: left;
+  vertical-align: top;
+}
+#modal-body th { background: var(--accent-soft); font-weight: 650; }
+#modal-body .table-scroll { overflow-x: auto; }
+#modal-body blockquote {
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--amber);
+  background: var(--amber-soft);
+  border-radius: 0 8px 8px 0;
+}
+#modal-body blockquote p { margin: 4px 0; font-size: 0.88rem; }
+#modal-body code {
+  background: var(--border);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+#modal-body hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+#modal-body h3 { font-size: 0.95rem; margin: 14px 0 4px; }
+/* Unfilled blanks should be impossible to miss before submitting. */
+.fill-blank {
+  background: var(--amber-soft);
+  color: var(--amber);
+  border: 1px dashed var(--amber);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 0.85em;
+}
+
 .modal-body h2 { margin-top: 18px; }
 .modal-body ul { padding-left: 20px; }
 .modal-body .checklist-item { list-style: none; margin-left: -20px; }
