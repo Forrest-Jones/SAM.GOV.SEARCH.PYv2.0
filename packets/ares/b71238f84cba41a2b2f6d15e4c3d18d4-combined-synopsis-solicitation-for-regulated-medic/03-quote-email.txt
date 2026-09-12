@@ -10,7 +10,7 @@ to perform within the stated period and place of performance.
   Offeror:  [[FILL: legal business name]]
   UEI:      [[FILL: UEI]]
   CAGE:     [[FILL: CAGE]]
-  Contact:  [[FILL: signatory name]], [[FILL: title]] — [[FILL: phone]], forrestjones2010@gmail.com
+  Contact:  Forrest Andrew Jones, Owner / Managing Member — (832) 562-1355, forrestjones2010@gmail.com
 
 Attached:
   - Price sheet, signed
@@ -23,9 +23,9 @@ Please confirm receipt. We are available for any clarification you need
 before the 2026-09-28 closing.
 
 Respectfully,
-[[FILL: signatory name]]
-[[FILL: title]], [[FILL: legal business name]]
-[[FILL: phone]] | forrestjones2010@gmail.com
+Forrest Andrew Jones
+Owner / Managing Member, [[FILL: legal business name]]
+(832) 562-1355 | forrestjones2010@gmail.com
 
 --------------------------------------------------------------------
 BEFORE SENDING, CHECK:

@@ -1,12 +1,12 @@
 {
-  "company_fingerprint": "eac45902d857c015",
-  "blanks_left": 70,
+  "company_fingerprint": "9089bc7a95952d7f",
+  "blanks_left": 63,
   "built": "2026-09-12",
   "deadline": "2026-09-28",
   "files": {
-    "01-proposal.md": "80f544be9f967cb0",
+    "01-proposal.md": "61c75c24f7187c0b",
     "02-price-sheet.csv": "dc933fe1b54253df",
-    "03-quote-email.txt": "2de62f519a9e9653",
-    "00-START-HERE.md": "07dc4d504d7b6de7"
+    "03-quote-email.txt": "36021253b7695b00",
+    "00-START-HERE.md": "e0771e6ac9457bbc"
   }
 }

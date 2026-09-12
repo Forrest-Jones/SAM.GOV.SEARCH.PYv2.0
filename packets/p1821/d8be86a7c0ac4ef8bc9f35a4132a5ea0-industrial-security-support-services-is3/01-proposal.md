@@ -26,13 +26,13 @@
 
 | Field | Value |
 |---|---|
-| Legal business name | [[FILL: legal business name]] |
-| UEI | [[FILL: UEI from your SAM.gov registration]] |
-| CAGE code | [[FILL: CAGE code]] |
-| Address | [[FILL: business address]] |
-| Phone | [[FILL: phone]] |
+| Legal business name | Proverbs 1821 Consulting LLC |
+| UEI | GD83PAK36818 |
+| CAGE code | 22ND2 |
+| Address | 12103 Hawthorne Dr, Montgomery, TX 77356 |
+| Phone | (832) 562-1355 |
 | Email | forrestjones2010@gmail.com |
-| Authorized signatory | [[FILL: signatory name]], [[FILL: title]] |
+| Authorized signatory | Forrest Andrew Jones, Owner / Managing Member |
 
 ## 3. Cover letter
 
@@ -43,16 +43,16 @@ DEPT OF DEFENSE.DEFENSE COUNTERINTELLIGENCE AND SECURITY AGENCY (DCSA).DEFENSE C
 
 **Subject:** Response to A033281, Industrial Security Support Services (IS3)
 
-[[FILL: legal business name]] is pleased to submit this response. We have reviewed the requirement in full and confirm our ability to perform within the stated period and place of performance.
+Proverbs 1821 Consulting LLC is pleased to submit this response. We have reviewed the requirement in full and confirm our ability to perform within the stated period and place of performance.
 
 [[FILL: 2-3 sentences on why you're qualified — paste your capability statement into Settings so this fills itself in]]
 
-This offer remains valid for [[FILL: number]] days. Questions may be directed to [[FILL: signatory name]] at [[FILL: phone]] or forrestjones2010@gmail.com.
+This offer remains valid for [[FILL: number]] days. Questions may be directed to Forrest Andrew Jones at (832) 562-1355 or forrestjones2010@gmail.com.
 
 Respectfully,
 
 [[FILL: SIGNATURE — wet or digital, applied by the authorized signatory]]
-[[FILL: signatory name]], [[FILL: title]]
+Forrest Andrew Jones, Owner / Managing Member
 
 ## 4. Technical approach
 

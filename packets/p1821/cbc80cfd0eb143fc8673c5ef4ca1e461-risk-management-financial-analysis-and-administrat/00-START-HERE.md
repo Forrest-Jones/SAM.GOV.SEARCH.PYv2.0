@@ -21,7 +21,7 @@ this date? If no, delete this folder and add a line to `skip_keywords` in
 
 **3. Price it.** Open `02-price-sheet.csv`. Your rates are already in it — no rate card on file yet. Enter **hours** only; the extended column totals itself.
 
-**4. Tailor the draft.** `01-proposal.md` has **66 blanks** left, marked `[[FILL: ...]]`. Search for that string and work through them.
+**4. Tailor the draft.** `01-proposal.md` has **54 blanks** left, marked `[[FILL: ...]]`. Search for that string and work through them.
 
 **5. Send it.** `03-quote-email.txt` is addressed and written. Confirm the submission method on the listing, sign the price sheet, send.
 

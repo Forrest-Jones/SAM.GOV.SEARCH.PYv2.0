@@ -30,9 +30,9 @@
 | UEI | [[FILL: UEI from your SAM.gov registration]] |
 | CAGE code | [[FILL: CAGE code]] |
 | Address | [[FILL: business address]] |
-| Phone | [[FILL: phone]] |
+| Phone | (832) 562-1355 |
 | Email | forrestjones2010@gmail.com |
-| Authorized signatory | [[FILL: signatory name]], [[FILL: title]] |
+| Authorized signatory | Forrest Andrew Jones, Owner / Managing Member |
 
 ## 3. Cover letter
 
@@ -47,12 +47,12 @@ DEPT OF DEFENSE.DEFENSE LOGISTICS AGENCY.DLA DISPOSITION SERVICES.DLA DISPOSITIO
 
 [[FILL: 2-3 sentences on why you're qualified — paste your capability statement into Settings so this fills itself in]]
 
-This offer remains valid for [[FILL: number]] days. Questions may be directed to [[FILL: signatory name]] at [[FILL: phone]] or forrestjones2010@gmail.com.
+This offer remains valid for [[FILL: number]] days. Questions may be directed to Forrest Andrew Jones at (832) 562-1355 or forrestjones2010@gmail.com.
 
 Respectfully,
 
 [[FILL: SIGNATURE — wet or digital, applied by the authorized signatory]]
-[[FILL: signatory name]], [[FILL: title]]
+Forrest Andrew Jones, Owner / Managing Member
 
 ## 4. Technical approach
 
