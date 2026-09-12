@@ -828,12 +828,12 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
             # Costs one call against the 1,000/day budget, and the packet is
             # worth far more with the government's own words in it.
             description_text = fetch_description(opp, api_key)
-        out, blanks_left = packet.build_packet(
+        out, blanks_left, status = packet.build_packet(
             opp, description_text, company, packets_root, pts, reasons, session=session,
         )
-        built.append((out, opp, blanks_left))
-        state = "reused (already started)" if blanks_left is None else f"{blanks_left} blanks left"
-        log(f"  packet {os.path.basename(out)} — {state}")
+        built.append((out, opp, blanks_left, status))
+        left = "-" if blanks_left is None else f"{blanks_left} blanks left"
+        log(f"  packet [{status}] {os.path.basename(out)} — {left}")
 
     index = packet.write_batch_index(built, skipped, packets_root, profile["label"])
     log(f"\n{len(built)} packet(s) ready — start here: {index}")

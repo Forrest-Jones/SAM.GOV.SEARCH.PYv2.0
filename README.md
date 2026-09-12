@@ -177,8 +177,19 @@ With an empty fact bank a packet leaves **69** blanks. With it filled,
 the technical narrative, and why each past-performance contract is
 relevant to *this* requirement.
 
-Rebuilding never overwrites a packet you have started, so it is safe to
-run daily.
+Rebuilding is safe to run daily, and it is smart about your work. Each
+packet records a fingerprint of the facts it was built from plus a hash of
+every file it wrote. On the next run:
+
+- **facts unchanged** — left alone entirely
+- **facts changed, nothing edited** — regenerated against the new facts, so
+  a packet built while `company.toml` was still empty picks up your UEI and
+  rates the moment you enter them
+- **facts changed, some files edited** — only the untouched files are
+  refreshed; a price sheet you have worked on is never overwritten
+
+`INDEX.md` shows which happened per packet: `new`, `refreshed`, `partial`
+or `kept`.
 
 ### What it will not do
 

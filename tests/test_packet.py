@@ -184,7 +184,8 @@ def test_quote_email_blanks_the_officer_when_the_notice_has_none():
 
 
 def test_packet_contains_every_piece_and_counts_its_own_blanks(tmp_path):
-    out, blanks = packet.build_packet(OPP, "Scope: do the work.", FILLED, str(tmp_path), 4, "why")
+    out, blanks, status = packet.build_packet(OPP, "Scope: do the work.", FILLED, str(tmp_path), 4, "why")
+    assert status == "new"
     for name in ("00-START-HERE.md", "01-proposal.md", "02-price-sheet.csv", "03-quote-email.txt"):
         assert os.path.exists(os.path.join(out, name)), name
     assert os.path.exists(os.path.join(out, "attachments", "MANIFEST.txt"))
@@ -194,15 +195,64 @@ def test_packet_contains_every_piece_and_counts_its_own_blanks(tmp_path):
     assert "2026-09-22" in start
 
 
-def test_rebuilding_never_clobbers_a_packet_in_progress(tmp_path):
-    out, _ = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+def test_rebuilding_never_clobbers_your_edits(tmp_path):
+    out, _, _ = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
     draft_path = os.path.join(out, "01-proposal.md")
     with open(draft_path, "w") as f:
         f.write("MY PRICED AND EDITED DRAFT")
-    again, blanks = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
-    assert again == out
-    assert blanks is None, "a reused packet reports no blank count"
+    # Same facts, so there is nothing to refresh anyway.
+    again, _, status = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    assert (again, status) == (out, "kept")
     assert open(draft_path).read() == "MY PRICED AND EDITED DRAFT"
+
+
+def test_unchanged_facts_leave_the_packet_alone(tmp_path):
+    out, blanks, _ = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    before = open(os.path.join(out, "01-proposal.md")).read()
+    _, blanks_again, status = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    assert status == "kept"
+    assert blanks_again == blanks
+    assert open(os.path.join(out, "01-proposal.md")).read() == before
+
+
+def test_filling_the_fact_bank_refreshes_an_untouched_packet(tmp_path):
+    # The trap this exists to close: a packet built while company.toml was
+    # empty must not stay empty forever once the facts are entered.
+    out, blanks_empty, _ = packet.build_packet(OPP, "", {}, str(tmp_path), 4, "")
+    assert "[[FILL: UEI" in open(os.path.join(out, "01-proposal.md")).read()
+
+    same, blanks_filled, status = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    assert same == out
+    assert status == "refreshed"
+    assert blanks_filled < blanks_empty
+    draft = open(os.path.join(out, "01-proposal.md")).read()
+    assert "ABC123456789" in draft, "the newly entered UEI should now be in the draft"
+
+
+def test_a_refresh_keeps_the_one_file_you_edited(tmp_path):
+    out, _, _ = packet.build_packet(OPP, "", {}, str(tmp_path), 4, "")
+    priced = os.path.join(out, "02-price-sheet.csv")
+    with open(priced, "w") as f:
+        f.write("MY PRICING WORK")
+
+    _, _, status = packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+    assert status == "partial"
+    assert open(priced).read() == "MY PRICING WORK", "priced sheet must survive"
+    # ...while the files nobody touched do pick up the new facts.
+    assert "ABC123456789" in open(os.path.join(out, "01-proposal.md")).read()
+
+
+def test_an_edited_file_stays_protected_across_later_refreshes(tmp_path):
+    out, _, _ = packet.build_packet(OPP, "", {}, str(tmp_path), 4, "")
+    priced = os.path.join(out, "02-price-sheet.csv")
+    with open(priced, "w") as f:
+        f.write("MY PRICING WORK")
+    packet.build_packet(OPP, "", FILLED, str(tmp_path), 4, "")
+
+    more = dict(FILLED, phone="713-555-9999")
+    _, _, status = packet.build_packet(OPP, "", more, str(tmp_path), 4, "")
+    assert status == "partial"
+    assert open(priced).read() == "MY PRICING WORK"
 
 
 def test_manifest_records_attachments_it_could_not_download(tmp_path):
@@ -251,7 +301,7 @@ def test_oversized_attachment_is_refused_not_written(tmp_path):
 def test_batch_index_sorts_by_soonest_deadline(tmp_path):
     soon = dict(OPP, noticeId="a", title="Closes soon", responseDeadLine="2026-09-14T00:00:00-04:00")
     later = dict(OPP, noticeId="b", title="Closes later", responseDeadLine="2026-10-30T00:00:00-04:00")
-    built = [("/x/b-later", later, 20), ("/x/a-soon", soon, 12)]
+    built = [("/x/b-later", later, 20, "new"), ("/x/a-soon", soon, 12, "new")]
     path = packet.write_batch_index(built, [(OPP, "PSC in skip_psc")], str(tmp_path), "Test")
     text = open(path).read()
     assert text.index("Closes soon") < text.index("Closes later")

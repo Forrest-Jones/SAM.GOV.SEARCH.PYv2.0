@@ -20,6 +20,8 @@ machine signing those on your behalf is a false statement, not a feature.
 """
 
 import csv
+import hashlib
+import json
 import os
 import re
 from datetime import date, datetime
@@ -28,6 +30,9 @@ import proposal
 from company import filled_rows
 
 MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
+
+META_NAME = ".packet-meta.json"
+GENERATED = ("00-START-HERE.md", "01-proposal.md", "02-price-sheet.csv", "03-quote-email.txt")
 
 
 def _deadline_parts(opp):
@@ -55,6 +60,45 @@ def _co_name(opp):
         if contact.get("fullName"):
             return contact["fullName"]
     return ""
+
+
+def company_fingerprint(company):
+    """A stable hash of the facts a packet was built from, so a rebuild can
+    tell that the fact bank has changed since."""
+    facts = {k: v for k, v in (company or {}).items() if not k.startswith("_")}
+    blob = json.dumps(facts, sort_keys=True, default=str).encode()
+    return hashlib.sha256(blob).hexdigest()[:16]
+
+
+def _file_hash(path):
+    try:
+        with open(path, "rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()[:16]
+    except OSError:
+        return None
+
+
+def _read_meta(out):
+    try:
+        with open(os.path.join(out, META_NAME)) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def untouched_files(out, meta):
+    """Which generated files are still exactly as this tool wrote them.
+
+    The point is to distinguish "nobody has opened this yet" from "priced
+    and edited". A file whose content still hashes to what was recorded at
+    build time is the machine's to replace; anything else is the user's
+    work and is never overwritten.
+    """
+    recorded = (meta or {}).get("files") or {}
+    return {
+        name for name in GENERATED
+        if name in recorded and _file_hash(os.path.join(out, name)) == recorded[name]
+    }
 
 
 def packet_dir(opp, root):
@@ -287,52 +331,105 @@ def build_start_here(opp, company, blanks_left, attachments, failed):
 
 
 def build_packet(opp, description_text, company, root, score=None, reasons="", session=None):
-    """Writes the whole folder. Returns (path, blanks_left).
+    """Writes the whole folder. Returns (path, blanks_left, status).
 
-    Never overwrites a packet that already exists — you may be part way
-    through pricing it, and a re-run must not wipe that out.
+    Status is one of:
+      new        built for the first time
+      refreshed  the fact bank changed and nothing here had been edited,
+                 so the packet was regenerated against the newer facts
+      kept       edited by you, or already current — left alone
+      partial    the fact bank changed but some files are edited; only the
+                 untouched ones were refreshed
+
+    The reason for all this: a packet built while company.toml was still
+    empty carries blanks for facts you have since entered. Refusing to
+    overwrite anything would freeze that emptiness in place forever, and
+    overwriting everything would destroy a price sheet you spent an hour
+    on. So the distinction is per file and based on content, not time.
     """
     out = packet_dir(opp, root)
-    if os.path.exists(os.path.join(out, "00-START-HERE.md")):
-        return out, None
+    fingerprint = company_fingerprint(company)
+    existing = os.path.exists(os.path.join(out, "00-START-HERE.md"))
+
+    if existing:
+        meta = _read_meta(out)
+        if meta.get("company_fingerprint") == fingerprint:
+            return out, meta.get("blanks_left"), "kept"
+        replaceable = untouched_files(out, meta)
+        if not replaceable:
+            return out, meta.get("blanks_left"), "kept"
+        status = "refreshed" if replaceable == set(GENERATED) else "partial"
+    else:
+        replaceable = set(GENERATED)
+        status = "new"
+
     os.makedirs(out, exist_ok=True)
 
     draft = proposal.build_proposal_markdown(opp, description_text, company, score, reasons)
     blanks_left = len(re.findall(r"\[\[FILL:", draft))
-    with open(os.path.join(out, "01-proposal.md"), "w") as f:
-        f.write(draft)
 
-    write_price_sheet(opp, company, os.path.join(out, "02-price-sheet.csv"))
-    with open(os.path.join(out, "03-quote-email.txt"), "w") as f:
-        f.write(build_quote_email(opp, company))
+    written = {}
+    if "01-proposal.md" in replaceable:
+        path = os.path.join(out, "01-proposal.md")
+        with open(path, "w") as f:
+            f.write(draft)
+        written["01-proposal.md"] = _file_hash(path)
+    if "02-price-sheet.csv" in replaceable:
+        path = write_price_sheet(opp, company, os.path.join(out, "02-price-sheet.csv"))
+        written["02-price-sheet.csv"] = _file_hash(path)
+    if "03-quote-email.txt" in replaceable:
+        path = os.path.join(out, "03-quote-email.txt")
+        with open(path, "w") as f:
+            f.write(build_quote_email(opp, company))
+        written["03-quote-email.txt"] = _file_hash(path)
 
     got, failed = fetch_attachments(opp, os.path.join(out, "attachments"), session=session)
-    with open(os.path.join(out, "00-START-HERE.md"), "w") as f:
-        f.write(build_start_here(opp, company, blanks_left, got, failed))
-    return out, blanks_left
+
+    if "00-START-HERE.md" in replaceable:
+        path = os.path.join(out, "00-START-HERE.md")
+        with open(path, "w") as f:
+            f.write(build_start_here(opp, company, blanks_left, got, failed))
+        written["00-START-HERE.md"] = _file_hash(path)
+
+    # Files we deliberately left alone keep the hashes they had, so a later
+    # rebuild still recognises them as the user's work.
+    previous = (_read_meta(out).get("files") or {}) if existing else {}
+    merged = {**previous, **written}
+    with open(os.path.join(out, META_NAME), "w") as f:
+        json.dump(
+            {"company_fingerprint": fingerprint, "blanks_left": blanks_left,
+             "built": date.today().isoformat(), "files": merged},
+            f, indent=2,
+        )
+    return out, blanks_left, status
 
 
 def write_batch_index(built, skipped, root, profile_label):
     """One page listing today's batch, soonest deadline first — the
     conveyor belt's output tray."""
     rows = []
-    for out, opp, blanks_left in built:
+    for out, opp, blanks_left, *rest in built:
+        status = rest[0] if rest else ""
         deadline, days = _deadline_parts(opp)
-        rows.append((days if days is not None else 9999, deadline, days, out, opp, blanks_left))
-    rows.sort()
+        rows.append((days if days is not None else 9999, deadline, days, out, opp,
+                     blanks_left, status))
+    rows.sort(key=lambda r: r[0])
 
     lines = [
         f"# Bid packets — {profile_label}",
         f"_{date.today().isoformat()} — {len(built)} packet(s), soonest deadline first_",
         "",
-        "| Due | Days | Title | Blanks left | Folder |",
-        "|---|---|---|---|---|",
+        "| Due | Days | Title | Blanks left | State | Folder |",
+        "|---|---|---|---|---|---|",
     ]
-    for _, deadline, days, out, opp, blanks_left in rows:
+    for _, deadline, days, out, opp, blanks_left, status in rows:
         title = (opp.get("title") or "")[:70]
         folder = os.path.basename(out)
-        left = "already started" if blanks_left is None else str(blanks_left)
-        lines.append(f"| {deadline} | {days if days is not None else '?'} | {title} | {left} | `{folder}/` |")
+        left = "-" if blanks_left is None else str(blanks_left)
+        lines.append(
+            f"| {deadline} | {days if days is not None else '?'} | {title} | {left} "
+            f"| {status} | `{folder}/` |"
+        )
 
     if skipped:
         lines += [
