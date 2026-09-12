@@ -20,7 +20,9 @@
 | Point of contact | Forrest Andrew Jones, Owner / Managing Member |
 | Phone / email | (832) 562-1355 / forrestjones2010@gmail.com |
 | Business size | Small business for NAICS 541219 (self-certified in SAM.gov against the size standard) |
-| Socio-economic status | [[FILL: state only what is actually certified — leave blank if none]] |
+| Socio-economic status | [[FILL: state only what is actually certified — write None if none]] |
+| 8(a) participant | [[FILL: yes with graduation date, or No]] |
+| Accounting system | [[FILL: what system you keep books in, and whether a Government adequacy review has ever been performed — if none, say so plainly]] |
 
 ## Company profile
 
@@ -30,28 +32,65 @@
 
 - Enrolled Agent (IRS, Circular 230): Randy White
 
+## Interest as a prime contractor
+
+[[FILL: state plainly whether you intend to compete as prime, as a subcontractor, or either — this is asked as its own item and a vague answer here weakens everything after it]]
+
 ## Relevant experience
 
 Market research notices are screening for demonstrated capability, so
 general statements are discounted. Each entry needs scope, size and
 who can confirm it.
 
-| # | Customer | Contract / order | Value | Period | Scope, and why it is relevant here |
-|---|---|---|---|---|---|
-| 1 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: $ value]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
-| 2 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: $ value]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
-| 3 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: $ value]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
+| # | Customer | Contract / order | Prime or sub | Your share (% and $) | Period | Scope, and why it is relevant here |
+|---|---|---|---|---|---|---|
+| 1 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
+| 2 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
+| 3 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
 
 - Commercial (non-federal) work counts here: [[FILL: list it if federal past performance is thin — say so plainly rather than leaving a gap]]
 
+### Technical skills against the draft PWS
+
+[[FILL: the specific skills that let you meet the PWS objectives — cite the PWS paragraph each one answers, and name the systems you actually know (accounting platforms, any Government financial system the notice names)]]
+
 ## Answers to the notice's questions
 
-No numbered questions were detectable in the notice text, which means
-either it asks none or they are inside an attachment. Open the notice
-and check before submitting — unanswered questions are the most common
-reason a capability statement is set aside.
+Taken from the notice itself, in its order. Evaluators read for their
+own questions — answering them one for one is the substance of the
+response.
 
-- [[FILL: paste each question from the notice and answer it]]
+**1. Does your company believe there is one or more specific NAICS and PSC code combinations that would be better suited to this requirement than the anticipated NAICS and PSC code aligned to this notice by the Government? If so, which one(s) and why?**
+
+[[FILL: your answer]]
+
+**2. Does your company believe there is one or more specific contract type or types that would be better suited to this requirement than the anticipated contract type identified in this notice by the Government? If so, what are they and why?**
+
+[[FILL: your answer]]
+
+**3. Does your company see any risk areas or any concerns with this overall effort? If so, what are they and how would you mitigate them?**
+
+[[FILL: your answer]]
+
+**4. Does your company consider the PWS details and other notice attachments, if any, to be an adequate basis for submitting a proposal? If not, what additional technical information would be needed?**
+
+[[FILL: your answer]]
+
+**5. Does your company believe there are unique support requirements not correctly captured and/or articulated in the PWS? If so, what are they?**
+
+[[FILL: your answer]]
+
+**6. Does your company believe these services meet the definition of a commercial service as defined in FAR 2.101?**
+
+[[FILL: your answer]]
+
+**7. Does your company currently provide similar services in support of commercial products or as standalone services to the general public under terms and conditions similar to those offered to the Federal Government?**
+
+[[FILL: your answer]]
+
+**8. Does your company offer and sell these services competitively in substantial quantities in the commercial marketplace based on established catalog or market prices for specific task performed or outcomes to be achieved and under standard terms and conditions? If so, what is/are the specific vehicle title(s) and your company s specific MAS/GWAC/IDIQ Contract Number(s) under that vehicle?**
+
+[[FILL: your answer]]
 
 ## Capacity and approach
 

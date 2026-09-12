@@ -187,3 +187,70 @@ def test_rebuilding_a_capability_response_keeps_your_answers(tmp_path):
         SSN, NOTICE_TEXT, BANK, str(tmp_path), notice_kind="Sources Sought")
     assert (again, status) == (out, "kept")
     assert open(answered).read() == "MY ANSWERS"
+
+
+# ---------- requirements this notice asks for explicitly ----------
+
+REAL_NOTICE = """
+1) Identify/define your company profile.
+h. Status of the company's accounting system including the last adequacy/acceptability review date.
+2) Describe your interest in this effort as a potential Prime Contractor.
+3) Describe your company's recent relevant experience. Responses shall:
+a. Detail your company's specific technical skills that ensure the capability to meet the objectives in Enclosure 1 DRAFT PWS.
+b. Describe similar work to include: i. the relevant contract number and involvement as a prime or subcontractor, and
+ii. The percentage and dollar amount of the work your company performed.
+4) Provide feedback in the form of responses to the following questions:
+a. Does your company believe there is one or more specific NAICS and PSC code combinations that would be better suited? If so, which one(s) and why?
+b. Does your company see any risk areas or any concerns with this overall effort? If so, what are they and how would you mitigate them?
+"""
+
+
+def test_a_conditional_follow_up_stays_with_its_question():
+    # "If so, which one(s) and why?" is a conditional on the question
+    # before it, not a question of its own.
+    questions = capability.extract_questions(REAL_NOTICE)
+    assert len(questions) == 2
+    assert "If so, which one(s) and why?" in questions[0]
+    assert "how would you mitigate them?" in questions[1]
+
+
+def test_a_heading_ending_before_a_question_is_not_itself_a_question():
+    # "Provide feedback in the form of responses to the following
+    # questions:" was being captured as question one, which pushed the
+    # first real question out of the list.
+    questions = capability.extract_questions(REAL_NOTICE)
+    assert not any(q.lower().startswith("provide feedback") for q in questions)
+
+
+def test_a_definition_preceding_a_question_is_not_captured():
+    text = ("Market prices means current prices established in the course of "
+            "ordinary trade. Does your company sell these services commercially?")
+    questions = capability.extract_questions(text)
+    assert len(questions) == 1
+    assert questions[0].startswith("Does your company")
+
+
+def test_accounting_system_status_is_asked_for():
+    # Asked on effectively every DoD services notice, and a small firm
+    # with no DCAA review has to answer it honestly rather than skip it.
+    text = capability.build_capability_markdown(SSN, REAL_NOTICE, BANK)
+    assert "Accounting system" in text
+    assert "adequacy review has ever been performed" in text
+
+
+def test_prime_or_subcontractor_intent_has_its_own_section():
+    text = capability.build_capability_markdown(SSN, REAL_NOTICE, BANK)
+    assert "## Interest as a prime contractor" in text
+
+
+def test_experience_asks_for_role_and_dollar_share():
+    # The notice wants what THIS company performed, not what its team did.
+    text = capability.build_capability_markdown(SSN, REAL_NOTICE, BANK)
+    assert "Prime or sub" in text
+    assert "percentage and dollar amount YOUR company performed" in text
+
+
+def test_technical_skills_are_tied_to_the_pws():
+    text = capability.build_capability_markdown(SSN, REAL_NOTICE, BANK)
+    assert "Technical skills against the draft PWS" in text
+    assert "cite" in text and "PWS paragraph" in text

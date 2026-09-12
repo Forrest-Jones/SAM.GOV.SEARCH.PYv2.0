@@ -30,13 +30,23 @@ FILL = "[[FILL: {}]]"
 # Sources Sought notices almost always carry a numbered or lettered list
 # of questions, and answering them one for one is the whole substance of a
 # good response. Evaluators read for their own questions, in their order.
-QUESTION_RE = re.compile(
-    r"(?:^|\s)((?:[a-z]|[ivx]{1,4}|\d{1,2})[.)]\s+[A-Z][^?]{15,400}\?)",
-    re.MULTILINE,
+#
+# Matching forward from a list marker over-captured: it swallowed the
+# "Provide feedback in the form of responses to the following questions:"
+# header together with the first real question, and picked up a definition
+# of "market prices" that happened to precede one. Working backwards from
+# each question mark to the nearest sentence boundary, and keeping only
+# fragments that actually open like a question, is both simpler and right.
+INTERROGATIVES = (
+    "does", "do", "did", "is", "are", "was", "were", "would", "will",
+    "can", "could", "should", "has", "have", "what", "which", "how",
+    "why", "who", "when", "if", "in what", "to what",
 )
 
+BOUNDARY_RE = re.compile(r"(?:[.;:!?]\s+|^\s*|\s(?:[a-z]|[ivx]{1,4}|\d{1,2})[.)]\s+)")
 
-def extract_questions(text, limit=25):
+
+def extract_questions(text, limit=30):
     """The notice's own questions, in the order it asks them.
 
     Returns [] when none are detectable rather than inventing a generic
@@ -45,11 +55,33 @@ def extract_questions(text, limit=25):
     """
     if not text:
         return []
+    flat = re.sub(r"\s+", " ", text)
     found, seen = [], set()
-    for match in QUESTION_RE.finditer(text):
-        question = re.sub(r"\s+", " ", match.group(1)).strip()
-        question = re.sub(r"^(?:[a-z]|[ivx]{1,4}|\d{1,2})[.)]\s+", "", question)
-        key = question.lower()[:80]
+
+    for mark in re.finditer(r"\?", flat):
+        end = mark.end()
+        # Walk back to the last sentence or list boundary before this "?".
+        start = 0
+        for boundary in BOUNDARY_RE.finditer(flat, 0, mark.start()):
+            start = boundary.end()
+        question = flat[start:end].strip()
+
+        lowered = question.lower()
+        if not any(lowered.startswith(word + " ") for word in INTERROGATIVES):
+            # A statement that merely precedes a question mark — a heading
+            # or a definition — is not itself a question.
+            continue
+        if not 20 <= len(question) <= 400:
+            continue
+
+        # "If so, which one(s) and why?" is a conditional on the question
+        # before it, not a question of its own. Kept attached so the answer
+        # box covers both halves, the way the notice asks them.
+        if found and re.match(r"^if (?:so|not|yes|applicable)\b", lowered) and len(question) <= 140:
+            found[-1] = found[-1] + " " + question
+            continue
+
+        key = lowered[:70]
         if key in seen:
             continue
         seen.add(key)
@@ -98,7 +130,9 @@ def build_capability_markdown(opp, description_text, company, notice_kind=""):
         f"| Phone / email | {value('phone', 'phone')} / {value('email', 'email')} |",
         f"| Business size | Small business for NAICS {opp.get('naicsCode') or FILL.format('NAICS')} "
         "(self-certified in SAM.gov against the size standard) |",
-        f"| Socio-economic status | {FILL.format('state only what is actually certified — leave blank if none')} |",
+        f"| Socio-economic status | {FILL.format('state only what is actually certified — write None if none')} |",
+        f"| 8(a) participant | {FILL.format('yes with graduation date, or No')} |",
+        f"| Accounting system | {FILL.format('what system you keep books in, and whether a Government adequacy review has ever been performed — if none, say so plainly')} |",
         "",
         "## Company profile",
         "",
@@ -116,21 +150,30 @@ def build_capability_markdown(opp, description_text, company, notice_kind=""):
         lines.append("")
 
     lines += [
+        "## Interest as a prime contractor",
+        "",
+        FILL.format("state plainly whether you intend to compete as prime, as a "
+                    "subcontractor, or either — this is asked as its own item and "
+                    "a vague answer here weakens everything after it"),
+        "",
         "## Relevant experience",
         "",
         "Market research notices are screening for demonstrated capability, so",
         "general statements are discounted. Each entry needs scope, size and",
         "who can confirm it.",
         "",
-        "| # | Customer | Contract / order | Value | Period | Scope, and why it is relevant here |",
-        "|---|---|---|---|---|---|",
+        "| # | Customer | Contract / order | Prime or sub | Your share (% and $) | Period | Scope, and why it is relevant here |",
+        "|---|---|---|---|---|---|---|",
     ]
     for i in range(1, 4):
         ref = references[i - 1] if i <= len(references) else {}
         lines.append(
             f"| {i} | {ref.get('customer') or FILL.format('customer')} "
             f"| {ref.get('contract') or FILL.format('contract number')} "
-            f"| {ref.get('value') or FILL.format('$ value')} "
+            # Both asked for explicitly and routinely: a notice wants to know
+            # what the company itself performed, not what its team did.
+            f"| {FILL.format('prime or subcontractor')} "
+            f"| {FILL.format('percentage and dollar amount YOUR company performed')} "
             f"| {ref.get('period') or FILL.format('start–end')} "
             f"| {(str(ref.get('scope') or '').strip() + ' — ') if ref.get('scope') else ''}"
             f"{FILL.format('why it is relevant to THIS requirement')} |"
@@ -139,6 +182,13 @@ def build_capability_markdown(opp, description_text, company, notice_kind=""):
     lines += [
         "",
         f"- Commercial (non-federal) work counts here: {FILL.format('list it if federal past performance is thin — say so plainly rather than leaving a gap')}",
+        "",
+        "### Technical skills against the draft PWS",
+        "",
+        FILL.format("the specific skills that let you meet the PWS objectives — cite "
+                    "the PWS paragraph each one answers, and name the systems you "
+                    "actually know (accounting platforms, any Government financial "
+                    "system the notice names)"),
         "",
         "## Answers to the notice's questions",
         "",

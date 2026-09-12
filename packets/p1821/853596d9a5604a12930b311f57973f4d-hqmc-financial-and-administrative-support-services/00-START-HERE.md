@@ -5,8 +5,8 @@
 | **Due** | **2026-09-30 (18 days out)** |
 | Notice type | Sources Sought |
 | Solicitation | M95494-26-SSN-ADCFAS |
-| Agency | DEPT OF DEFENSE.DEPT OF THE NAVY.USMC.MARCORP I&L.MARINE CORPS INSTALLATIONS COMMAND.MARINE CORPS INSTALLATIONS COMMAND HQ.COMMANDING OFFICER |
-| Set-aside | No Set aside used |
+| Agency | DEPT OF DEFENSE.DEPT OF THE NAVY.USMC.MARCORP I&L.MARINE CORPS INSTALLATIONS COMMAND |
+| Set-aside | None (full and open) |
 | NAICS / PSC | 541219 / R499 |
 | Where | see listing |
 | Contracting officer | david.godfrey@usmc.mil |
@@ -26,7 +26,7 @@ profile, relevant experience, then the notice's own questions in the
 notice's own order. Unanswered questions are the usual reason one of
 these gets set aside.
 
-There are **26 blanks** to fill, marked `[[FILL: ...]]`.
+There are **40 blanks** to fill, marked `[[FILL: ...]]`.
 
 **4. Send it.** `02-response-email.txt` is addressed and written.
 Confirm the submission method on the listing first.
@@ -45,7 +45,7 @@ Confirm the submission method on the listing first.
 - Offeror identity, UEI, CAGE, signatory and insurance filled from the fact bank
 - Past performance: none on file yet — add real contracts to company.toml
 - The notice's own questions pulled out and laid in its order
-- 2 solicitation attachment(s) downloaded
+- Attachment manifest written
 - Cover email drafted and addressed to the contracting officer
 
 ## Only you can do these
