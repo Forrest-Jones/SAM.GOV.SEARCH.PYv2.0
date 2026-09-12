@@ -1,0 +1,13 @@
+Attachments listed on SAM.gov notice 67e523e4d11c4db78d885a6661253032
+Listing: https://sam.gov/workspace/contract/opp/67e523e4d11c4db78d885a6661253032/view
+
+[downloaded] Answers-to-questions-on-CEHO-BPAs.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/11cf4905e3d7470c9f2ef307ad34ab36/download
+[downloaded] Solicitation---W912HQ26QA023.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/167422a0fb414f6cb07c12c1f6718187/download
+[downloaded] CEHO-BPAs---answer-regarding-labor-categories.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/647967341b2b4f86b071e0037e741efc/download
+[downloaded] Response-to-KTR-Questions.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/871d7e435edc4ef4bc345e454abd0c7e/download
+[downloaded] NAVFAC-USACE-PAST-PERFORMANCE-QUESTIONNAIRE-26-March-2024.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/bcd9cfdbc5e24e9dbbbc376ebfe05475/download

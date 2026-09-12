@@ -1,0 +1,11 @@
+Attachments listed on SAM.gov notice 06fb300b3d804d96b14636f855dfdd06
+Listing: https://sam.gov/workspace/contract/opp/06fb300b3d804d96b14636f855dfdd06/view
+
+[downloaded] C04a_Attachment-1_PWS_12444326Q0075.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ad67cc216bb749cfad587afea6db8893/download
+[downloaded] C04b_Attachment-2_Draft-Certificate_12444326Q0075.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/bb4f678ad24a4a169cf6ca75b4dbf108/download
+[downloaded] C04c_Attachment-3_Wage-Determination_12444326Q0075.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c0ed4058e258437cb156a87d77d50be2/download
+[downloaded] C04_Solicitation_12444326Q0075.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f467fc246f394ca9ae2107b732777acf/download
