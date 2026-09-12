@@ -833,3 +833,63 @@ def test_every_plain_key_of_a_profile_survives_the_toml_tables():
     company = company_mod.load_company("p1821")
     for key in ("legal_name", "uei", "cage", "address", "packet_naics"):
         assert company.get(key), f"{key} did not survive parsing"
+
+
+# ---------- running on an older interpreter ----------
+
+def test_the_toml_parser_is_optional_at_import_time():
+    # Live failure on a Mac running Anaconda's Python: tomllib is standard
+    # library only from 3.11, and assuming it broke startup with nothing
+    # but a ModuleNotFoundError. company.py must import either way.
+    import builtins
+    import importlib
+    import sys
+
+    real_import = builtins.__import__
+
+    def without_toml(name, *args, **kwargs):
+        if name in ("tomllib", "tomli"):
+            raise ModuleNotFoundError(f"No module named {name!r}")
+        return real_import(name, *args, **kwargs)
+
+    for name in ("company", "packet", "proposal"):
+        sys.modules.pop(name, None)
+    builtins.__import__ = without_toml
+    try:
+        module = importlib.import_module("company")
+        assert module.tomllib is None
+        loaded = module.load_company("p1821")
+        # Degrades to visible blanks with an actionable message, rather
+        # than taking the whole pipeline down.
+        assert "pip install tomli" in loaded["_error"]
+        required, _ = module.missing_fields(loaded)
+        assert len(required) == len(module.REQUIRED_FIELDS)
+        assert module.skip_reason(loaded, {"naicsCode": "541219"}) is None
+    finally:
+        builtins.__import__ = real_import
+        for name in ("company", "packet", "proposal"):
+            sys.modules.pop(name, None)
+        importlib.import_module("company")
+
+
+def test_requirements_pin_tomli_for_older_pythons():
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    text = open(os.path.join(root, "requirements.txt")).read()
+    assert "tomli" in text
+    assert 'python_version < "3.11"' in text, (
+        "must be marked, or pip installs a redundant backport on 3.11+")
+
+
+def test_the_launcher_checks_every_import_not_just_flask():
+    # The launcher skipped its install step because Flask happened to be
+    # present, and the app then died on the missing TOML parser.
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    script = open(os.path.join(root, "start.command")).read()
+    # Every module the app imports at startup has to be covered, however
+    # the script spells the check.
+    assert "for mod in flask requests" in script
+    assert 'python3 -c "import tomllib"' in script
+    assert 'python3 -c "import tomli"' in script
+    # ...and the install must be driven by whatever is missing, not by
+    # Flask alone, which is the bug this pins.
+    assert 'if [ -n "$missing" ]' in script

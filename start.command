@@ -31,16 +31,41 @@ command -v python3 >/dev/null 2>&1 || die \
 say "Getting the latest version..."
 git pull --quiet 2>/dev/null || say "(could not reach GitHub — starting with what is already here)"
 
-# Flask missing is the single most common reason this fails, and the error
-# scrolls past in a wall of pip output, so check for it directly.
-if ! python3 -c "import flask" >/dev/null 2>&1; then
-  say "First run — installing what it needs (about a minute)..."
+say "Using $(python3 -V 2>&1) at $(command -v python3)"
+
+# Every module the app imports at startup, not just Flask. Checking only
+# Flask meant that on a Python with Flask already installed the install
+# step was skipped entirely — and the app then died on a missing tomllib,
+# which is standard library only from Python 3.11 and comes from the
+# "tomli" package below that.
+missing=""
+for mod in flask requests; do
+  python3 -c "import $mod" >/dev/null 2>&1 || missing="$missing $mod"
+done
+python3 -c "import tomllib" >/dev/null 2>&1 \
+  || python3 -c "import tomli" >/dev/null 2>&1 \
+  || missing="$missing tomli"
+
+if [ -n "$missing" ]; then
+  say "Installing what is missing:$missing"
   python3 -m pip install --quiet --user -r requirements.txt -r webapp/requirements.txt 2>/dev/null \
+    || python3 -m pip install --quiet -r requirements.txt -r webapp/requirements.txt 2>/dev/null \
     || python3 -m pip install --quiet --break-system-packages -r requirements.txt -r webapp/requirements.txt \
-    || die "Could not install Flask. Try running this in Terminal:
-      python3 -m pip install flask requests"
+    || die "Could not install:$missing
+
+  Try this in Terminal, then double-click again:
+      python3 -m pip install$missing"
 fi
-python3 -c "import flask" >/dev/null 2>&1 || die "Flask still is not importable after installing."
+
+# Re-check, and name whichever one is still absent rather than failing
+# later inside the app with a bare traceback.
+for mod in flask requests; do
+  python3 -c "import $mod" >/dev/null 2>&1 || die "$mod is still not importable.
+  Try: python3 -m pip install $mod"
+done
+python3 -c "import tomllib" >/dev/null 2>&1 || python3 -c "import tomli" >/dev/null 2>&1 \
+  || die "No TOML parser for $(python3 -V 2>&1).
+  Try: python3 -m pip install tomli"
 
 # Port 5000 is held by AirPlay Receiver on macOS, which answers with a 403
 # that looks like a broken app. 8000 is the default; step along if taken.

@@ -22,7 +22,18 @@ outcomes here are "a real value you entered" and "an obvious hole".
 import os
 import re
 import sys
-import tomllib
+
+# tomllib joined the standard library in Python 3.11. On 3.7-3.10 the same
+# parser ships as "tomli", which is what requirements.txt installs there.
+# Assuming 3.11+ broke startup on a Mac running Anaconda's older Python
+# with nothing but a ModuleNotFoundError to go on.
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - depends on interpreter
+    try:
+        import tomli as tomllib
+    except ModuleNotFoundError:  # pragma: no cover
+        tomllib = None
 
 CONFIG_NAME = "company.toml"
 
@@ -91,6 +102,17 @@ def load_company(profile, path=None):
     in the packet. The pipeline still runs.
     """
     path = path or config_path()
+    if tomllib is None:
+        # Every offeror field becomes a visible blank rather than the whole
+        # pipeline failing, and the message says exactly how to fix it.
+        return {
+            "_source": None,
+            "_error": (
+                "no TOML parser available on Python "
+                f"{sys.version_info.major}.{sys.version_info.minor} — run: "
+                "python3 -m pip install tomli"
+            ),
+        }
     try:
         with open(path, "rb") as f:
             raw = tomllib.load(f)
