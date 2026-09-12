@@ -59,7 +59,8 @@ OPTIONS
   --include-restricted-set-asides
                         Also show set-asides you're not certified for (8(a), HUBZone,
                         SDVOSB, etc). Excluded by default so they don't clutter results.
-  --email               Force-send the email digest even if unchanged from defaults
+  --email               Fail loudly if the Gmail credentials are missing
+  --always-email        Send the digest even when nothing is new (daily run)
   --no-email            Never send an email, even if GMAIL_APP_PASSWORD is set
   --to EMAIL            Digest recipient (default forrestjones2010@gmail.com)
 
@@ -587,25 +588,73 @@ def write_draft(opp, pts, reasons, elig, description_text, drafts_dir):
     return path
 
 
-def send_email_digest(new_ones, to_addr, from_addr, app_password, profile_label=None):
+def format_notice_lines(pts, reasons, opp):
+    days_left = days_until_deadline(opp)
+    deadline = (opp.get("responseDeadLine") or "")[:10] or "not listed"
+    if days_left is not None and days_left >= 0:
+        deadline += f" ({days_left}d left)"
+    pop = opp.get("placeOfPerformance") or {}
+    where = ", ".join(
+        p for p in ((pop.get("city") or {}).get("name"), (pop.get("state") or {}).get("code")) if p
+    ) or "not listed"
+    lines = [
+        f"[{pts}] {opp.get('title')}",
+        f"  due {deadline} | {where} | NAICS {opp.get('naicsCode')}",
+        f"  set-aside: {opp.get('typeOfSetAsideDescription') or 'none (open to everyone)'}",
+    ]
+    if reasons:
+        lines.append(f"  why it matched: {reasons}")
+    lines.append(f"  {opp.get('uiLink', '-')}")
+    lines.append("")
+    return lines
+
+
+def send_email_digest(new_ones, to_addr, from_addr, app_password,
+                      profile_label=None, ranked=None, top_n=10):
+    """The daily digest. Leads with what's new, then lists the current best
+    matches so the mail is useful even on a day when nothing is new — which
+    is most days, and otherwise the reader can't tell a quiet day from a
+    broken search."""
     import smtplib
     from email.mime.text import MIMEText
 
-    # Two profiles now email the same inbox, so the subject and body have to
-    # say which business the notices belong to.
+    # Both profiles mail the same inbox, so the subject has to name the
+    # business or the two digests are indistinguishable.
     who = profile_label or "Proverbs 1821 Consulting"
-    lines = [f"{len(new_ones)} new SAM.gov opportunity(ies) — {who}:\n"]
-    for pts, reasons, opp in new_ones:
-        lines.append(f"[{pts}] {opp.get('title')}")
-        lines.append(f"  NAICS {opp.get('naicsCode')} | deadline {(opp.get('responseDeadLine') or '-')[:10]}")
-        lines.append(f"  {opp.get('uiLink', '-')}")
-        if reasons:
-            lines.append(f"  why: {reasons}")
-        lines.append("")
-    body = "\n".join(lines)
+    ranked = ranked or []
+    new_ids = {opp.get("noticeId") for _, _, opp in new_ones}
 
-    msg = MIMEText(body)
-    msg["Subject"] = f"SAM.gov: {len(new_ones)} new for {who}"
+    lines = [f"SAM.gov daily search — {who}", f"{date.today().strftime('%A, %B %d, %Y')}", ""]
+
+    if new_ones:
+        lines.append(f"NEW SINCE YESTERDAY ({len(new_ones)})")
+        lines.append("=" * 40)
+        lines.append("")
+        for pts, reasons, opp in new_ones:
+            lines += format_notice_lines(pts, reasons, opp)
+    else:
+        lines += ["Nothing new since yesterday.", ""]
+
+    others = [r for r in ranked if r[2].get("noticeId") not in new_ids and r[0] > 0]
+    if others:
+        lines.append(f"STILL OPEN — TOP MATCHES ({min(len(others), top_n)} of {len(others)})")
+        lines.append("=" * 40)
+        lines.append("")
+        for pts, reasons, opp in others[:top_n]:
+            lines += format_notice_lines(pts, reasons, opp)
+
+    lines += [
+        "-" * 40,
+        f"{len(ranked)} open notices matched your codes today.",
+        "Review packets for the best matches are in the repo under drafts/.",
+        "Nothing has been submitted — every bid stays your decision.",
+    ]
+
+    msg = MIMEText("\n".join(lines))
+    if new_ones:
+        msg["Subject"] = f"SAM.gov: {len(new_ones)} new for {who}"
+    else:
+        msg["Subject"] = f"SAM.gov: nothing new for {who}"
     msg["From"] = from_addr
     msg["To"] = to_addr
 
@@ -698,10 +747,15 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
             log(f"  drafted {path}")
 
     emailed = False
-    if new_ones and cfg["send_email"] and cfg.get("from_email") and cfg.get("app_password"):
+    have_creds = cfg.get("from_email") and cfg.get("app_password")
+    # A scheduled daily digest should arrive even on a quiet day, otherwise
+    # "no email" is ambiguous between nothing new and a broken search.
+    worth_sending = bool(new_ones) or cfg.get("always_email")
+    if cfg["send_email"] and have_creds and worth_sending:
         send_email_digest(
             new_ones, cfg["to_email"], cfg["from_email"], cfg["app_password"],
             profile_label=cfg.get("profile_label"),
+            ranked=ranked,
         )
         emailed = True
 
@@ -745,6 +799,8 @@ def main():
     ap.add_argument("--certs", type=str, default=",".join(DEFAULT_HELD_CERTS),
                     help=f"certifications held, comma-separated from: {','.join(CERTIFICATION_HINTS)}")
     ap.add_argument("--email", action="store_true")
+    ap.add_argument("--always-email", action="store_true",
+                    help="send the digest even when nothing is new (for the daily run)")
     ap.add_argument("--no-email", action="store_true")
     ap.add_argument("--to", type=str, default=DEFAULT_TO_EMAIL)
     args = ap.parse_args()
@@ -790,6 +846,7 @@ def main():
         "from_email": from_addr,
         "app_password": app_password,
         "send_email": not args.no_email,
+        "always_email": args.always_email,
     }
 
     result = run_search(cfg, api_key)
