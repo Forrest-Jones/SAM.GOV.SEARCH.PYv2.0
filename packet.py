@@ -22,6 +22,7 @@ machine signing those on your behalf is a false statement, not a feature.
 import csv
 import hashlib
 import json
+import mimetypes
 import os
 import re
 from datetime import date, datetime
@@ -198,6 +199,52 @@ BEFORE SENDING, CHECK:
 """
 
 
+def _sanitize(name):
+    return re.sub(r"[^A-Za-z0-9._-]+", "-", name or "").strip("-")[:80]
+
+
+def attachment_name(url, resp, index, taken):
+    """A real, unique filename for a downloaded attachment.
+
+    Every SAM.gov resource URL ends in the literal path segment
+    "download", so deriving the name from the URL gave all of a notice's
+    files the same name and each overwrote the last — thirteen documents
+    arriving as one. The actual filename is in Content-Disposition; when
+    that is absent the extension is inferred from the content type and
+    the index keeps it distinct.
+    """
+    headers = getattr(resp, "headers", None) or {}
+    disposition = headers.get("content-disposition") or headers.get("Content-Disposition") or ""
+    match = re.search(r"filename\*?=(?:UTF-8'')?\"?([^\";]+)\"?", disposition)
+    name = _sanitize(match.group(1)) if match else ""
+
+    if not name or name.lower() in ("download", "resources", "files"):
+        base = _sanitize(os.path.basename(url.split("?")[0]))
+        if base and base.lower() not in ("download", "resources", "files"):
+            name = base
+        else:
+            ctype = (headers.get("content-type") or headers.get("Content-Type") or "").split(";")[0].strip()
+            ext = mimetypes.guess_extension(ctype) if ctype else ""
+            name = f"attachment-{index:02d}{ext or ''}"
+
+    # Two attachments on one notice can legitimately share a name.
+    stem, ext = os.path.splitext(name)
+    candidate, n = name, 2
+    while candidate in taken:
+        candidate = f"{stem}-{n}{ext}"
+        n += 1
+    return candidate
+
+
+def has_downloads(dest_dir):
+    """Whether any attachment actually made it to disk, ignoring the
+    manifest itself."""
+    try:
+        return any(f != "MANIFEST.txt" for f in os.listdir(dest_dir))
+    except OSError:
+        return False
+
+
 def fetch_attachments(opp, dest_dir, session=None, log=print):
     """Downloads the solicitation's own files next to the draft, because
     the PWS and the forms are what actually have to be answered.
@@ -213,15 +260,16 @@ def fetch_attachments(opp, dest_dir, session=None, log=print):
     got, failed = [], []
 
     if session is not None:
-        for url in links:
-            name = re.sub(r"[^A-Za-z0-9._-]+", "-", os.path.basename(url.split("?")[0]))[:80]
-            name = name or f"attachment-{len(got) + len(failed) + 1}"
+        taken = set()
+        for index, url in enumerate(links, 1):
             try:
                 resp = session.get(url, timeout=60)
                 resp.raise_for_status()
                 if len(resp.content) > MAX_ATTACHMENT_BYTES:
                     failed.append((url, "larger than 15MB — download it by hand"))
                     continue
+                name = attachment_name(url, resp, index, taken)
+                taken.add(name)
                 with open(os.path.join(dest_dir, name), "wb") as f:
                     f.write(resp.content)
                 got.append((url, name))
@@ -353,10 +401,14 @@ def build_packet(opp, description_text, company, root, score=None, reasons="", s
 
     if existing:
         meta = _read_meta(out)
-        if meta.get("company_fingerprint") == fingerprint:
-            return out, meta.get("blanks_left"), "kept"
         replaceable = untouched_files(out, meta)
-        if not replaceable:
+        if meta.get("company_fingerprint") == fingerprint or not replaceable:
+            # The drafts are current or yours, but the government's own
+            # documents are neither — if they are missing from disk that is
+            # pure loss, so fetch them even when nothing else changes.
+            attachments_dir = os.path.join(out, "attachments")
+            if (opp.get("resourceLinks") or []) and not has_downloads(attachments_dir):
+                fetch_attachments(opp, attachments_dir, session=session)
             return out, meta.get("blanks_left"), "kept"
         status = "refreshed" if replaceable == set(GENERATED) else "partial"
     else:

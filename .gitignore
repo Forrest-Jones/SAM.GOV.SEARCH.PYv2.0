@@ -3,6 +3,9 @@ __pycache__/
 .venv/
 venv/
 *.csv
+# ...but a packet's price sheet is the centrepiece of the packet, and
+# *.csv was silently keeping every one of them out of the repo.
+!packets/**/*.csv
 .env
 .env.local
 last_results.json

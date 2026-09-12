@@ -306,3 +306,90 @@ def test_batch_index_sorts_by_soonest_deadline(tmp_path):
     text = open(path).read()
     assert text.index("Closes soon") < text.index("Closes later")
     assert "Not built" in text and "skip_psc" in text
+
+
+# ---------- attachment naming (every SAM.gov URL ends in "download") ----------
+
+class FakeResp:
+    def __init__(self, content=b"pdf", headers=None):
+        self.content = content
+        self.headers = headers or {}
+
+    def raise_for_status(self):
+        pass
+
+
+class FakeSession:
+    """Serves every URL, the way SAM.gov does: the path ends in /download
+    and the real filename arrives in Content-Disposition."""
+
+    def __init__(self, headers_per_url=None):
+        self.headers_per_url = headers_per_url or {}
+
+    def get(self, url, **kw):
+        return FakeResp(headers=self.headers_per_url.get(url, {}))
+
+
+def test_every_attachment_gets_its_own_file(tmp_path):
+    # The live bug: thirteen documents on one notice, every URL ending in
+    # "/download", all written to the same name — twelve files lost.
+    urls = [f"https://sam.gov/api/prod/opps/v3/opportunities/resources/files/{i:032x}/download"
+            for i in range(13)]
+    opp = dict(OPP, resourceLinks=urls)
+    got, failed = packet.fetch_attachments(opp, str(tmp_path / "att"), session=FakeSession())
+    assert failed == []
+    names = [name for _, name in got]
+    assert len(names) == 13
+    assert len(set(names)) == 13, "each attachment must land in its own file"
+    on_disk = {f for f in os.listdir(tmp_path / "att") if f != "MANIFEST.txt"}
+    assert len(on_disk) == 13
+
+
+def test_content_disposition_filename_is_preferred(tmp_path):
+    url = "https://sam.gov/api/prod/opps/v3/opportunities/resources/files/abc/download"
+    opp = dict(OPP, resourceLinks=[url])
+    session = FakeSession({url: {"content-disposition": 'attachment; filename="PWS Statement.pdf"'}})
+    got, _ = packet.fetch_attachments(opp, str(tmp_path / "att"), session=session)
+    assert got[0][1] == "PWS-Statement.pdf"
+
+
+def test_content_type_supplies_an_extension_when_there_is_no_filename(tmp_path):
+    url = "https://sam.gov/x/download"
+    opp = dict(OPP, resourceLinks=[url])
+    session = FakeSession({url: {"content-type": "application/pdf"}})
+    got, _ = packet.fetch_attachments(opp, str(tmp_path / "att"), session=session)
+    assert got[0][1].endswith(".pdf")
+
+
+def test_duplicate_filenames_on_one_notice_do_not_collide(tmp_path):
+    urls = ["https://sam.gov/a/download", "https://sam.gov/b/download"]
+    opp = dict(OPP, resourceLinks=urls)
+    headers = {u: {"content-disposition": 'attachment; filename="SOW.pdf"'} for u in urls}
+    got, _ = packet.fetch_attachments(opp, str(tmp_path / "att"), session=FakeSession(headers))
+    names = [n for _, n in got]
+    assert names == ["SOW.pdf", "SOW-2.pdf"]
+
+
+def test_a_kept_packet_still_recovers_missing_attachments(tmp_path):
+    # The drafts may be current or hand-edited, but the government's own
+    # documents are neither — missing ones are pure loss, so a rebuild
+    # fetches them even when nothing else changes.
+    url = "https://sam.gov/x/download"
+    opp = dict(OPP, resourceLinks=[url])
+    session = FakeSession({url: {"content-disposition": 'attachment; filename="SOW.pdf"'}})
+    out, _, _ = packet.build_packet(opp, "", FILLED, str(tmp_path), 4, "", session=session)
+    sow = os.path.join(out, "attachments", "SOW.pdf")
+    assert os.path.exists(sow)
+
+    os.remove(sow)
+    _, _, status = packet.build_packet(opp, "", FILLED, str(tmp_path), 4, "", session=session)
+    assert status == "kept"
+    assert os.path.exists(sow), "a kept packet must re-fetch attachments it has lost"
+
+
+def test_the_price_sheet_is_not_gitignored():
+    # *.csv in .gitignore silently kept every price sheet out of the repo,
+    # so the centrepiece of each packet never reached GitHub.
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    rules = open(os.path.join(root, ".gitignore")).read()
+    assert "!packets/**/*.csv" in rules
