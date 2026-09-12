@@ -79,18 +79,19 @@ import requests
 
 API_URL = "https://api.sam.gov/opportunities/v2/search"
 
-# Every NAICS code that has appeared in this entity's SAM.gov registration
-# history (CAGE 22ND2), from the registration audit. Searching a code the
-# registration doesn't currently carry costs only a little noise; MISSING one
-# costs opportunities, so this is deliberately the union of all four
-# registration events rather than a guess at today's state.
+# Every NAICS code in this entity's SAM.gov registration (CAGE 22ND2),
+# assembled from the registration audit's four events.
 #
-# This is a SEARCH list, not proof of registration. The audit left one
-# question open: whether the 8/19/26 update replaced or merely supplemented
-# the 541-series. If it replaced them, only the five industrial codes plus
-# 541620/541618 are on file today. Size standards and set-aside
-# representations depend on the real registration, so confirm against
-# sam.gov -> Entity Management -> Assertions before certifying a bid.
+# The audit's open question — whether the 8/19/26 update replaced or merely
+# supplemented the 541-series — is resolved: it ADDED. The registration has
+# only ever grown, never shrunk, so these are codes actually carried today,
+# not just a defensive search net. (Confirmed by the registrant, 9/12/26.)
+#
+# Two items still worth confirming against sam.gov -> Entity Management ->
+# Assertions before a bid leans on them: the 9/9/26 set was recorded as
+# recommended but never confirmed as entered, and 541211 never appeared in
+# the audit at all. Searching them costs nothing either way; certifying size
+# standard or set-aside status against them does.
 DEFAULT_NAICS = [
     # --- Initial registration, ~7/7/26 ---
     "541611",  # Admin & General Management Consulting (was primary)
@@ -109,7 +110,7 @@ DEFAULT_NAICS = [
     "562211",  # Hazardous Waste Treatment & Disposal
     "811310",  # Commercial & Industrial Machinery Repair
     "333998",  # All Other General Purpose Machinery Mfg (corrected from 333999)
-    # --- Recommended 9/9/26, not confirmed as entered ---
+    # --- Recommended 9/9/26 — still unconfirmed as entered ---
     "541213",  # Tax Preparation Services
     "541219",  # Other Accounting Services
     "238190",  # Other Building Exterior Contractors — raised as a maybe for
