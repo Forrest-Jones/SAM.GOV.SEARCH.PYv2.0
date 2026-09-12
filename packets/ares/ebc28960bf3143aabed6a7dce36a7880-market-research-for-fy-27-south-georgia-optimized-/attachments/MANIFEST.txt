@@ -1,7 +1,7 @@
 Attachments listed on SAM.gov notice ebc28960bf3143aabed6a7dce36a7880
 Listing: https://sam.gov/workspace/contract/opp/ebc28960bf3143aabed6a7dce36a7880/view
 
-[downloaded] download
+[downloaded] South-GA-ORC-PWS_DRAFT_USACE_CLEAN.docx
              https://sam.gov/api/prod/opps/v3/opportunities/resources/files/7b6be148b32247a9908cb0bdfbcfea4f/download
-[downloaded] download
+[downloaded] download.png
              https://sam.gov/api/prod/opps/v3/opportunities/resources/files/84af6856c92a4ecb8e5b87623baebce6/download

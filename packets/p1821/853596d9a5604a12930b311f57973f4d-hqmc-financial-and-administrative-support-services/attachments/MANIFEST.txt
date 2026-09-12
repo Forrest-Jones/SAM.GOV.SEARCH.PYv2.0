@@ -1,7 +1,7 @@
 Attachments listed on SAM.gov notice 853596d9a5604a12930b311f57973f4d
 Listing: https://sam.gov/workspace/contract/opp/853596d9a5604a12930b311f57973f4d/view
 
-[downloaded] download
+[downloaded] SSN_ADCFAS_Services_10Sep26.pdf
              https://sam.gov/api/prod/opps/v3/opportunities/resources/files/6cb3f2fcd5314533bf6349e0b2d0f842/download
-[downloaded] download
+[downloaded] SSN_ADCFAS_Enclosure_1_PWS_DRAFT_10Sep26.pdf
              https://sam.gov/api/prod/opps/v3/opportunities/resources/files/6d4089b8c3824d87b4e9dc6a064d4aa3/download
