@@ -1,0 +1,4 @@
+# One line per daily-search run, appended by .github/workflows/daily-search.yml.
+# Two jobs: a permanent record of every run, and a daily commit so GitHub never
+# disables the 10:00 AM schedule for 60 days of repository inactivity.
+# Switch it off with KEEPALIVE: "off" in that workflow's last step.

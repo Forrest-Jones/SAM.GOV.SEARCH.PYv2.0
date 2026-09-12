@@ -62,14 +62,48 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python3 find_opportunities.py --profile ares --always-email
 
-      - name: Commit updated state and drafts
+      # GitHub switches off a scheduled workflow after 60 days with no
+      # repository activity. Nothing would break loudly — the searches would
+      # just stop arriving. So every run appends one line to
+      # .log/daily-search.log and commits it, which means there is always a
+      # push within the last 24 hours and the 60-day clock never gets past 1.
+      # The line doubles as a permanent record of every run.
+      #
+      # To switch the heartbeat off, set KEEPALIVE below to "off". The search
+      # and the email still run; only the daily commit stops (and the 60-day
+      # clock starts counting again).
+      - name: Commit results and keep the schedule alive
         if: always() && steps.gate.outputs.skip != 'true'
+        env:
+          KEEPALIVE: "on"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage the real output first, so the heartbeat line can record
+          # whether this run actually found anything.
           git add -A state-*.sqlite3 drafts/
-          git diff --cached --quiet && echo "nothing new to commit" && exit 0
-          git commit -m "chore: daily search $(date -u +%Y-%m-%d)"
+          if git diff --cached --quiet; then
+            results="no new notices"
+          else
+            results="new results"
+          fi
+
+          if [ "$KEEPALIVE" = "on" ]; then
+            mkdir -p .log
+            printf '%s  run %s  %s  %s\n' \
+              "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              "$GITHUB_RUN_NUMBER" "$GITHUB_EVENT_NAME" "$results" \
+              >> .log/daily-search.log
+            git add .log/daily-search.log
+          fi
+
+          if git diff --cached --quiet; then
+            echo "nothing to commit — keepalive is off and there are no new results"
+            exit 0
+          fi
+
+          git commit -m "chore: daily search $(date -u +%Y-%m-%d) - $results"
           # A search takes minutes, so main can move while it runs — a push
           # straight from the checked-out SHA then fails "fetch first" and the
           # results are lost. Rebase onto whatever landed meanwhile, and retry

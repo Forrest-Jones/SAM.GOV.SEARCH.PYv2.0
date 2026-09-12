@@ -142,11 +142,40 @@ there for scripting/CI use.
 
 ## Scheduling (GitHub Actions)
 
-`.github/workflows/daily-search.yml` runs the search daily at 12:00 UTC
-(and on-demand via workflow_dispatch), then commits the updated
-`state.sqlite3` and any new `drafts/*.md` back to the repo — so drafts
-are reviewable right here on GitHub, and the "new since last run" diff
-persists across runs.
+`.github/workflows/daily-search.yml` runs both profiles once a day at
+**10:00 AM Houston time**, and on demand from the Actions tab
+(workflow_dispatch). Each profile gets its own search, its own state
+file and its own email digest.
+
+GitHub's cron is UTC-only and ignores daylight saving, so a single entry
+would drift by an hour twice a year. Two are registered — 15:00 and
+16:00 UTC — and the first step checks the real `America/Chicago` hour
+and skips the one that isn't 10:00. Expect one full run and one run that
+exits in seconds; the fast one is the other half of the pair, not a
+failure.
+
+After the searches, the workflow commits any updated
+`state-<profile>.sqlite3` and new `drafts/*.md` back to `main`, so
+drafts are reviewable right here on GitHub and the "new since last run"
+diff survives between runs.
+
+### Keeping the schedule alive
+
+GitHub disables a scheduled workflow after 60 days with no repository
+activity. Nothing breaks loudly — the daily email would just stop
+arriving. So every run also appends one line to `.log/daily-search.log`
+and commits it:
+
+```
+2026-09-12T15:00:11Z  run 9  schedule  no new notices
+```
+
+That guarantees a push within the last 24 hours, so the 60-day counter
+never gets past 1. The file is also a permanent record of every run.
+
+To switch it off, set `KEEPALIVE: "off"` in the workflow's last step.
+The search and the email keep working; only the daily commit stops — and
+the 60-day clock starts running again.
 
 Add these as repository secrets (Settings -> Secrets and variables ->
 Actions):
