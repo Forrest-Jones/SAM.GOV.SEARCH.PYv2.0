@@ -140,6 +140,66 @@ Change which certifications you hold from the Web UI's Settings tab
 code changes needed. The CLI's `--naics`/module-level defaults are still
 there for scripting/CI use.
 
+## Bid packets (the conveyor belt)
+
+Finding a contract is the easy half. The work is the paperwork, and most
+of that paperwork is the same forty facts every single time.
+
+Put those facts in `company.toml` once — UEI, CAGE, signatory,
+insurance, past-performance references, labor rates. Check what is still
+missing at any time:
+
+```bash
+python3 company.py --profile p1821
+```
+
+Then build a day's tray:
+
+```bash
+python3 find_opportunities.py --profile p1821 --batch 10
+```
+
+Each match becomes a folder under `packets/<profile>/`:
+
+```
+packets/p1821/<notice-id>-<title>/
+  00-START-HERE.md      five steps, deadline, and the live blank count
+  01-proposal.md        the full draft, your facts already in it
+  02-price-sheet.csv    your rate card, with self-totalling formulas
+  03-quote-email.txt    addressed to the contracting officer, ready to edit
+  attachments/          the solicitation's own files, plus a manifest
+```
+
+`packets/<profile>/INDEX.md` lists the batch, soonest deadline first.
+
+With an empty fact bank a packet leaves **69** blanks. With it filled,
+**26** — and what remains is only what genuinely changes per bid: hours,
+the technical narrative, and why each past-performance contract is
+relevant to *this* requirement.
+
+Rebuilding never overwrites a packet you have started, so it is safe to
+run daily.
+
+### What it will not do
+
+- **Submit.** There is no SAM.gov submission API, and a federal offer
+  carries signed representations and certifications. A machine signing
+  those is a false statement, not a feature. The packet is prepared; you
+  send it.
+- **Price.** A price is a binding offer. Rates come from your rate card;
+  hours and totals stay yours.
+- **Invent.** Anything not in the fact bank stays a visible
+  `[[FILL: ...]]`. A fabricated past-performance reference on a federal
+  submission is a false claim, so the generator would rather leave a hole
+  that is obviously a hole.
+
+### Stopping packets you don't want
+
+Set `skip_psc` or `skip_keywords` in `company.toml`. The belt skips those
+notices and `INDEX.md` records what it skipped and why — so the first
+time a packet shows up for work you don't perform, one line stops it
+forever.
+
 ## Scheduling (GitHub Actions)
 
 `.github/workflows/daily-search.yml` runs both profiles once a day at

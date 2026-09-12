@@ -1,0 +1,98 @@
+# =====================================================================
+# company.toml — the fact bank
+#
+# Fill this in ONCE. Every proposal packet reads from here, so a fact
+# entered today is a fact filled automatically on every bid from now on.
+# Anything left blank shows up as a visible [[FILL: ...]] in the packet —
+# nothing is ever guessed or invented on a federal submission.
+#
+# Check what is still missing at any time:
+#     python3 company.py
+#
+# This repository is PRIVATE. If that ever changes, or you add
+# collaborators, remember that past-performance reference phone numbers
+# and emails below become visible to everyone with repo access.
+# =====================================================================
+
+[shared]
+# The person with authority to sign a binding offer. On a federal
+# response this must be a real person who can obligate the company.
+signatory_name  = ""
+signatory_title = ""
+phone           = ""
+email           = "forrestjones2010@gmail.com"
+
+# Kept current so packets can state it rather than leaving a blank.
+sam_registration_expires = ""     # e.g. "2027-07-07"
+
+# Insurance and bonding get asked for constantly. Enter once.
+insurance_carrier       = ""
+insurance_gl_limit      = ""      # e.g. "$2,000,000 general aggregate"
+workers_comp            = ""      # e.g. "Statutory, TX"
+bonding_capacity_single = ""      # leave blank if you do not bond
+bonding_capacity_total  = ""
+
+# Work the conveyor belt should never build a packet for, no matter how
+# well it scores. This is the brake: add a PSC or a phrase the first time
+# a packet shows up for work you do not actually perform, and it will
+# never appear again.
+skip_psc      = []                # e.g. ["Z2AZ", "Y1AZ"]
+skip_keywords = []                # e.g. ["foundation repair", "roofing"]
+
+# =====================================================================
+# Proverbs 1821 — tax, accounting, audit, evaluation
+# =====================================================================
+[p1821]
+legal_name = ""
+uei        = ""                   # 12 characters, from your SAM.gov registration
+cage       = ""                   # 5 characters
+address    = ""                   # street, city, state, ZIP as SAM has it
+
+# 2-3 sentences. This is dropped into every cover letter, so write it
+# once, well: what you do, for whom, and why a contracting officer
+# should believe you can do it.
+capability_statement = ""
+
+# ONLY real, verifiable contracts. A plausible-sounding invented
+# reference is a false statement on a federal submission.
+[[p1821.past_performance]]
+customer     = ""
+contract     = ""
+value        = ""
+period       = ""
+scope        = ""
+ref_name     = ""
+ref_phone    = ""
+ref_email    = ""
+
+# Your standard labor categories and rates. These pre-fill the price
+# sheet so the only thing left per bid is HOURS.
+[[p1821.rate_card]]
+category = ""
+unit     = "hr"
+rate     = ""
+
+# =====================================================================
+# Ares Robotics — waste, remediation, environmental, machinery
+# =====================================================================
+[ares]
+legal_name = ""
+uei        = ""
+cage       = ""
+address    = ""
+capability_statement = ""
+
+[[ares.past_performance]]
+customer     = ""
+contract     = ""
+value        = ""
+period       = ""
+scope        = ""
+ref_name     = ""
+ref_phone    = ""
+ref_email    = ""
+
+[[ares.rate_card]]
+category = ""
+unit     = "hr"
+rate     = ""

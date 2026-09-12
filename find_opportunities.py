@@ -780,6 +780,68 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
     }
 
 
+def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
+                packets_root, log=lambda m: print(m, file=sys.stderr)):
+    """The conveyor belt: turn the top N open matches into packet folders.
+
+    Works off the full ranked list rather than only what is new, because
+    the goal is N packets in the tray today — a notice that was new
+    yesterday and is still open is still worth bidding.
+    """
+    import requests
+
+    import packet
+    from company import load_company, missing_fields, skip_reason
+
+    company = load_company(profile_key)
+    required, leverage = missing_fields(company)
+    if company.get("_error"):
+        log(f"  !! {company['_error']} — every offeror field will be a blank")
+    elif required:
+        log(f"  !! fact bank incomplete: {len(required)} required field(s) blank "
+            f"({', '.join(required[:3])}{'...' if len(required) > 3 else ''})")
+        log("     packets still build, but those blanks repeat on every one — "
+            "run: python3 company.py --profile " + profile_key)
+
+    # Attachment URLs on SAM.gov need the same API key the search uses.
+    session = requests.Session()
+    original_get = session.get
+
+    def keyed_get(url, **kw):
+        if "api_key=" not in url:
+            url += ("&" if "?" in url else "?") + "api_key=" + api_key
+        return original_get(url, **kw)
+
+    session.get = keyed_get
+
+    built, skipped = [], []
+    for pts, reasons, opp in ranked:
+        if len(built) >= count:
+            break
+        why = skip_reason(company, opp)
+        if why:
+            skipped.append((opp, why))
+            continue
+        nid = opp.get("noticeId")
+        description_text = descriptions.get(nid)
+        if description_text is None:
+            # Costs one call against the 1,000/day budget, and the packet is
+            # worth far more with the government's own words in it.
+            description_text = fetch_description(opp, api_key)
+        out, blanks_left = packet.build_packet(
+            opp, description_text, company, packets_root, pts, reasons, session=session,
+        )
+        built.append((out, opp, blanks_left))
+        state = "reused (already started)" if blanks_left is None else f"{blanks_left} blanks left"
+        log(f"  packet {os.path.basename(out)} — {state}")
+
+    index = packet.write_batch_index(built, skipped, packets_root, profile["label"])
+    log(f"\n{len(built)} packet(s) ready — start here: {index}")
+    if skipped:
+        log(f"{len(skipped)} skipped by your skip_psc / skip_keywords rules")
+    return built, skipped
+
+
 def main():
     # Progress and summary lines go to stderr, the ranked list to stdout.
     # Redirected to a file (a CI log), stdout is block-buffered and flushes
@@ -807,6 +869,12 @@ def main():
     ap.add_argument("--draft-min-score", type=int, default=None,
                     help="default: the profile's own threshold")
     ap.add_argument("--no-drafts", action="store_true")
+    ap.add_argument("--batch", type=int, default=0, metavar="N",
+                    help="build N submission-ready bid packets from the top matches "
+                         "(the conveyor belt: folder each, with price sheet, cover email "
+                         "and the solicitation's own attachments)")
+    ap.add_argument("--packets-dir", type=str, default=None,
+                    help="default: packets/<profile>")
     ap.add_argument("--include-restricted-set-asides", action="store_true")
     ap.add_argument("--include-expired", action="store_true",
                     help="also show notices whose response deadline has already passed")
@@ -930,6 +998,15 @@ def main():
         f"(tracked in {cfg['db_path']})",
         file=sys.stderr,
     )
+
+    if args.batch:
+        packets_root = args.packets_dir or os.path.join("packets", args.profile)
+        print(f"\nBuilding up to {args.batch} bid packet(s) in {packets_root}/",
+              file=sys.stderr)
+        build_batch(
+            args.batch, args.profile, profile, ranked,
+            result["descriptions"], api_key, packets_root,
+        )
 
 
 if __name__ == "__main__":

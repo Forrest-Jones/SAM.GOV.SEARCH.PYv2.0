@@ -22,6 +22,8 @@ import os
 import re
 from datetime import date
 
+from company import filled_rows
+
 FILL = "[[FILL: {}]]"
 
 # Section headings commonly used in a PWS/SOW. When the solicitation text
@@ -251,11 +253,27 @@ def build_proposal_markdown(opp, description_text, profile, score=None, reasons=
         "| # | Customer | Contract # | Value | Period | Scope relevance | Reference contact |",
         "|---|---|---|---|---|---|---|",
     ]
+    references = filled_rows(profile, "past_performance")
     for i in range(1, 4):
+        ref = references[i - 1] if i <= len(references) else {}
+        contact = ", ".join(
+            str(ref.get(k) or "").strip()
+            for k in ("ref_name", "ref_phone", "ref_email")
+            if str(ref.get(k) or "").strip()
+        )
         lines.append(
-            f"| {i} | {FILL.format('customer')} | {FILL.format('contract number')} | "
-            f"{FILL.format('$ value')} | {FILL.format('start–end')} | "
-            f"{FILL.format('why it is relevant to THIS requirement')} | {FILL.format('name, phone, email')} |"
+            f"| {i} "
+            f"| {ref.get('customer') or FILL.format('customer')} "
+            f"| {ref.get('contract') or FILL.format('contract number')} "
+            f"| {ref.get('value') or FILL.format('$ value')} "
+            f"| {ref.get('period') or FILL.format('start–end')} "
+            # Relevance is per-solicitation by definition: the same contract
+            # is relevant to this requirement for a different reason than to
+            # the last one, so the stored scope is offered as a starting
+            # point and the tailoring stays a blank.
+            f"| {(str(ref.get('scope') or '').strip() + ' — ') if ref.get('scope') else ''}"
+            f"{FILL.format('why it is relevant to THIS requirement')} "
+            f"| {contact or FILL.format('name, phone, email')} |"
         )
 
     lines += [
@@ -269,11 +287,21 @@ def build_proposal_markdown(opp, description_text, profile, score=None, reasons=
         "| Labor category | Qty / hours | Unit | Rate | Extended |",
         "|---|---|---|---|---|",
     ]
-    for _ in range(4):
-        lines.append(
-            f"| {FILL.format('category')} | {FILL.format('hours')} | {FILL.format('hr/ea')} | "
-            f"{FILL.format('$rate')} | {FILL.format('$total')} |"
-        )
+    rate_card = filled_rows(profile, "rate_card")
+    if rate_card:
+        # Rates come from the fact bank; hours are the only genuinely
+        # per-solicitation number, so they are the only blank left here.
+        for row in rate_card:
+            lines.append(
+                f"| {row.get('category')} | {FILL.format('hours')} | "
+                f"{row.get('unit') or 'hr'} | {row.get('rate')} | {FILL.format('$total')} |"
+            )
+    else:
+        for _ in range(4):
+            lines.append(
+                f"| {FILL.format('category')} | {FILL.format('hours')} | {FILL.format('hr/ea')} | "
+                f"{FILL.format('$rate')} | {FILL.format('$total')} |"
+            )
     lines += [
         f"| **Total** | | | | **{FILL.format('$ total offered price')}** |",
         "",
@@ -299,10 +327,23 @@ def build_proposal_markdown(opp, description_text, profile, score=None, reasons=
         )
     lines += [
         "- [ ] No active exclusions/debarment",
+        f"- [ ] SAM registration active through {profile.get('sam_registration_expires') or FILL.format('SAM expiry date')}",
         "- [ ] Any required solicitation-specific forms completed (SF-1449, SF-33, etc.)",
         (profile.get("certifications_text") or "").strip(),
         "",
-        "## 9. Submission checklist",
+        "## 9. Insurance and bonding",
+        "",
+        "Requested on most commercial-item buys. Values come from the fact bank.",
+        "",
+        "| Item | Value |",
+        "|---|---|",
+        f"| Carrier | {profile_value(profile, 'insurance_carrier', 'insurance carrier')} |",
+        f"| General liability | {profile_value(profile, 'insurance_gl_limit', 'GL limit')} |",
+        f"| Workers compensation | {profile_value(profile, 'workers_comp', 'workers comp')} |",
+        f"| Bonding (single / aggregate) | {profile.get('bonding_capacity_single') or 'n/a'}"
+        f" / {profile.get('bonding_capacity_total') or 'n/a'} |",
+        "",
+        "## 10. Submission checklist",
         "",
         f"- [ ] Confirmed submission method and address from the solicitation (not assumed)",
         f"- [ ] Submitted before the deadline: **{deadline}** (confirm the time zone)",
