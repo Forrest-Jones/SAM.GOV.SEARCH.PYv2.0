@@ -10,6 +10,11 @@ on:
     #   15:xx UTC = 10:xx CDT (summer) / 09:xx CST (winter)
     #   16:xx UTC = 11:xx CDT (summer) / 10:xx CST (winter)
     #
+    # Whichever of the pair arrives first at or after 10:00 local does the
+    # work; the other finds today's run already logged and stops. That also
+    # absorbs a late delivery, which GitHub warns about and which already
+    # cost one run.
+    #
     # Minute 17, not 0, on purpose. GitHub's own docs name the start of every
     # hour as a high-load window where the schedule event gets delayed or
     # dropped, and a 15:00 entry is queued behind everyone else's :00 cron.
@@ -26,18 +31,40 @@ jobs:
   search:
     runs-on: ubuntu-latest
     steps:
-      - name: Run only at 10:00 America/Chicago
+      # Checked out before the gate, because the gate needs to see whether
+      # today's run already happened.
+      - uses: actions/checkout@v4
+
+      - name: Run once a day, at or after 10:00 America/Chicago
         id: gate
         run: |
           hour=$(TZ=America/Chicago date +%H)
-          echo "local hour in Houston: $hour"
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$hour" != "10" ]; then
-            echo "not 10:00 local — this is the other DST cron, skipping"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          fi
+          today=$(date -u +%Y-%m-%d)
+          echo "local hour in Houston: $hour (UTC date $today)"
 
-      - uses: actions/checkout@v4
-        if: steps.gate.outputs.skip != 'true'
+          # The first version of this gate demanded the local hour be
+          # exactly 10, to keep only the correct half of the DST cron pair.
+          # It worked, and then threw away the first scheduled run that ever
+          # fired: GitHub delivered the event two hours late, local time was
+          # 13:00, and the gate discarded it — turning a late run into no
+          # run at all. GitHub states plainly that the schedule event can be
+          # delayed, so a guard that only tolerates the exact minute is a
+          # guard that fails on the platform's documented behaviour.
+          #
+          # Run-once-per-day is the property actually wanted. Too early and
+          # the other cron of the pair will cover it; already run today and
+          # there is nothing to do; otherwise go, however late it is.
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "$hour" -lt 10 ]; then
+              echo "before 10:00 local — the later cron covers today"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            elif [ -f .log/daily-search.log ] && grep -q "^$today" .log/daily-search.log; then
+              echo "already ran today — nothing to do"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "first run of the day, at or after 10:00 local — going"
+            fi
+          fi
 
       - uses: actions/setup-python@v5
         if: steps.gate.outputs.skip != 'true'
