@@ -374,3 +374,9 @@ ul.cert-held { list-style: none; padding: 0; margin: 0 0 10px; }
 ul.cert-held li { padding: 5px 0; font-size: 14px; }
 li.cert-yes { color: var(--go, #1f6b4a); font-weight: 600; }
 li.cert-no { color: #8b8b8b; }
+
+/* One company in the header; the selector picks a kind of work, not a business. */
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand-name { font-weight: 700; }
+.switch-label { font-size: 12px; text-transform: uppercase; letter-spacing: .07em;
+  color: #6b7b88; margin-left: 14px; }

@@ -24,8 +24,13 @@
 
   <div id="app" hidden>
     <header class="topbar">
-      <div class="brand">📋 Contract Finder</div>
-      <select id="profile-switch" class="profile-switch" aria-label="Which business"></select>
+      <div class="brand">
+        <span class="brand-mark">📋</span>
+        <span class="brand-name">Proverbs 1821 Consulting</span>
+      </div>
+      <label for="profile-switch" class="switch-label">Work</label>
+      <select id="profile-switch" class="profile-switch"
+              aria-label="Which kind of work to show"></select>
       <nav class="tabs">
         <button class="tab-btn active" data-tab="dashboard">Home</button>
         <button class="tab-btn" data-tab="opportunities">Contracts</button>

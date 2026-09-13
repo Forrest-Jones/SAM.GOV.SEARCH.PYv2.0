@@ -145,9 +145,15 @@ PRIORITY_PSC = {"R710", "B505", "R499", "R407", "F108", "J039"}
 # undifferentiated pile of 25 packets, scored by one model tuned for the
 # former. Each profile gets its own codes, keywords, PSCs, threshold, state
 # file and drafts folder, so a run surfaces one business at a time.
+# The one offeror. Both lanes below bid under this name and this
+# registration — Ares Robotics is in-house, not a separate business, so the
+# interface shows one company with two kinds of work rather than a choice
+# between two companies.
+COMPANY_NAME = "Proverbs 1821 Consulting LLC"
+
 PROFILES = {
     "p1821": {
-        "label": "Proverbs 1821 Consulting — tax, accounting, evaluation",
+        "label": "Financial, accounting & administrative services",
         "naics": [
             "541211",  # Offices of Certified Public Accountants
             "541213",  # Tax Preparation Services
@@ -171,7 +177,7 @@ PROFILES = {
         "draft_min_score": 4,
     },
     "ares": {
-        "label": "Ares Robotics — waste, remediation, machinery, structural",
+        "label": "Industrial, waste, remediation & vessel services",
         "naics": [
             "562211",  # Hazardous Waste Treatment & Disposal
             "562910",  # Remediation Services
