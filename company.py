@@ -55,6 +55,7 @@ REQUIRED_FIELDS = (
 # the whole pipeline.
 LEVERAGE_FIELDS = (
     ("capability_statement", "capability statement (used in every cover letter)"),
+    ("past_performance_note", "standing note on the firm's federal record"),
     ("insurance_carrier", "insurance carrier"),
     ("insurance_gl_limit", "general liability limit"),
     ("workers_comp", "workers comp coverage"),
@@ -133,7 +134,12 @@ def load_company(profile, path=None):
 # company.toml reads as a real labor category purely because it carries
 # unit = "hr", and an empty priced line would reach a packet.
 ROW_IDENTITY = {
-    "past_performance": ("customer", "contract"),
+    # Customer only. Requiring a contract number too silently discarded
+    # commercial engagements, which routinely have none — and for a firm
+    # with no federal record those are the entire relevant-experience
+    # section. A named customer with a described scope is a real reference
+    # whether or not a contract number exists.
+    "past_performance": ("customer",),
     "rate_card": ("category", "rate"),
 }
 

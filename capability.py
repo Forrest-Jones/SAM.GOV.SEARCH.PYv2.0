@@ -181,7 +181,20 @@ def build_capability_markdown(opp, description_text, company, notice_kind=""):
 
     lines += [
         "",
-        f"- Commercial (non-federal) work counts here: {FILL.format('list it if federal past performance is thin — say so plainly rather than leaving a gap')}",
+    ]
+
+    # A standing, honest statement about the firm's federal record. Stated
+    # once in the fact bank and carried onto every response, because it is
+    # the same truth every time and retyping it invites the version that
+    # overclaims. An evaluator reads candour as candour; a padded table
+    # reads as a padded table.
+    note = (company.get("past_performance_note") or "").strip()
+    lines += [
+        "",
+        note or FILL.format(
+            "one honest paragraph on the firm's federal record — if there is none, "
+            "say so plainly and say what you are asking for instead; put it in "
+            "company.toml so it carries onto every response"),
         "",
         "### Technical skills against the draft PWS",
         "",

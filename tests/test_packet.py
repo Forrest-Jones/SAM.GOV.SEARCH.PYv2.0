@@ -1044,3 +1044,18 @@ def test_the_identity_check_blocks_only_on_identity_fields():
                 if f in ("legal business name", "UEI (12 chars, from SAM.gov)", "CAGE code")]
     assert blocking == [], "identity present, so the search should run"
     assert required, "other fields are still reported as missing"
+
+
+def test_a_commercial_engagement_with_no_contract_number_still_counts():
+    # For a firm with no federal record, commercial work is the entire
+    # relevant-experience section — and commercial engagements routinely
+    # have no contract number. Requiring one discarded them silently.
+    commercial = {"past_performance": [
+        {"customer": "Blackwater Investment Group, Inc.", "contract": "",
+         "scope": "Investor reporting and capitalization records"}]}
+    assert len(company_mod.filled_rows(commercial, "past_performance")) == 1
+
+
+def test_a_row_with_no_customer_is_still_not_a_reference():
+    blank = {"past_performance": [{"customer": "", "contract": "W912-001"}]}
+    assert company_mod.filled_rows(blank, "past_performance") == []

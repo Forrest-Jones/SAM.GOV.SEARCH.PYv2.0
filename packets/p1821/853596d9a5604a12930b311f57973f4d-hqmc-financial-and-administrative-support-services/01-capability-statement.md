@@ -9,7 +9,7 @@
 
 | Field | Value |
 |---|---|
-| Date of submission | 2026-09-12 |
+| Date of submission | 2026-09-13 |
 | Notice / solicitation number | M95494-26-SSN-ADCFAS |
 | Notice title | HQMC  Financial and Administrative Support Services |
 | Response due | 2026-09-30 |
@@ -26,11 +26,17 @@
 
 ## Company profile
 
-[[FILL: 2-3 paragraphs: what the firm does, for whom, and the depth behind it — put this in company.toml so it fills itself in on every response]]
+Proverbs 1821 Consulting LLC provides financial management, analysis, and administrative support services to organizations whose reporting and compliance obligations outrun their internal staffing. The core of the work is recurring financial operations: budget preparation and execution tracking, variance and burn-rate analysis, reconciliation, funding-document control, recurring management and stakeholder reporting, and the preparation of decision-support materials for executives who have to defend a number in front of a board, a lender, or an oversight body. The firm also supplies administrative and executive staff support around that work — document control, records management, calendar and correspondence support, meeting preparation and minutes, and action-item tracking — because in practice the financial deliverable and the staff work that surrounds it are the same job.
+
+The firm is principal-led. Work is performed by Forrest A. Jones, who brings twenty-five years in capital markets and corporate finance, a Certified Healthcare Financial Professional designation, an active IRS PTIN, and formal software engineering training, and who scales the firm by contracting named specialists under written agreements rather than by staffing junior labor against senior rates. That structure matters to a customer buying financial and administrative support: the person analyzing the budget is the person briefing it, and the firm's fixed overhead does not get billed into the rate. A second element of how the firm works is automation. The principal builds the reporting infrastructure himself — API integrations, recurring report generation, pipeline and exception monitoring — so that status reporting that is normally hand-assembled every cycle is produced on a schedule and audited rather than rebuilt.
+
+Proverbs 1821 is a young company registered and positioned for federal work: SAM registration is active, the firm carries a CAGE code, and it is currently pursuing its first federal award. It is not an incumbent on this or any comparable requirement, and it is not in a position to claim a federal past performance record it does not have.
 
 **Credentials held**
 
 - Enrolled Agent (IRS, Circular 230): Randy White
+- Third-party certification: Forrest A. Jones — Certified Healthcare Financial Professional (CHFP)
+- Third-party certification: Forrest A. Jones — IRS Preparer Tax Identification Number (PTIN), active
 
 ## Interest as a prime contractor
 
@@ -44,11 +50,12 @@ who can confirm it.
 
 | # | Customer | Contract / order | Prime or sub | Your share (% and $) | Period | Scope, and why it is relevant here |
 |---|---|---|---|---|---|---|
-| 1 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
-| 2 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
+| 1 | Blackwater Investment Group, Inc. (Montgomery, TX) | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements. — [[FILL: why it is relevant to THIS requirement]] |
+| 2 | Solomon Energy of Texas LLC | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation. — [[FILL: why it is relevant to THIS requirement]] |
 | 3 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
 
-- Commercial (non-federal) work counts here: [[FILL: list it if federal past performance is thin — say so plainly rather than leaving a gap]]
+
+Proverbs 1821 Consulting LLC has no federal past performance to report. The firm was formed in February 2026 and its relevant experience to date is commercial financial and administrative support, described above. We are responding to this Sources Sought Notice to register capability and interest, and to be considered as a subcontractor or named team member by primes preparing to compete this requirement. We are not representing ourselves as ready to prime it.
 
 ### Technical skills against the draft PWS
 
@@ -114,4 +121,4 @@ still being decided when market research is running.
 **Not a bid. No price is offered and none is implied.** Submit only through
 the method the notice names, by the date above.
 
-_Prepared 2026-09-12 from SAM.gov notice 853596d9a5604a12930b311f57973f4d._
+_Prepared 2026-09-13 from SAM.gov notice 853596d9a5604a12930b311f57973f4d._

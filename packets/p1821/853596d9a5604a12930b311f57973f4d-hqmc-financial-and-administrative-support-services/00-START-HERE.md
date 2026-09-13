@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| **Due** | **2026-09-30 (18 days out)** |
+| **Due** | **2026-09-30 (17 days out)** |
+| Closing time | 12:00 (UTC-04) |
 | Notice type | Sources Sought |
 | Solicitation | M95494-26-SSN-ADCFAS |
-| Agency | DEPT OF DEFENSE.DEPT OF THE NAVY.USMC.MARCORP I&L.MARINE CORPS INSTALLATIONS COMMAND |
+| Agency | DEPT OF DEFENSE.DEPT OF THE NAVY.USMC.MARINE CORPS INSTALLATIONS COMMAND |
 | Set-aside | None (full and open) |
 | NAICS / PSC | 541219 / R499 |
 | Where | see listing |
@@ -26,7 +27,7 @@ profile, relevant experience, then the notice's own questions in the
 notice's own order. Unanswered questions are the usual reason one of
 these gets set aside.
 
-There are **40 blanks** to fill, marked `[[FILL: ...]]`.
+There are **36 blanks** to fill, marked `[[FILL: ...]]`.
 
 **4. Send it.** `02-response-email.txt` is addressed and written.
 Confirm the submission method on the listing first.
@@ -43,7 +44,7 @@ Confirm the submission method on the listing first.
 - Matched to your NAICS codes and scored
 - Set-aside eligibility checked against the certifications you hold
 - Offeror identity, UEI, CAGE, signatory and insurance filled from the fact bank
-- Past performance: none on file yet — add real contracts to company.toml
+- Past performance: 2 reference(s) carried in from the fact bank
 - The notice's own questions pulled out and laid in its order
 - Attachment manifest written
 - Cover email drafted and addressed to the contracting officer
@@ -57,4 +58,4 @@ Confirm the submission method on the listing first.
 - **Sending it.** This writes a file. Submission is yours.
 
 ---
-_Capability statement prepared 2026-09-12. Not a bid, and not submitted._
+_Capability statement prepared 2026-09-13. Not a bid, and not submitted._
