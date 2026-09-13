@@ -20,8 +20,8 @@
 | Point of contact | Forrest Andrew Jones, Owner / Managing Member |
 | Phone / email | (832) 562-1355 / forrestjones2010@gmail.com |
 | Business size | Small business for NAICS 541219 (self-certified in SAM.gov against the size standard) |
-| Socio-economic status | [[FILL: state only what is actually certified — write None if none]] |
-| 8(a) participant | [[FILL: yes with graduation date, or No]] |
+| Socio-economic status | None. Proverbs 1821 Consulting LLC is a small business. It holds no socio-economic or ownership-status certification. |
+| 8(a) participant | No. |
 | Accounting system | [[FILL: what system you keep books in, and whether a Government adequacy review has ever been performed — if none, say so plainly]] |
 
 ## Company profile
@@ -62,7 +62,7 @@ Enrolled Agent, IRS Circular 230, with unlimited representation rights before th
 
 ## Interest as a prime contractor
 
-[[FILL: state plainly whether you intend to compete as prime, as a subcontractor, or either — this is asked as its own item and a vague answer here weakens everything after it]]
+**[DRAFT — your review]** Subcontractor. Proverbs 1821 Consulting LLC is not representing itself as ready to prime this requirement, and PWS 10.1 requires a Secret facility clearance and cleared staff at award which the firm does not hold. We are asking to be considered as a subcontractor or named team member by primes preparing to compete it.
 
 ## Relevant experience
 
@@ -72,8 +72,8 @@ who can confirm it.
 
 | # | Customer | Contract / order | Prime or sub | Your share (% and $) | Period | Scope, and why it is relevant here |
 |---|---|---|---|---|---|---|
-| 1 | Blackwater Investment Group, Inc. (Montgomery, TX) | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements. — [[FILL: why it is relevant to THIS requirement]] |
-| 2 | Solomon Energy of Texas LLC | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation. — [[FILL: why it is relevant to THIS requirement]] |
+| 1 | Blackwater Investment Group, Inc. (Montgomery, TX) | Commercial engagement; no contract number. | Prime / direct contractor. | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements. — **[DRAFT — your review]** Recurring financial operations and reporting for a capital-markets client, plus the sourcing and day-to-day management of a contracted team — the same combination of financial deliverable and surrounding staff work this PWS describes across scope areas (2) and (3). |
+| 2 | Solomon Energy of Texas LLC | Commercial engagement; no contract number. | Prime / direct contractor. | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation. — **[DRAFT — your review]** Assembly of a multi-stage institutional submission against an external reviewer's rubric, coordinating multi-party financial and technical deliverables to a fixed date — directly comparable to the scheduled deliverable discipline in PWS Section 6.0. |
 | 3 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: prime or subcontractor]] | [[FILL: percentage and dollar amount YOUR company performed]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] |
 
 
@@ -81,7 +81,7 @@ Proverbs 1821 Consulting LLC has no federal past performance to report. The firm
 
 ### Technical skills against the draft PWS
 
-[[FILL: the specific skills that let you meet the PWS objectives — cite the PWS paragraph each one answers, and name the systems you actually know (accounting platforms, any Government financial system the notice names)]]
+**[DRAFT — your review]** Budget formulation and execution tracking, variance and burn-rate analysis, reconciliation, and funding-document control (PWS 5.2, RFA and SDI financial analysis). Recurring management and stakeholder reporting produced on a schedule through built reporting infrastructure — API integrations, automated report generation, and exception monitoring — rather than hand-assembled each cycle (PWS 5.1.3 data management and reporting solutions, and Section 6.0 recurring deliverables). Written subject-matter analysis to a defined turnaround (PWS 5.1.1.1 and 5.4.1, WRASI). Executive and administrative staff support: document control, records management, correspondence, meeting preparation and minutes, action-item tracking (PWS 5.2, scope area 3). Systems familiarity is commercial accounting and reporting platforms and data integration; the firm has no prior Defense Agencies Initiative experience and does not claim any.
 
 ## Answers to the notice's questions
 
@@ -91,42 +91,42 @@ response.
 
 **1. Does your company believe there is one or more specific NAICS and PSC code combinations that would be better suited to this requirement than the anticipated NAICS and PSC code aligned to this notice by the Government? If so, which one(s) and why?**
 
-[[FILL: your answer]]
+**[DRAFT — your review]** Partially — see our response under the acquisition-strategy comment above. In short: 541219 fits the audit-assistance and financial-reporting tasks; scope areas (1) and (3) are management and administrative support, for which 541611 is a closer fit. PSC R499 is appropriate as drafted.
 
 **2. Does your company believe there is one or more specific contract type or types that would be better suited to this requirement than the anticipated contract type identified in this notice by the Government? If so, what are they and why?**
 
-[[FILL: your answer]]
+**[DRAFT — your review]** Yes. Firm Fixed Price suits the scheduled deliverables in Section 6.0, where scope and volume are predictable. It suits the request-driven work less well: the WRASI deliverable (PWS 5.1.1.1, 5.1.3.1, 5.4.1, 5.4.3) is provided when requested, within 5 to 10 business days, on subject matter defined at the time of request, and neither the annual volume nor the individual scope is stated. Pricing that firm-fixed requires an offeror to price a distribution it cannot see, producing either a risk premium the Government pays unnecessarily or an underbid that degrades responsiveness. We suggest a hybrid: FFP CLINs for scheduled deliverables and administrative support, with Time-and-Materials CLINs or a priced ordering structure for the on-demand analytical work. Publishing the historical annual volume of WRASI requests would alternatively allow those to be priced firm-fixed.
 
 **3. Does your company see any risk areas or any concerns with this overall effort? If so, what are they and how would you mitigate them?**
 
-[[FILL: your answer]]
+**[DRAFT — your review]** Yes — three, set out under our acquisition-strategy comment above: the clearance requirement's effect on competition, transition continuity from the incumbent effort under GS10F0168W / M9549422F0021, and dependence on Government-controlled access to MCEN-N and on DAI Complementary User Entity Controls the contractor does not own. Mitigations are proposed for each.
 
 **4. Does your company consider the PWS details and other notice attachments, if any, to be an adequate basis for submitting a proposal? If not, what additional technical information would be needed?**
 
-[[FILL: your answer]]
+**[DRAFT — your review]** The PWS is sufficient to understand the scope and to respond to this notice. It is not yet sufficient to price a Firm Fixed Price proposal. We would need: estimated level of effort by scope area and labor category, or current staffing levels; historical annual volume of the request-driven deliverables, particularly WRASI; period of performance and option structure; the number of cleared personnel required by labor category and whether any clearance phase-in is permitted; the specific place of performance for the onsite portions of PWS 5.2, which determines the applicable wage determination and the recruiting market; and the anticipated CLIN structure, including whether transition-in and transition-out are separately priced. The first two are the difference between a priced offer and an estimate.
 
 **5. Does your company believe there are unique support requirements not correctly captured and/or articulated in the PWS? If so, what are they?**
 
-[[FILL: your answer]]
+**[DRAFT — your review]** Yes — three, set out under our acquisition-strategy comment above: the organizational conflict of interest inherent in supporting the MCNAFAS audit branch alongside financial operations; the absence of any reference to Federal records management obligations or Section 508 accessibility for the administrative products in scope area (3); and the absence of stated surge periods, which for financial support work concentrate around budget submission and fiscal year end.
 
 **6. Does your company believe these services meet the definition of a commercial service as defined in FAR 2.101?**
 
-[[FILL: your answer]]
+**[DRAFT — your review]** Substantially yes. Financial analysis, budget formulation and execution support, reconciliation, management reporting, and executive and administrative staff support are services of a type customarily offered and sold competitively in substantial quantities in the commercial marketplace under standard commercial terms, within FAR 2.101 as services offered and sold competitively based on established market prices for specific tasks performed. Two elements are Government-unique rather than commercial: work performed within the Defense Agencies Initiative and against DAI Complementary User Entity Controls, and the security requirements in PWS Section 10. In our view those are conditions of performance rather than changes to the nature of the service.
 
 **7. Does your company currently provide similar services in support of commercial products or as standalone services to the general public under terms and conditions similar to those offered to the Federal Government?**
 
-[[FILL: your answer]]
+**[DRAFT — your review]** Yes. The firm currently performs financial and administrative support of this type for commercial clients under commercial terms and conditions — recurring financial operations, investor and management reporting, capitalization and document control, institutional reporting packages, and the contracting and management of specialist teams. Both engagements are described in the relevant experience section above. The firm has no Federal past performance and does not represent this experience as equivalent to a Federal performance record.
 
 **8. Does your company offer and sell these services competitively in substantial quantities in the commercial marketplace based on established catalog or market prices for specific task performed or outcomes to be achieved and under standard terms and conditions? If so, what is/are the specific vehicle title(s) and your company s specific MAS/GWAC/IDIQ Contract Number(s) under that vehicle?**
 
-[[FILL: your answer]]
+**[DRAFT — your review]** Not under a published catalog. Proverbs 1821 Consulting LLC does not maintain a catalog price list and prices each engagement at prevailing market rates for the labor categories involved. The firm holds no GSA Multiple Award Schedule, GSA MAC IDIQ, Navy SeaPort-NxG or other Government-Wide Acquisition Contract, and is not a schedule or contract holder under any such vehicle.
 
 ## Capacity and approach
 
-- Staffing available for this scope: [[FILL: how many people, in what roles]]
-- Ability to scale: [[FILL: what you would add, and how quickly]]
-- Teaming or subcontracting intent: [[FILL: prime alone, prime with subs, or sub to another prime]]
-- Place of performance you can support: [[FILL: on-site, remote, or both]]
+- Staffing available for this scope: **[DRAFT — your review]** Principal-led. Forrest A. Jones performs the financial analysis and briefs it — the analyst and the briefer are the same person, with no junior-labor pyramid billed at senior rates. Specialists are engaged by name under written agreement as scope requires. Randy White, Enrolled Agent, covers tax practice matters.
+- Ability to scale: **[DRAFT — your review]** Additional named specialists under written agreement, typically within two to four weeks depending on the skill. Cleared personnel are the exception: the firm holds no facility clearance, so any requirement for cleared staff at award cannot be met on that timeline and is the reason we are approaching this as a subcontractor.
+- Teaming or subcontracting intent: **[DRAFT — your review]** Subcontractor to another prime for this requirement.
+- Place of performance you can support: **[DRAFT — your review]** Both. PWS 7.1 contemplates the majority of work being performed remotely, which the firm supports fully. Onsite performance for the ADC P, ADC R, RFA and SDI activities in PWS 5.2 would require locally based personnel and is addressed with the prime as part of any teaming arrangement.
 
 ## Comment on the acquisition strategy
 
@@ -134,9 +134,9 @@ These notices usually invite this explicitly, and it is the part with
 real leverage: the NAICS code, PSC, set-aside and contract type are
 still being decided when market research is running.
 
-- Suggested NAICS / PSC, if different: [[FILL: code and why — or state that the proposed codes fit]]
-- Set-aside recommendation: [[FILL: what you would recommend and why]]
-- Anything in the draft PWS that would limit competition: [[FILL: or state none]]
+- Suggested NAICS / PSC, if different: **[DRAFT — your review]** Partially. NAICS 541219 fits scope area (5) Financial Audit Assistance and the financial reporting in (2). It fits the balance less well: scope areas (1) Contract/Project Management Support and (3) Administrative Assistance are management and administrative support rather than accounting services, and on our reading of Section 5.0 they represent the majority of the labor. We suggest the Government consider NAICS 541611 as primary with 541219 retained for the audit assistance tasks. PSC R499 is appropriately broad and we would not change it; R408 or R710 each describe parts of the requirement more precisely than R499 describes all of it. The choice materially affects the competitive pool, since the registered small business population differs between the codes.
+- Set-aside recommendation: **[DRAFT — your review]** A small-business set-aside is appropriate to the scope. We would recommend the Government pair it with a workable clearance approach — sponsoring initial clearances for a defined number of key personnel, permitting a phase-in against a milestone schedule, or separating the unclassified remote work PWS 7.1 already contemplates into CLINs with a lower threshold. As drafted, requiring a facility clearance and fully cleared staff at award, with no Government sponsorship of initial clearances, limits the pool to firms already holding both and will exclude most of the small businesses the set-aside is intended to reach.
+- Anything in the draft PWS that would limit competition: **[DRAFT — your review]** Two. First, PWS Section 10 requires a Secret facility clearance and cleared staff at award while stating the Government will not sponsor initial clearances; combined with the anticipated FAR 52.219-14 limitation on subcontracting, a compliant bidder must hold both the clearance infrastructure and the in-house cleared staff. Second, scope area (5) assists the MCNAFAS branch, which performs independent audits of Non-Appropriated Fund Instrumentalities; if the same contractor also supports financial operations for entities MCNAFAS audits, that is an organizational conflict of interest the PWS does not currently address. An explicit OCI clause would resolve it before award rather than after.
 
 ---
 

@@ -1,37 +1,63 @@
-To:      david.godfrey@usmc.mil
-Subject: M95494-26-SSN-ADCFAS — Capability statement from Proverbs 1821 Consulting LLC (UEI GD83PAK36818)
+To:      david.godfrey@usmc.mil, adam.cole@usmc.mil, dashawn.r.perrywilliams.civ@usmc.mil
+Subject: M95494-26-SSN-ADCFAS — Sources Sought Response — Proverbs 1821 Consulting LLC (UEI GD83PAK36818)
 
-David F. Godfrey,
+Mr. Godfrey, Mr. Cole, Mr. Perry,
 
-Proverbs 1821 Consulting LLC is pleased to submit the attached capability statement in response to M95494-26-SSN-ADCFAS,
-HQMC  Financial and Administrative Support Services. We have reviewed the requirement in full and confirm our ability
-to perform within the stated period and place of performance.
+Proverbs 1821 Consulting LLC submits the attached capability statement in
+response to Sources Sought Notice M95494-26-SSN-ADCFAS, ADC P&R Financial
+and Administrative Support Services.
 
-  Offeror:  Proverbs 1821 Consulting LLC
-  UEI:      GD83PAK36818
-  CAGE:     22ND2
-  Contact:  Forrest Andrew Jones, Owner / Managing Member — (832) 562-1355, forrestjones2010@gmail.com
+  Company:   Proverbs 1821 Consulting LLC
+  UEI:       GD83PAK36818
+  CAGE:      22ND2
+  Address:   12103 Hawthorne Dr, Montgomery, TX 77356
+  Size:      Small business for NAICS 541219
+  Primary:   Forrest A. Jones, Owner / Managing Member
+             (832) 562-1355 / forrestjones2010@gmail.com
+  Secondary: [[FILL: secondary point of contact — name, title, phone, email;
+             the notice asks for two]]
 
 Attached:
-  - Capability statement
-  - [[FILL: any other attachment the solicitation requires — check its
-    instructions paragraph before sending]]
+  - Capability Statement, Proverbs 1821 Consulting LLC (PDF)
 
-Our representations and certifications are current in SAM.gov.
+The response addresses the company profile items in Section V.A.1, our
+interest as described in V.A.2, relevant experience per V.A.3, and answers
+each question at V.A.4 in the order the notice asks them.
 
-Please confirm receipt. We are available for any clarification you need
-before the 2026-09-30 closing.
+This is a response to market research. It is not an offer and contains no
+price.
+
+Two points we would highlight for the Government's market research:
+
+  - The Secret facility clearance and cleared-staff-at-award requirement in
+    Enclosure 1, PWS 10.1, combined with no Government sponsorship of
+    initial clearances, limits the eligible pool to firms already holding
+    both. We offer three possible mitigations in the response.
+
+  - Scope area (5) assists the MCNAFAS audit branch. We note a potential
+    organizational conflict of interest the draft PWS does not currently
+    address.
+
+We are available for teaming discussions with any prime preparing to
+compete this requirement, and would welcome the opportunity to be
+considered as a subcontractor or named team member.
 
 Respectfully,
-Forrest Andrew Jones
-Owner / Managing Member, Proverbs 1821 Consulting LLC
-(832) 562-1355 | forrestjones2010@gmail.com
+
+Forrest A. Jones
+Owner / Managing Member
+Proverbs 1821 Consulting LLC
+(832) 562-1355 | (832) 662-1812
+forrestjones2010@gmail.com
 
 --------------------------------------------------------------------
-BEFORE SENDING, CHECK:
-  [ ] This is the submission method the solicitation actually names.
-      Some require a portal, a specific form, or a different address.
-      Do not assume email.
-  [ ] This is a market research response and contains no price.
-  [ ] Sent before 2026-09-30 — confirm the closing TIME and time zone.
+BEFORE SENDING:
+  [ ] All THREE addresses above. The notice says "to all of the
+      following Points of Contact."
+  [ ] Sent before 30 September 2026, 12:00 PM EDT. NOON, not close of
+      business.
+  [ ] Capability statement converted to PDF. Cover page, then a table of
+      contents (1 page max), then the statement (15 pages max).
+  [ ] Every [[FILL: ...]] resolved and every [DRAFT] marker removed.
+  [ ] Request confirmation of receipt. The notice does not promise it.
 --------------------------------------------------------------------
