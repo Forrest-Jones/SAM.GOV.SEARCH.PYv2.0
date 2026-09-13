@@ -66,7 +66,7 @@ SHARED_KEYS = (
     "signatory_name", "signatory_title", "phone", "email",
     "sam_registration_expires", "insurance_carrier", "insurance_gl_limit",
     "workers_comp", "bonding_capacity_single", "bonding_capacity_total",
-    "skip_psc", "skip_keywords",
+    "skip_psc", "skip_keywords", "active_profiles",
 )
 
 
@@ -152,6 +152,29 @@ def filled_rows(company, key):
     if not identity:
         return [row for row in rows if _is_filled(row)]
     return [row for row in rows if all(_is_filled(row.get(f)) for f in identity)]
+
+
+def personnel(company):
+    """Named people who perform the work, real entries only."""
+    return [
+        {"name": str(row.get("name") or "").strip(),
+         "role": str(row.get("role") or "").strip(),
+         "brings": str(row.get("brings") or "").strip()}
+        for row in (company.get("personnel") or [])
+        if _is_filled(row.get("name"))
+    ]
+
+
+def affiliations(company):
+    """Affiliated organisations, cited as affiliations and never as this
+    entity's own contract history."""
+    return [
+        {"name": str(row.get("name") or "").strip(),
+         "what": str(row.get("what") or "").strip(),
+         "cite_as": str(row.get("cite_as") or "").strip()}
+        for row in (company.get("affiliations") or [])
+        if _is_filled(row.get("name"))
+    ]
 
 
 def missing_fields(company):

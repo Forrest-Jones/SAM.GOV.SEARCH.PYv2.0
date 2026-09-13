@@ -38,6 +38,28 @@ Proverbs 1821 is a young company registered and positioned for federal work: SAM
 - Third-party certification: Forrest A. Jones — Certified Healthcare Financial Professional (CHFP)
 - Third-party certification: Forrest A. Jones — IRS Preparer Tax Identification Number (PTIN), active
 
+## Key personnel
+
+**Forrest A. Jones** — Principal
+
+Twenty-five years in capital markets and corporate finance; Certified Healthcare Financial Professional; active IRS PTIN; formal software engineering training. Chief Investment Officer of Blackwater Investment Group, Inc.
+
+**Richard Starr** — Robotics and vessel services (Ares Robotics, in-house)
+
+In robotics since 1985, beginning with Navy SEAL mine search and disposal. Founded Ares Robotics in 1998 after six years of platform development. Designer of the ROV chassis line and the Manway Cannon system.
+
+**Randy White** — Tax practice
+
+Enrolled Agent, IRS Circular 230, with unlimited representation rights before the IRS. Not a CPA — does not satisfy a CPA licence requirement.
+
+**Jason Teal**
+
+[[FILL: what Jason Teal brings — put it in company.toml under personnel]]
+
+## Affiliations
+
+- **Blackwater Evaluation (Blackwater Investment Group, Inc.)** — Third-party program evaluation practice serving federal research sponsors. Forrest A. Jones is Chief Investment Officer of the parent. Cited as affiliation and teaming resource.
+
 ## Interest as a prime contractor
 
 [[FILL: state plainly whether you intend to compete as prime, as a subcontractor, or either — this is asked as its own item and a vague answer here weakens everything after it]]

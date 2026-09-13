@@ -1,12 +1,12 @@
 {
-  "company_fingerprint": "42ae7548314f5c33",
-  "blanks_left": 36,
+  "company_fingerprint": "428897f9f3fd322a",
+  "blanks_left": 37,
   "built": "2026-09-13",
   "deadline": "2026-09-30",
   "response_kind": "capability",
   "files": {
-    "01-capability-statement.md": "432c2a4cdc1cd116",
+    "01-capability-statement.md": "92bc16c339edf8f2",
     "02-response-email.txt": "afc1a58fb270fac7",
-    "00-START-HERE.md": "a48ea04dbfa2e69f"
+    "00-START-HERE.md": "4b6cfdd854194346"
   }
 }

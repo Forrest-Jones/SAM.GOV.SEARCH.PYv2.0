@@ -23,7 +23,7 @@ import os
 import re
 from datetime import date
 
-from company import filled_rows, held_credentials
+from company import filled_rows, held_credentials, personnel, affiliations
 
 FILL = "[[FILL: {}]]"
 
@@ -147,6 +147,28 @@ def build_capability_markdown(opp, description_text, company, notice_kind=""):
         for credential in credentials:
             detail = f" — {credential['identifier']}" if credential["identifier"] else ""
             lines.append(f"- {credential['label']}: {credential['holder']}{detail}")
+        lines.append("")
+
+    # The people who perform the work. Their individual experience is the
+    # firm's to state without qualification, and naming them is what turns
+    # a capability claim into something an evaluator can check.
+    team = personnel(company)
+    if team:
+        lines += ["## Key personnel", ""]
+        for person in team:
+            role = f" — {person['role']}" if person["role"] else ""
+            lines.append(f"**{person['name']}**{role}")
+            lines.append("")
+            lines.append(person["brings"] or FILL.format(
+                f"what {person['name']} brings — put it in company.toml under personnel"))
+            lines.append("")
+
+    allies = affiliations(company)
+    if allies:
+        lines += ["## Affiliations", ""]
+        for ally in allies:
+            lines.append(f"- **{ally['name']}** — {ally['what']}"
+                         + (f" Cited as {ally['cite_as']}." if ally["cite_as"] else ""))
         lines.append("")
 
     lines += [

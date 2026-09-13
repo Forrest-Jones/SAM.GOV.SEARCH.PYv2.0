@@ -1020,14 +1020,51 @@ def test_a_packet_with_no_published_time_says_to_confirm(tmp_path):
 
 # ---------- a profile that cannot submit is not searched ----------
 
-def test_ares_has_no_legal_identity_on_file():
-    # The state that made the identity check necessary: --batch 0 stopped
-    # the packets and left the daily digest arriving, so an hour went into
-    # a DLA hazardous waste solicitation for a business with no registered
-    # name to put on the offer.
-    required, _ = company_mod.missing_fields(company_mod.load_company("ares"))
-    assert "legal business name" in required
-    assert "UEI (12 chars, from SAM.gov)" in required
+def test_both_profiles_bid_under_the_one_registration():
+    # Ares Robotics is in-house to Proverbs 1821, not a separate offeror.
+    # Both lanes submit under the same legal entity, so neither can be
+    # blocked for want of an identity it was never going to have.
+    p1821 = company_mod.load_company("p1821")
+    ares = company_mod.load_company("ares")
+    for key in ("legal_name", "uei", "cage", "address"):
+        assert ares[key] == p1821[key], key
+    assert company_mod.missing_fields(ares)[0] == []
+
+
+def test_a_lane_can_be_switched_off_without_pretending_it_cannot_bid():
+    # The reason a lane goes quiet is now a deliberate choice, not a
+    # missing UEI: opportunities that will not be acted on this month are
+    # noise, and noise in a daily email costs an afternoon.
+    active = company_mod.load_company("p1821").get("active_profiles")
+    assert active == ["p1821"]
+    assert "ares" not in active
+
+
+def test_the_bench_is_on_file_with_what_each_person_brings():
+    team = {p["name"]: p for p in company_mod.personnel(company_mod.load_company("p1821"))}
+    assert {"Forrest A. Jones", "Richard Starr", "Randy White", "Jason Teal"} <= set(team)
+    assert "1985" in team["Richard Starr"]["brings"], "robotics since 1985"
+    assert "Enrolled Agent" in team["Randy White"]["brings"]
+    # Randy's entry must say what it is not, because the whole file exists
+    # to stop an EA being offered against a CPA requirement.
+    assert "Not a CPA" in team["Randy White"]["brings"]
+
+
+def test_an_affiliation_is_labelled_as_one():
+    allies = company_mod.affiliations(company_mod.load_company("p1821"))
+    assert len(allies) == 1
+    assert "Blackwater" in allies[0]["name"]
+    assert allies[0]["cite_as"] == "affiliation and teaming resource"
+
+
+def test_the_ares_lane_carries_the_robotics_capability():
+    ares = company_mod.load_company("ares")
+    cap = ares["capability_statement"]
+    for fact in ("Manway Cannon", "SLOFEC", "Exxon", "1998"):
+        assert fact in cap, fact
+    # And the deployment record stays attributed rather than restated as
+    # this entity's own contract history.
+    assert "in-house" in cap.lower()
 
 
 def test_p1821_does_have_one():

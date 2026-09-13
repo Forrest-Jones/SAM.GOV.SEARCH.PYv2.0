@@ -1077,7 +1077,22 @@ def main():
     # itself the moment company.toml has it.
     if not args.no_identity_check:
         from company import load_company, missing_fields
-        required, _ = missing_fields(load_company(args.profile))
+        company_facts = load_company(args.profile)
+
+        # A lane can be deliberately quiet. Both businesses bid under one
+        # registration, so neither is blocked by identity any more — but a
+        # lane whose opportunities cannot be acted on this month is noise,
+        # and noise in a daily email is how an afternoon went into a DLA
+        # hazardous waste solicitation nobody was going to bid.
+        active = company_facts.get("active_profiles")
+        if active and args.profile not in active:
+            print(f"  {args.profile} is not in active_profiles "
+                  f"({', '.join(active)}) — no search, no email.", file=sys.stderr)
+            print(f"  Add \"{args.profile}\" to active_profiles in company.toml"
+                  " to turn this lane back on.", file=sys.stderr)
+            return
+
+        required, _ = missing_fields(company_facts)
         blocking = [f for f in required
                     if f in ("legal business name", "UEI (12 chars, from SAM.gov)", "CAGE code")]
         if blocking:

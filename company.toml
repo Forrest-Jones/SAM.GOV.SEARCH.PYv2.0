@@ -15,6 +15,12 @@
 # =====================================================================
 
 [shared]
+# Profiles the daily run should work. A lane set to false is not searched
+# and sends no digest — used to keep one business quiet while the other
+# gets its first submission out, rather than leaving its opportunities
+# arriving daily and unactionable.
+active_profiles = ["p1821"]
+
 # The person with authority to sign a binding offer. On a federal
 # response this must be a real person who can obligate the company.
 signatory_name  = "Forrest Andrew Jones"
@@ -119,6 +125,37 @@ packet_psc_prefixes = ["R", "B"]
 # credential under Circular 230 with unlimited representation rights
 # before the IRS; audits and any opinion on financial statements are
 # reserved to CPAs licensed by a state board of accountancy.
+# Affiliated organisations. Cited as affiliations and teaming resources,
+# never as this firm's own past performance.
+[[p1821.affiliations]]
+name    = "Blackwater Evaluation (Blackwater Investment Group, Inc.)"
+what    = "Third-party program evaluation practice serving federal research sponsors. Forrest A. Jones is Chief Investment Officer of the parent."
+cite_as = "affiliation and teaming resource"
+
+# Who performs the work. Individual experience belongs to the firm that
+# employs the individual, so these go in a key personnel section without
+# qualification — unlike another entity's contract history, which stays
+# attributed to that entity.
+[[p1821.personnel]]
+name  = "Forrest A. Jones"
+role  = "Principal"
+brings = "Twenty-five years in capital markets and corporate finance; Certified Healthcare Financial Professional; active IRS PTIN; formal software engineering training. Chief Investment Officer of Blackwater Investment Group, Inc."
+
+[[p1821.personnel]]
+name  = "Richard Starr"
+role  = "Robotics and vessel services (Ares Robotics, in-house)"
+brings = "In robotics since 1985, beginning with Navy SEAL mine search and disposal. Founded Ares Robotics in 1998 after six years of platform development. Designer of the ROV chassis line and the Manway Cannon system."
+
+[[p1821.personnel]]
+name  = "Randy White"
+role  = "Tax practice"
+brings = "Enrolled Agent, IRS Circular 230, with unlimited representation rights before the IRS. Not a CPA — does not satisfy a CPA licence requirement."
+
+[[p1821.personnel]]
+name  = "Jason Teal"
+role  = ""                  # FILL: what he does for the firm
+brings = ""                 # FILL: experience he brings
+
 [[p1821.credentials]]
 kind       = "ea"
 holder     = "Randy White"
@@ -169,17 +206,19 @@ rate     = ""
 # =====================================================================
 # Ares Robotics — waste, remediation, environmental, machinery
 # =====================================================================
-# NOT YET CONFIRMED. Ares is left blank on purpose rather than copying the
-# values above: if it trades under the same SAM registration then the UEI,
-# CAGE and legal name are identical, but if it is a separate entity then
-# copying them would put another company's identity on a federal
-# submission. Confirm which it is, then fill this in.
+# Ares Robotics is IN-HOUSE to Proverbs 1821, not a separate offeror. This
+# profile is a work-type lane — waste, remediation, industrial, vessel
+# services — and every bid under it goes in under the Proverbs 1821
+# registration below. Do not add a separate Ares UEI or CAGE; there isn't
+# one to add and the submission would be wrong if there were.
 [ares]
-legal_name = ""
-uei        = ""
-cage       = ""
-address    = ""
-capability_statement = ""
+legal_name = "Proverbs 1821 Consulting LLC"
+uei        = "GD83PAK36818"
+cage       = "22ND2"
+address    = "12103 Hawthorne Dr, Montgomery, TX 77356"
+past_performance_note = """Proverbs 1821 Consulting LLC has no federal past performance to report. The firm was formed in February 2026. Its industrial capability is performed in house by Ares Robotics, operating since 1998, whose ROV and Manway Cannon platforms have been deployed by Exxon, Shell, Conoco, Chevron, Marathon, DuPont, Valero, BP, TransCanada, Enbridge and Suncor. That record is Ares Robotics' commercial corporate history and is offered as the experience of the personnel and platforms performing the work, not as a federal performance record of this entity."""
+
+capability_statement = """Proverbs 1821 Consulting LLC performs industrial robotics and vessel services through Ares Robotics, in-house to the firm and operating since 1998 under Richard Starr, who has worked in robotics since 1985 beginning with Navy SEAL mine search and disposal.\n\nThe firm brings over 33 models of Remotely Operated Vehicle across four core chassis, Generation 6, assembled per job to match the material, its viscosity and the manway size rather than forcing one vehicle onto every project. Traction is wheeled rather than tracked, with independent per-wheel traction control, and proprietary spiral propeller compression hood technology loads the head for efficient evacuation of material from liquid through dried crude at under 1:1 cutter stock. Vehicles run 630 to 1600 lbs, averaging 1000 lbs and 120 HP, in carbon or stainless steel for service across the pH range. Self-contained launch carts deploy from the side, top or sub-terrain without plant lifting aid.\n\nAlso in house: Manway Cannon Systems, the only system combining hydraulic nozzles, a split-manway design and the ability to degas while removing material; Class 1 Div 1 camera and lighting systems including low-light, infrared and FLIR thermal, usable independently for visual inspection, level monitoring or hole watch; centrifuge manufacturing, repair, rental and sales with an in-house machine shop; and a first-of-its-kind system for top-entry vessel work performed while the tank remains in service, with simultaneous SLOFEC non-destructive testing for API 653 profiling.\n\nThese platforms have been deployed by Exxon, Shell, Conoco, Chevron, Marathon, DuPont, Valero, BP, TransCanada, Enbridge, Suncor and Oil Sands operators. That deployment record is Ares Robotics' corporate history, brought to this firm as in-house capability and cited as such."""
 
 [[ares.past_performance]]
 customer     = ""
