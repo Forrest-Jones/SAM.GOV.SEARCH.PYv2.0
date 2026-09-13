@@ -25,6 +25,8 @@ import json
 import mimetypes
 import os
 import re
+import zipfile
+import zlib
 from datetime import date, datetime
 
 import proposal
@@ -96,6 +98,92 @@ CREDENTIAL_GATES = (
      r"\bISO\s*\d{4,5}\b|certified\s+industrial\s+hygienist"
      r"|certified\s+safety\s+professional|\bPMP\b\s+certif"),
 )
+
+
+# How much attachment text to scan. Enough to reach a security or
+# qualifications section, which sits near the end of a work statement,
+# without loading a 15MB drawing set into memory.
+ATTACHMENT_SCAN_LIMIT = 400_000
+
+
+def _docx_text(path):
+    try:
+        with zipfile.ZipFile(path) as z:
+            raw = z.read("word/document.xml").decode("utf8", errors="replace")
+    except Exception:
+        return ""
+    raw = re.sub(r"</w:p>", "\n", raw)
+    return re.sub(r"<[^>]+>", "", raw)
+
+
+def _pdf_text(path):
+    """Text-showing operators out of a PDF's content streams.
+
+    Deliberately minimal and dependency-free: this runs on a CI runner
+    where the usual PDF libraries are not installed, and it only has to be
+    good enough to match a phrase like "Secret facility clearance".
+    """
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        return ""
+    out = []
+    for match in re.finditer(rb"stream\r?\n(.*?)\r?\nendstream", data, re.S):
+        chunk = match.group(1)
+        try:
+            chunk = zlib.decompress(chunk)
+        except Exception:
+            pass
+        text = chunk.decode("latin-1", errors="replace")
+        for op in re.finditer(r"\[((?:[^\[\]\\]|\\.)*)\]\s*TJ|\(((?:[^()\\]|\\.)*)\)\s*Tj", text):
+            if op.group(1) is not None:
+                out.append("".join(re.findall(r"\(((?:[^()\\]|\\.)*)\)", op.group(1))))
+            else:
+                out.append(op.group(2))
+            out.append(" ")
+        if sum(len(x) for x in out) > ATTACHMENT_SCAN_LIMIT:
+            break
+    return "".join(out)
+
+
+def attachment_text(dest_dir, limit=ATTACHMENT_SCAN_LIMIT):
+    """The readable text of a notice's downloaded attachments.
+
+    This exists because the qualification that decides a bid is almost
+    never in the notice body. NAFI's "independent CPA firm or licensed
+    CPA" was on page two of an evaluation attachment, and this notice's
+    Secret facility clearance requirement is in section 10 of a draft work
+    statement — both invisible to a scan of the notice description, both
+    found by hand, both after time had already gone into the packet.
+    """
+    if not os.path.isdir(dest_dir):
+        return ""
+    collected, total = [], 0
+    for name in sorted(os.listdir(dest_dir)):
+        if name in ("MANIFEST.txt", "PRUNED.txt"):
+            continue
+        path = os.path.join(dest_dir, name)
+        lower = name.lower()
+        if lower.endswith(".docx"):
+            text = _docx_text(path)
+        elif lower.endswith(".pdf"):
+            text = _pdf_text(path)
+        elif lower.endswith((".txt", ".md")):
+            try:
+                with open(path, errors="replace") as f:
+                    text = f.read(limit)
+            except OSError:
+                text = ""
+        else:
+            continue
+        if not text:
+            continue
+        collected.append(text)
+        total += len(text)
+        if total >= limit:
+            break
+    return "\n".join(collected)[:limit]
 
 
 def credential_gates(*texts):
@@ -645,7 +733,9 @@ def build_capability_response(opp, description_text, company, root,
     with open(start, "w") as f:
         f.write(build_start_here(
             opp, company, blanks_left, got, failed,
-            gates=credential_gates(description_text, opp.get("description")),
+            gates=credential_gates(
+                description_text, opp.get("description"),
+                attachment_text(os.path.join(out, "attachments"))),
             kind="capability",
         ))
     written["00-START-HERE.md"] = _file_hash(start)
@@ -737,7 +827,9 @@ def build_packet(opp, description_text, company, root, score=None, reasons="", s
         with open(path, "w") as f:
             f.write(build_start_here(
                 opp, company, blanks_left, got, failed,
-                gates=credential_gates(description_text, opp.get("description")),
+                gates=credential_gates(
+                    description_text, opp.get("description"),
+                    attachment_text(os.path.join(out, "attachments"))),
             ))
         written["00-START-HERE.md"] = _file_hash(path)
 

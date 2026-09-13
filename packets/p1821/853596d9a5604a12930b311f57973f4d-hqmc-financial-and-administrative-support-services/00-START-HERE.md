@@ -21,6 +21,21 @@
 this date? If no, delete this folder and add a line to `skip_keywords` in
 `company.toml` so it never reaches you again.
 
+> **This one is pass/fail before anything else.** The solicitation text
+> asks for the qualifications below. No amount of proposal writing
+> substitutes for one the business does not hold.
+
+> - Needs **a security clearance or facility clearance** — nothing on file covers this. **Do you have it?**
+>
+
+> Nothing on file answers the requirement(s) marked above. If you
+> cannot produce it, this one is over — stop here and take the next
+> packet. Five minutes now, or the whole week after the proposal is
+> written.
+>
+> If you do hold it, add it to `credentials` in `company.toml` and
+> every future packet answers this by itself.
+
 **3. Answer their questions.** Open `01-capability-statement.md`. It is
 already laid out the way this notice asks for it — cover page, company
 profile, relevant experience, then the notice's own questions in the

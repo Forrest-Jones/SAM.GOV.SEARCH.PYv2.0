@@ -1059,3 +1059,65 @@ def test_a_commercial_engagement_with_no_contract_number_still_counts():
 def test_a_row_with_no_customer_is_still_not_a_reference():
     blank = {"past_performance": [{"customer": "", "contract": "W912-001"}]}
     assert company_mod.filled_rows(blank, "past_performance") == []
+
+
+# ---------- the gate that decides the bid is usually in an attachment ----------
+
+def test_attachment_text_is_scanned_for_gates(tmp_path):
+    # Both real misses came from scanning only the notice body: NAFI's
+    # "independent CPA firm or licensed CPA" sat on page two of an
+    # evaluation attachment, and the HQMC Secret facility clearance in
+    # section 10 of a draft work statement. Both were found by hand, after
+    # time had gone into the packet.
+    att = tmp_path / "attachments"
+    att.mkdir()
+    (att / "PWS.txt").write_text(
+        "10.0 SECURITY REQUIREMENTS All tasks shall be conducted in full "
+        "compliance with DoD security regulations. At time of contract award, "
+        "all of the Contractor's staff assigned to this contract shall have and "
+        "maintain a Secret clearance and the Contractor shall have and maintain "
+        "a Secret facility clearance.")
+    text = packet.attachment_text(str(att))
+    assert "Secret facility clearance" in text
+    assert packet.credential_gates(text) == ["a security clearance or facility clearance"]
+
+
+def test_the_manifest_is_not_scanned_as_a_requirement(tmp_path):
+    att = tmp_path / "attachments"
+    att.mkdir()
+    (att / "MANIFEST.txt").write_text("Attachments listed on SAM.gov notice")
+    (att / "PRUNED.txt").write_text("Deadline passed, files removed")
+    assert packet.attachment_text(str(att)) == ""
+
+
+def test_a_missing_attachments_folder_is_harmless():
+    assert packet.attachment_text("/nonexistent/attachments") == ""
+
+
+def test_unreadable_formats_are_skipped_not_fatal(tmp_path):
+    att = tmp_path / "attachments"
+    att.mkdir()
+    (att / "drawing.dwg").write_bytes(b"\x00\x01binary")
+    (att / "broken.docx").write_bytes(b"not a zip file")
+    (att / "notes.txt").write_text("Contractor shall hold a Secret clearance.")
+    text = packet.attachment_text(str(att))
+    assert "Secret clearance" in text
+
+
+def test_the_scan_is_capped(tmp_path):
+    att = tmp_path / "attachments"
+    att.mkdir()
+    (att / "huge.txt").write_text("x" * (packet.ATTACHMENT_SCAN_LIMIT * 2))
+    assert len(packet.attachment_text(str(att))) <= packet.ATTACHMENT_SCAN_LIMIT
+
+
+def test_a_packets_gate_block_reflects_its_attachments(tmp_path):
+    att = packet.packet_dir(OPP, str(tmp_path))
+    os.makedirs(os.path.join(att, "attachments"), exist_ok=True)
+    with open(os.path.join(att, "attachments", "PWS.txt"), "w") as f:
+        f.write("The Contractor shall maintain a Secret facility clearance.")
+    out, _, _ = packet.build_packet(OPP, "Provide bookkeeping support.", FILLED,
+                                   str(tmp_path), 4, "")
+    text = open(os.path.join(out, "00-START-HERE.md")).read()
+    assert "a security clearance or facility clearance" in text
+    assert "nothing on file covers this" in text
