@@ -418,10 +418,10 @@
   // ---------------- Scoring labels ----------------
 
   function matchBadge(score) {
-    if (score >= 6) return { cls: "badge-great", text: "🔥 Great Match" };
-    if (score >= 4) return { cls: "badge-good", text: "👍 Worth a Look" };
-    if (score >= 1) return { cls: "badge-maybe", text: "🤔 Maybe" };
-    return { cls: "badge-low", text: "Low Match" };
+    if (score >= 6) return { cls: "badge-great", text: "Great match" };
+    if (score >= 4) return { cls: "badge-good", text: "Worth a look" };
+    if (score >= 1) return { cls: "badge-maybe", text: "Maybe" };
+    return { cls: "badge-low", text: "Low match" };
   }
 
   function daysUntil(dateStr) {
@@ -502,7 +502,7 @@
           ${isNew ? '<span class="badge badge-new">NEW</span>' : ""}
         </div>
       </div>
-      ${opp.eligibility === "unknown_set_aside" ? '<div class="opp-meta"><span class="badge badge-warn">⚠️ Double-check you can bid on this one</span></div>' : ""}
+      ${opp.eligibility === "unknown_set_aside" ? '<div class="opp-meta"><span class="badge badge-warn">Double-check you can bid on this one</span></div>' : ""}
     `;
     card.addEventListener("click", () => openOppModal(opp, isNew));
     return card;

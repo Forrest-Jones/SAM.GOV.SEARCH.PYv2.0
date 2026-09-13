@@ -4,13 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Contract Finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Public+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" />
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
   <div id="setup-screen" class="setup-screen" hidden>
     <div class="setup-card">
-      <h1>👋 Welcome</h1>
+      <h1>Welcome</h1>
       <p>This tool finds government contracts that match your business, so you don't have to dig through SAM.gov yourself. Let's get it connected — it only takes a minute.</p>
 
       <label class="field-label" for="setup-api-key">Your SAM.gov API Key</label>
@@ -46,7 +49,7 @@
         <div class="hero-card">
           <h1>Find contracts that match your business</h1>
           <p>One click checks SAM.gov for new opportunities in your business categories.</p>
-          <button id="search-btn" class="btn btn-primary btn-large">🔍 Find New Contracts</button>
+          <button id="search-btn" class="btn btn-primary btn-large">Find new contracts</button>
           <p id="search-status" class="status-text"></p>
         </div>
 
@@ -100,13 +103,13 @@
 
           <ol class="steps">
             <li class="step" id="step-read">
-              <h2>1. Read it</h2>
+              <h2>Read it</h2>
               <p class="field-help">The government's own documents. Everything you have to answer is in here.</p>
               <div id="packet-attachments" class="attachment-list"></div>
             </li>
 
             <li class="step" id="step-go">
-              <h2>2. Go or no-go</h2>
+              <h2>Go or no-go</h2>
               <p class="field-help">Can you perform this work, at this place, by this date? Nothing else matters until this is a yes.</p>
               <div id="packet-gates" hidden></div>
               <div class="go-row">
@@ -117,7 +120,7 @@
             </li>
 
             <li class="step" id="step-price">
-              <h2>3. Price it</h2>
+              <h2>Price it</h2>
               <p class="field-help">Your rates are already here. Enter hours — the totals compute as you type. This stays your number; nothing is guessed.</p>
               <table id="price-table" class="price-table">
                 <thead><tr><th>Labor category</th><th>Unit</th><th>Rate</th><th>Hours / Qty</th><th>Extended</th></tr></thead>
@@ -132,7 +135,7 @@
             </li>
 
             <li class="step" id="step-fill">
-              <h2>4. Fill in what's left</h2>
+              <h2>Fill in what's left</h2>
               <p class="field-help">One box per blank, grouped by where it appears. Blank boxes stay blank — nothing is invented on your behalf.</p>
               <p id="blanks-count" class="muted"></p>
               <div id="blanks-form"></div>
@@ -143,7 +146,7 @@
             </li>
 
             <li class="step" id="step-send">
-              <h2>5. Send it</h2>
+              <h2>Send it</h2>
               <p class="field-help">Addressed and written. Check the submission method against the solicitation before you send — that's the most common way a good quote gets thrown out.</p>
               <textarea id="packet-email" class="email-box" rows="18" readonly></textarea>
               <div class="row-actions">
