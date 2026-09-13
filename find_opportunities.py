@@ -986,6 +986,8 @@ def main():
     ap.add_argument("--always-email", action="store_true",
                     help="send the digest even when nothing is new (for the daily run)")
     ap.add_argument("--no-email", action="store_true")
+    ap.add_argument("--no-identity-check", action="store_true",
+                    help="search even with no legal identity on file (for testing)")
     ap.add_argument("--to", type=str, default=DEFAULT_TO_EMAIL)
     args = ap.parse_args()
 
@@ -1000,6 +1002,30 @@ def main():
 
     profile = PROFILES[args.profile]
     print(f"Profile: {args.profile} — {profile['label']}", file=sys.stderr)
+
+    # A profile with no legal identity on file cannot submit anything, so
+    # searching and emailing for it produces nothing but noise — and worse,
+    # it produces credible-looking opportunities that cost real hours before
+    # anyone notices the business behind them cannot bid. Setting --batch 0
+    # stopped the packets and left the digest arriving daily, which is
+    # exactly how an hour went into a DLA hazardous waste solicitation for a
+    # profile with no registered name.
+    #
+    # Skipped entirely until the identity exists, and it comes back by
+    # itself the moment company.toml has it.
+    if not args.no_identity_check:
+        from company import load_company, missing_fields
+        required, _ = missing_fields(load_company(args.profile))
+        blocking = [f for f in required
+                    if f in ("legal business name", "UEI (12 chars, from SAM.gov)", "CAGE code")]
+        if blocking:
+            print(f"  skipping {args.profile}: no legal identity on file "
+                  f"({', '.join(blocking)}).", file=sys.stderr)
+            print("  Nothing found under this profile could be submitted by anyone, so"
+                  " no search and no email.", file=sys.stderr)
+            print(f"  Fill it in company.toml under [{args.profile}] and this resumes"
+                  " on the next run.", file=sys.stderr)
+            return
 
     cfg = {
         "naics_codes": (

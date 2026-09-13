@@ -1016,3 +1016,31 @@ def test_a_packet_with_no_published_time_says_to_confirm(tmp_path):
         dict(OPP, responseDeadLine="2026-09-28"), "", FILLED, str(tmp_path), 4, "")
     text = open(os.path.join(out, "00-START-HERE.md")).read()
     assert "confirm on the listing" in text
+
+
+# ---------- a profile that cannot submit is not searched ----------
+
+def test_ares_has_no_legal_identity_on_file():
+    # The state that made the identity check necessary: --batch 0 stopped
+    # the packets and left the daily digest arriving, so an hour went into
+    # a DLA hazardous waste solicitation for a business with no registered
+    # name to put on the offer.
+    required, _ = company_mod.missing_fields(company_mod.load_company("ares"))
+    assert "legal business name" in required
+    assert "UEI (12 chars, from SAM.gov)" in required
+
+
+def test_p1821_does_have_one():
+    required, _ = company_mod.missing_fields(company_mod.load_company("p1821"))
+    assert required == []
+
+
+def test_the_identity_check_blocks_only_on_identity_fields():
+    # A missing capability statement or rate card is a nuisance. A missing
+    # legal name means nothing found could be submitted by anyone.
+    partial = {"legal_name": "X Co", "uei": "ABC123456789", "cage": "9XYZ1"}
+    required, _ = company_mod.missing_fields(partial)
+    blocking = [f for f in required
+                if f in ("legal business name", "UEI (12 chars, from SAM.gov)", "CAGE code")]
+    assert blocking == [], "identity present, so the search should run"
+    assert required, "other fields are still reported as missing"
