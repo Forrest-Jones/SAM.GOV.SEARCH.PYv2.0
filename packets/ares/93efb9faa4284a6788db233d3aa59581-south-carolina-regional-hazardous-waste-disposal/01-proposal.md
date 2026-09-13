@@ -11,7 +11,7 @@
 |---|---|
 | Notice ID | 93efb9faa4284a6788db233d3aa59581 |
 | Solicitation number | SP450026R0014 |
-| Agency / office | DEPT OF DEFENSE.DEFENSE LOGISTICS AGENCY.DLA DISPOSITION SERVICES.DLA DISPOSITION SERVICES - EBS |
+| Agency / office | DEPT OF DEFENSE.DEFENSE LOGISTICS AGENCY.DLA DISPOSITION SERVICES |
 | NAICS | 562211 |
 | PSC | S222 |
 | Set-aside | Small Business Set Aside - Total |
@@ -36,10 +36,10 @@
 
 ## 3. Cover letter
 
-September 12, 2026
+September 13, 2026
 
 [[FILL: Contracting Officer name]]
-DEPT OF DEFENSE.DEFENSE LOGISTICS AGENCY.DLA DISPOSITION SERVICES.DLA DISPOSITION SERVICES - EBS
+DEPT OF DEFENSE.DEFENSE LOGISTICS AGENCY.DLA DISPOSITION SERVICES
 
 **Subject:** Response to SP450026R0014, South Carolina Regional Hazardous Waste Disposal
 
@@ -56,23 +56,39 @@ Forrest Andrew Jones, Owner / Managing Member
 
 ## 4. Technical approach
 
-The full solicitation text wasn't machine-readable, so this falls back to a standard outline. Replace these headings with the solicitation's own.
+The solicitation text references the sections below. Answer them in the government's order — evaluators score against their own outline.
 
-### Understanding of the requirement
+### Reporting
 
-[[FILL: restate the government's need in your own words]]
+[[FILL: your approach to 'reporting' — cite the PWS paragraph you're answering]]
 
-### Technical approach
+### Security
 
-[[FILL: how you will perform the work, task by task]]
+[[FILL: your approach to 'security' — cite the PWS paragraph you're answering]]
 
-### Staffing and key personnel
+### Period Of Performance
 
-[[FILL: who performs the work, and their qualifications against the stated requirements]]
+[[FILL: your approach to 'period of performance' — cite the PWS paragraph you're answering]]
 
-### Quality control
+### Qualifications
 
-[[FILL: how you will ensure and measure performance]]
+[[FILL: your approach to 'qualifications' — cite the PWS paragraph you're answering]]
+
+### Transition
+
+[[FILL: your approach to 'transition' — cite the PWS paragraph you're answering]]
+
+### Performance Requirements
+
+[[FILL: your approach to 'performance requirements' — cite the PWS paragraph you're answering]]
+
+### Background
+
+[[FILL: your approach to 'background' — cite the PWS paragraph you're answering]]
+
+### Scope
+
+[[FILL: your approach to 'scope' — cite the PWS paragraph you're answering]]
 
 ## 5. Requirements traceability
 
@@ -80,7 +96,18 @@ One row per stated requirement, so nothing in the PWS goes unanswered — the mo
 
 | # | Requirement (from the solicitation) | Where answered | Can we perform? |
 |---|---|---|---|
-| 1 | [[FILL: paste each requirement from the PWS — no list was detectable in the text]] | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 1 | The standard removal time for containerized wastes under this contract is fifteen (15) business days, and for bulk waste is seven (7) bus... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 2 | Pricing for containerized wastes will most commonly be based on container sizes.  Pricing for bulk wastes will most commonly be based on ... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 3 | The Government agrees that all items placed on a Task Order (TO) on this contract will be accompanied by documentation and markings that ... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 4 | Publications and attachments applicable to this contract will be made available upon request.  During the solicitation and life of this c... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 5 | Industrial Cleaning Services (ICS) CLIN, when offered under this contract, require Contractor provision of all labor and equipment necess... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 6 | Generators are responsible for ensuring their containerized wastes sent for disposal via this contract are in proper Department of Transp... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 7 | Minimum TO charges under this contract will be $2,000.00 except where otherwise specified in the contract, including but not limited to v... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 8 | For the purpose of this contract the terms Department of Defense (DoD) and Department of War (DoW) are interchangeable and have the same ... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 9 | Base CLIN categories and their descriptions used for waste disposal CLINs under this contract are as follows: | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 10 | Batteries (BA) – Used for all battery types, some, or all of which may be turned in as Universal Waste (UW) where no EPA Waste Codes are ... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 11 | Toxic (TX) – Used for various toxic wastes that are not ignitable, corrosive, or reactive waste bearing the D001, D002, or D003 Waste Cod... | [[FILL: section]] | [[FILL: yes/no/partial]] |
+| 12 | Base CLIN sequence number – Refer to the Master Disposal CLIN Catalog. | [[FILL: section]] | [[FILL: yes/no/partial]] |
 
 ## 6. Past performance
 
@@ -142,4 +169,4 @@ Requested on most commercial-item buys. Values come from the fact bank.
 
 ---
 
-_Draft generated 2026-09-12 from SAM.gov notice 93efb9faa4284a6788db233d3aa59581 (triage score 5: set-aside (Small Business Set Aside - Total) — eligible, 16d to deadline, 1 keyword match)._ _Not a submission._
+_Draft generated 2026-09-13 from SAM.gov notice 93efb9faa4284a6788db233d3aa59581 (triage score 5: set-aside eligible, 16d to deadline)._ _Not a submission._

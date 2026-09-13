@@ -77,6 +77,16 @@ CREDENTIAL_GATES = (
      r"|facility\s+clearance|\bFCL\b|cleared\s+personnel"),
     ("a state contractor or professional license",
      r"licensed\s+in\s+the\s+state|state\s+contractor'?s?\s+licen"),
+    ("EPA / RCRA hazardous waste authority — permitted facilities, "
+     "transporters, or a generator ID",
+     r"\bRCRA\b|\bTSDF\b|EPA\s+(?:waste\s+)?(?:ID|code)|e-?Manifest"
+     r"|hazardous\s+waste\s+(?:permit|transporter|manifest)"
+     r"|\b40\s*(?:CFR|C\.F\.R\.|Code\s+of\s+Federal\s+Regulation)"
+     r"|qualified\s+(?:facilities|transporters)\s+list"),
+    ("DOT hazardous materials certification for drivers and shippers",
+     r"\bhazmat\b|hazardous\s+materials\s+(?:certif|endorsement|training)"
+     r"|\b49\s*(?:CFR|C\.F\.R\.|Code\s+of\s+Federal\s+Regulation)"
+     r"|proper\s+shipping\s+name"),
     ("documented OSHA / NFPA safety training for the crew",
      r"OSHA\s*(?:and|/|&)?\s*NFPA|\b(?:29\s*CFR\s*)?1910\.146\b"
      r"|competent\s+person|qualified\s+person\s+as\s+defined"),
@@ -103,6 +113,28 @@ def credential_gates(*texts):
         if re.search(pattern, blob, re.IGNORECASE):
             found.append(label)
     return found
+
+
+def _deadline_clock(opp):
+    """The closing time as the notice states it, or "" when it has none.
+
+    Shown because the date alone hides the half of the deadline that
+    actually catches people: the NAFI audit closed at 08:00 Eastern and
+    the DLA solicitations at various hours, none of them end of business.
+    """
+    raw = opp.get("responseDeadLine") or ""
+    match = re.match(r"^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2})(?::\d{2})?(.*)$", raw)
+    if not match:
+        return ""
+    hour, minute, zone = match.groups()
+    zone = zone.strip()
+    if zone in ("Z", "+00:00"):
+        label = "UTC"
+    elif zone:
+        label = f"UTC{zone[:3]}" if re.match(r"^[+-]\d{2}", zone) else zone
+    else:
+        label = "time zone not stated — confirm on the listing"
+    return f"{hour}:{minute} ({label})"
 
 
 def _deadline_parts(opp):
@@ -378,6 +410,7 @@ def build_start_here(opp, company, blanks_left, attachments, failed, gates=(), k
         "| | |",
         "|---|---|",
         f"| **Due** | **{when}** |",
+        f"| Closing time | {_deadline_clock(opp) or 'not published — confirm on the listing'} |",
         f"| Notice type | {opp.get('type') or opp.get('baseType') or 'not stated'} |",
         f"| Solicitation | {opp.get('solicitationNumber') or opp.get('noticeId') or '-'} |",
         f"| Agency | {opp.get('fullParentPathName') or '-'} |",

@@ -948,3 +948,71 @@ def test_the_shipped_psc_filter_matches_the_profile_priorities():
     # Every PSC the profile already scores as a priority must survive it.
     for psc in fo.PROFILES["p1821"]["priority_psc"]:
         assert any(psc.upper().startswith(p.upper()) for p in prefixes), psc
+
+
+# ---------- environmental authority ----------
+
+def test_rcra_hazardous_waste_authority_is_a_gate():
+    # The DLA Charleston solicitation: removal, transport and disposal of
+    # RCRA hazardous waste, using facilities and transporters from DLA's
+    # Qualified Facilities and Transporters Lists. None of that was caught
+    # before — the detector knew about CPAs and engineers and nothing about
+    # the permits that gate environmental work.
+    gates = packet.credential_gates(
+        "Work will consist primarily of the removal, transportation, and disposal "
+        "of Resource Conservation and Recovery Act (RCRA) hazardous wastes")
+    assert any("EPA / RCRA" in g for g in gates)
+
+
+def test_tsdf_and_qualified_lists_trip_the_same_gate():
+    for text in (
+        "the Contractor's Treatment, Storage and Disposal Facility (TSDF) of choice",
+        "only utilize facilities and transporters listed on the Qualified Facilities List",
+        "fees associated with the EPA national electronic manifest (e-Manifest) system",
+        "Universal Treatment Standards per 40 Code of Federal Regulation (CFR) 268.48",
+    ):
+        assert any("EPA / RCRA" in g for g in packet.credential_gates(text)), text
+
+
+def test_dot_hazmat_certification_is_its_own_gate():
+    gates = packet.credential_gates(
+        "DOT regulations, including Proper Shipping Name (PSN) and Hazard Class")
+    assert any("DOT hazardous materials" in g for g in gates)
+
+
+def test_environmental_gates_stay_quiet_on_office_work():
+    for benign in (
+        "Provide monthly bookkeeping and reconciliation services.",
+        "Prepare quarterly financial statements and management reports.",
+        "Administrative support for the program office.",
+    ):
+        assert packet.credential_gates(benign) == [], benign
+
+
+# ---------- the closing time, not just the date ----------
+
+def test_the_closing_time_is_shown_with_its_zone():
+    # A date alone hides the half of the deadline that catches people: the
+    # NAFI audit closed at 08:00, not end of business.
+    assert packet._deadline_clock({"responseDeadLine": "2026-09-22T08:00:00-04:00"}) == "08:00 (UTC-04)"
+    assert packet._deadline_clock({"responseDeadLine": "2026-09-30T12:00:00Z"}) == "12:00 (UTC)"
+
+
+def test_a_date_with_no_time_says_so_rather_than_guessing():
+    assert packet._deadline_clock({"responseDeadLine": "2026-09-30"}) == ""
+    assert packet._deadline_clock({}) == ""
+
+
+def test_the_checklist_carries_the_closing_time(tmp_path):
+    out, _, _ = packet.build_packet(
+        dict(OPP, responseDeadLine="2026-09-28T14:00:00-04:00"),
+        "", FILLED, str(tmp_path), 4, "")
+    text = open(os.path.join(out, "00-START-HERE.md")).read()
+    assert "14:00 (UTC-04)" in text
+
+
+def test_a_packet_with_no_published_time_says_to_confirm(tmp_path):
+    out, _, _ = packet.build_packet(
+        dict(OPP, responseDeadLine="2026-09-28"), "", FILLED, str(tmp_path), 4, "")
+    text = open(os.path.join(out, "00-START-HERE.md")).read()
+    assert "confirm on the listing" in text
