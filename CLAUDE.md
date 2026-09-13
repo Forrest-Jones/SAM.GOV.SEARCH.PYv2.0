@@ -127,6 +127,20 @@ is what survives a contracting officer checking:
 - Never paste an API key or password into chat or a file. The SAM key lives
   in gitignored `.env.local` locally and in GitHub Secrets for CI.
 
+## Where this work lives
+
+This repository is the only home for the SAM.gov opportunity pipeline, and
+it is the shared state between sessions — everything is committed and
+pushed, nothing is local-only. On the owner's Mac the clone is at
+`~/SAM.GOV.SEARCH.PYv2.0`; `bash start.command` runs the web app.
+
+There is an unrelated HighLevel CRM project at `~/bwig-ghl` on that
+machine. It has no SAM.gov context and is not part of this work. A session
+opened there looked in `~/samgov` — an empty folder — and concluded the
+app did not exist. It does; that was the wrong directory. Do not treat
+that project as a source for anything here, and do not split this work
+across it.
+
 ## Open items
 
 - Add **NAICS 541219** and **PSC R499** to the SAM registration. Notices
