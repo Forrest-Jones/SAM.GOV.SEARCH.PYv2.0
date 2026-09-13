@@ -82,6 +82,13 @@
           <h1>Bid Desk</h1>
           <p class="muted">Everything that can be prepared for you already has been. What's left is the part only you can do: decide to bid, set the price, sign it.</p>
           <div id="factbank-banner" class="notice" hidden></div>
+          <section id="company-card" class="company-card" hidden>
+            <div class="company-card-head">
+              <h2 id="company-card-name"></h2>
+              <span class="muted" id="company-card-ids"></span>
+            </div>
+            <div id="company-card-body" class="company-facts"></div>
+          </section>
           <div id="packets-list" class="card-list"></div>
           <p id="packets-empty" class="muted" hidden>No bid packets yet. They're built automatically each morning for your best matches.</p>
         </div>
@@ -241,15 +248,8 @@
         <div class="settings-card">
           <h2>Your Company Details</h2>
           <p class="field-help">Fills in proposal drafts — cover letter, offeror information, signature block. Anything left blank appears in the draft as an obvious blank rather than a guess, because these facts go on a federal submission.</p>
-          <div class="credential-row"><span>Legal business name</span><input id="cp-legal_name" type="text" /></div>
-          <div class="credential-row"><span>UEI</span><input id="cp-uei" type="text" placeholder="from your SAM.gov registration" /></div>
-          <div class="credential-row"><span>CAGE code</span><input id="cp-cage" type="text" /></div>
-          <div class="credential-row"><span>Address</span><input id="cp-address" type="text" /></div>
-          <div class="credential-row"><span>Phone</span><input id="cp-phone" type="text" /></div>
-          <div class="credential-row"><span>Email</span><input id="cp-email" type="text" /></div>
-          <div class="credential-row"><span>Signer's name</span><input id="cp-signatory_name" type="text" /></div>
-          <div class="credential-row"><span>Signer's title</span><input id="cp-signatory_title" type="text" placeholder="e.g. Managing Member" /></div>
-          <div class="credential-row"><span>Capability statement</span><input id="cp-capability_statement" type="text" placeholder="2-3 sentences on why you're qualified" /></div>
+          <div id="company-on-file" class="company-facts"></div>
+          <p class="field-help">Read from <code>company.toml</code>. Every packet and every response carries exactly this; edit that file to change it.</p>
         </div>
 
         <div class="settings-card">

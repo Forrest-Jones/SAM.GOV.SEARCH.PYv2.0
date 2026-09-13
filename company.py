@@ -63,7 +63,7 @@ LEVERAGE_FIELDS = (
 )
 
 SHARED_KEYS = (
-    "signatory_name", "signatory_title", "phone", "email",
+    "signatory_name", "signatory_title", "phone", "phone_alt", "email",
     "sam_registration_expires", "insurance_carrier", "insurance_gl_limit",
     "workers_comp", "bonding_capacity_single", "bonding_capacity_total",
     "skip_psc", "skip_keywords", "active_profiles",

@@ -84,10 +84,6 @@ DEFAULT_SHARED = {
     "company_name": "Proverbs 1821 Consulting LLC",
     "notify_email": core.DEFAULT_TO_EMAIL,
     "send_email": True,
-    # Fills the offeror/cover-letter sections of a proposal draft. Anything
-    # left blank shows up as a visible [[FILL: ...]] blank rather than being
-    # guessed at — these are facts that go on a federal submission.
-    "company_profile": dict(proposal_builder.DEFAULT_COMPANY_PROFILE),
 }
 
 # Settings that differ per business.
@@ -245,9 +241,9 @@ def load_store():
     # reads a stale copy: a WOSB sole source scored "Great Match — eligible"
     # in the web UI for two days after the code stopped claiming WOSB,
     # because this file still said the certification was held.
-    dropped = "certifications" in saved
+    dropped = "certifications" in saved or "company_profile" in saved
     for block in (saved.get("profiles") or {}).values():
-        if isinstance(block, dict) and "certifications" in block:
+        if isinstance(block, dict) and ("certifications" in block or "company_profile" in block):
             dropped = True
     if dropped:
         save_store(store)
@@ -405,13 +401,6 @@ def api_save_settings():
         if "@" in email:
             settings["notify_email"] = email
 
-    if isinstance(body.get("company_profile"), dict):
-        profile = dict(settings.get("company_profile") or {})
-        for key in proposal_builder.DEFAULT_COMPANY_PROFILE:
-            if key in body["company_profile"]:
-                profile[key] = str(body["company_profile"][key]).strip()
-        settings["company_profile"] = profile
-
     for key in DEFAULT_SHARED:
         store[key] = settings[key]
     store["profiles"][profile] = {k: settings[k] for k in PER_PROFILE_KEYS}
@@ -530,11 +519,13 @@ def api_build_proposal(notice_id):
     with open(notice_path) as f:
         cached = json.load(f)
 
-    settings = load_settings(profile)
     path = proposal_builder.write_proposal(
         cached["opp"],
         cached.get("description"),
-        settings.get("company_profile") or {},
+        # The fact bank, not a settings copy: a proposal built here with an
+        # empty settings block while company.toml was full is exactly the
+        # drift that put blank identity fields on a draft.
+        fact_bank.load_company(profile),
         proposals_dir_for(profile),
         score=cached.get("score"),
         reasons=cached.get("reasons") or "",
@@ -849,14 +840,30 @@ def api_factbank():
     profile = requested_profile()
     company = fact_bank.load_company(profile)
     required, leverage = fact_bank.missing_fields(company)
+    refs = fact_bank.filled_rows(company, "past_performance")
     return jsonify({
         "profile": profile,
         "required_missing": required,
         "leverage_missing": leverage,
         "format_warnings": fact_bank.format_warnings(company),
-        "past_performance": len(fact_bank.filled_rows(company, "past_performance")),
+        "past_performance": len(refs),
         "rate_card": len(fact_bank.filled_rows(company, "rate_card")),
         "ready": not required,
+        # Everything on file, so the page can show what will go on every
+        # packet instead of leaving the user to wonder what the tool knows.
+        "identity": {k: company.get(k) or "" for k in (
+            "legal_name", "uei", "cage", "address", "phone", "phone_alt", "email",
+            "signatory_name", "signatory_title", "sam_registration_expires")},
+        "capability_statement": company.get("capability_statement") or "",
+        "past_performance_note": company.get("past_performance_note") or "",
+        "credentials": fact_bank.held_credentials(company),
+        "personnel": fact_bank.personnel(company),
+        "affiliations": fact_bank.affiliations(company),
+        "references": [{"customer": r.get("customer") or "", "scope": r.get("scope") or "",
+                        "value": r.get("value") or "", "period": r.get("period") or ""}
+                       for r in refs],
+        "held_certs": held_certifications(),
+        "source": os.path.basename(company.get("_source") or "company.toml"),
     })
 
 

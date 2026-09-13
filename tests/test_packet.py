@@ -1211,3 +1211,73 @@ def test_a_stale_settings_file_claiming_wosb_is_stripped(tmp_path, monkeypatch):
     assert "certifications" not in json.loads(path.read_text())["profiles"]["p1821"]
     # The unrelated setting survives.
     assert loaded["profiles"]["p1821"]["naics_codes"] == ["541611"]
+
+
+# ---------- company facts live in exactly one place, too ----------
+
+def _webapp():
+    import sys
+    sys.path.insert(0, os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "webapp"))
+    import app as webapp
+    return webapp
+
+
+def test_company_facts_are_not_a_saved_setting():
+    # Same drift as the certifications: settings.json carried its own empty
+    # company_profile, the Settings form showed blank identity fields, and
+    # the old proposal builder produced drafts with blank UEI while
+    # company.toml had it all along.
+    webapp = _webapp()
+    assert "company_profile" not in webapp.DEFAULT_SHARED
+    assert "company_profile" not in webapp.PER_PROFILE_KEYS
+
+
+def test_a_stale_company_profile_in_settings_is_stripped(tmp_path, monkeypatch):
+    import json
+    webapp = _webapp()
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({
+        "active_profile": "p1821",
+        "company_profile": {"legal_name": "", "uei": ""},
+        "profiles": {"p1821": {"naics_codes": ["541611"]}},
+    }))
+    monkeypatch.setattr(webapp, "SETTINGS_PATH", str(path))
+    loaded = webapp.load_store()
+    assert "company_profile" not in loaded
+    assert "company_profile" not in json.loads(path.read_text())
+
+
+def test_the_factbank_endpoint_returns_the_identity_on_file():
+    webapp = _webapp()
+    webapp.app.config["TESTING"] = True
+    with webapp.app.test_client() as c:
+        data = c.get("/api/factbank?profile=p1821").get_json()
+    assert data["identity"]["legal_name"] == "Proverbs 1821 Consulting LLC"
+    assert data["identity"]["uei"] == "GD83PAK36818"
+    assert data["identity"]["cage"] == "22ND2"
+    assert data["identity"]["signatory_name"] == "Forrest Andrew Jones"
+    names = {p["name"] for p in data["personnel"]}
+    assert {"Forrest A. Jones", "Richard Starr", "Randy White"} <= names
+    assert data["held_certs"]["held"] == ["small_business"]
+    assert any(r["customer"].startswith("Blackwater") for r in data["references"])
+    assert data["source"] == "company.toml"
+
+
+def test_the_web_proposal_builder_uses_the_fact_bank(tmp_path, monkeypatch):
+    # The path a user reaches from Review Packets. It used to read the
+    # empty settings copy and draft a proposal with [[FILL: UEI]] on it.
+    import json
+    webapp = _webapp()
+    notices = tmp_path / "notices" / "p1821"
+    notices.mkdir(parents=True)
+    (notices / "n1.json").write_text(json.dumps({
+        "opp": dict(OPP, noticeId="n1"), "description": "Scope.", "score": 4, "reasons": ""}))
+    monkeypatch.setattr(webapp, "notices_dir_for", lambda p: str(notices))
+    monkeypatch.setattr(webapp, "proposals_dir_for", lambda p: str(tmp_path / "proposals"))
+    webapp.app.config["TESTING"] = True
+    with webapp.app.test_client() as c:
+        data = c.post("/api/proposals/n1?profile=p1821").get_json()
+    assert data["ok"]
+    assert "GD83PAK36818" in data["content"]
+    assert "[[FILL: UEI" not in data["content"]

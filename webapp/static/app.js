@@ -5,14 +5,11 @@
     activeProfile: null,
     settings: null,
     certifications: null,
+    factbank: null,
     naicsCodes: [],
     lastOpportunities: [],
   };
 
-  const COMPANY_FIELDS = [
-    "legal_name", "uei", "cage", "address", "phone", "email",
-    "signatory_name", "signatory_title", "capability_statement",
-  ];
 
   function $(id) { return document.getElementById(id); }
 
@@ -96,6 +93,8 @@
     $("packet-list-view").hidden = false;
 
     const fb = await api("/api/factbank");
+    state.factbank = fb;
+    renderCompanyCard(fb);
     const banner = $("factbank-banner");
     if (fb.required_missing && fb.required_missing.length) {
       banner.hidden = false;
@@ -363,6 +362,50 @@
       $("packet-go-state").textContent =
         "Not bidding. Add a word from the title to skip_keywords in company.toml and work like it stops reaching you.";
     });
+  }
+
+  // ---------------- What is on file ----------------
+
+  function factRow(k, v) {
+    return '<div class="fact"><span class="fact-k">' + escapeHtml(k) + "</span>" +
+      '<span class="fact-v">' + (v ? escapeHtml(v) : '<em class="muted">not on file</em>') + "</span></div>";
+  }
+
+  function renderCompanyFacts(root, fb, opts) {
+    if (!root || !fb) return;
+    const id = fb.identity || {};
+    let html = factRow("Legal name", id.legal_name) + factRow("UEI", id.uei) +
+      factRow("CAGE", id.cage) + factRow("Address", id.address) +
+      factRow("Phone", [id.phone, id.phone_alt].filter(Boolean).join(" · ")) +
+      factRow("Email", id.email) +
+      factRow("Signs for the company", [id.signatory_name, id.signatory_title].filter(Boolean).join(", ")) +
+      factRow("SAM registration", id.sam_registration_expires ? "active, renews " + id.sam_registration_expires : "");
+    if (!(opts && opts.compact)) {
+      const certs = (fb.held_certs && fb.held_certs.held) || [];
+      const labels = (fb.held_certs && fb.held_certs.labels) || {};
+      html += factRow("Set-aside programs held", certs.map((c) => labels[c] || c).join(", "));
+      html += factRow("Credentials", (fb.credentials || []).map((c) =>
+        c.label + " — " + c.holder + (c.identifier ? " (" + c.identifier + ")" : "")).join("; "));
+      html += factRow("Who performs the work", (fb.personnel || []).map((p) =>
+        p.name + (p.role ? " (" + p.role + ")" : "")).join("; "));
+      html += factRow("Affiliations", (fb.affiliations || []).map((a) => a.name).join("; "));
+      html += factRow("References on file", (fb.references || []).map((r) => r.customer).join("; "));
+      html += factRow("Capability statement", fb.capability_statement ? "on file, " +
+        fb.capability_statement.split(/\s+/).length + " words" : "");
+    }
+    root.innerHTML = html;
+  }
+
+  function renderCompanyCard(fb) {
+    const card = $("company-card");
+    if (!card) return;
+    const id = (fb && fb.identity) || {};
+    if (!id.legal_name) { card.hidden = true; return; }
+    card.hidden = false;
+    $("company-card-name").textContent = id.legal_name;
+    $("company-card-ids").textContent = "UEI " + id.uei + " · CAGE " + id.cage +
+      " · from " + (fb.source || "company.toml");
+    renderCompanyFacts($("company-card-body"), fb, { compact: false });
   }
 
   function linkifyPlain(text) {
@@ -690,6 +733,7 @@
     state.profiles = data.profiles || [];
     state.certifications = data.certifications;
     state.naicsCodes = data.settings.naics_codes.slice();
+    state.factbank = await api("/api/factbank");
     renderProfileSwitch();
     renderSettingsForm();
     renderCredentialStatus();
@@ -751,11 +795,7 @@
     $("send-email").checked = !!s.send_email;
     $("notify-email").value = s.notify_email;
 
-    const profile = s.company_profile || {};
-    COMPANY_FIELDS.forEach((key) => {
-      const el = $("cp-" + key);
-      if (el) el.value = profile[key] || "";
-    });
+    renderCompanyFacts($("company-on-file"), state.factbank, { compact: true });
   }
 
   function renderNaicsChips() {
@@ -796,16 +836,9 @@
     $("settings-status").textContent = "Saving...";
 
 
-    const companyProfile = {};
-    COMPANY_FIELDS.forEach((key) => {
-      const el = $("cp-" + key);
-      if (el) companyProfile[key] = el.value;
-    });
-
     await api("/api/settings", {
       method: "POST",
       body: JSON.stringify({
-        company_profile: companyProfile,
         naics_codes: state.naicsCodes,
         show_ineligible: $("show-ineligible").checked,
         deadline_max_days: $("deadline-max").value,
