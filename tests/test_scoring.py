@@ -358,3 +358,81 @@ def test_score_uses_the_profile_keywords_not_the_module_default():
 def test_score_reports_the_matched_home_state():
     _, reasons = score(make_opp(), 7, 60, WOSB_HOLDER, home_states={"TX"})
     assert "TX" in reasons
+
+
+# ---------- the digest must not recommend unwinnable work ----------
+
+def test_the_digest_does_not_list_a_blocked_notice_as_a_top_match(monkeypatch):
+    # The failure this pins: the Coast Guard NAFI audit says "independent
+    # Certified Public Accountant firm or licensed CPA" in its own
+    # description. It was reported blocked inside its packet, and still
+    # arrived as the first entry in the daily email three days running,
+    # which reads as a recommendation.
+    import find_opportunities as fo
+
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def login(self, *a): pass
+        def sendmail(self, frm, to, text):
+            # MIMEText base64-encodes a utf-8 body, so decode it rather
+            # than asserting against transfer encoding.
+            import email as email_mod
+            sent["body"] = email_mod.message_from_string(text).get_payload(
+                decode=True).decode("utf-8")
+
+    import smtplib
+    monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
+
+    nafi = {"noticeId": "n1", "title": "NAFI Audit",
+            "responseDeadLine": "2026-09-22T08:00:00-04:00",
+            "uiLink": "https://sam.gov/nafi", "naicsCode": "541211"}
+    good = {"noticeId": "n2", "title": "Bookkeeping Support Services",
+            "responseDeadLine": "2026-09-30T12:00:00-04:00",
+            "uiLink": "https://sam.gov/good", "naicsCode": "541219"}
+
+    fo.send_email_digest(
+        new_ones=[(6, "set-aside eligible", nafi)],
+        to_addr="x@example.com", from_addr="y@example.com", app_password="pw",
+        ranked=[(6, "set-aside eligible", nafi), (4, "9d to deadline", good)],
+        blocked=[(nafi, "a licensed CPA or CPA firm")],
+    )
+    body = sent["body"]
+
+    # It appears once, under its own heading, below everything else.
+    assert "CANNOT BID — QUALIFICATION NOT HELD" in body
+    assert "needs a licensed CPA or CPA firm" in body
+    assert body.index("Bookkeeping Support Services") < body.index("CANNOT BID")
+    # And never as new, or as a top match.
+    assert "NEW SINCE YESTERDAY" not in body
+    top = body[body.index("STILL OPEN"):body.index("CANNOT BID")]
+    assert "NAFI" not in top
+
+
+def test_an_unblocked_digest_has_no_cannot_bid_section(monkeypatch):
+    import find_opportunities as fo
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def login(self, *a): pass
+        def sendmail(self, frm, to, text):
+            # MIMEText base64-encodes a utf-8 body, so decode it rather
+            # than asserting against transfer encoding.
+            import email as email_mod
+            sent["body"] = email_mod.message_from_string(text).get_payload(
+                decode=True).decode("utf-8")
+
+    import smtplib
+    monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
+    good = {"noticeId": "n2", "title": "Bookkeeping Support",
+            "responseDeadLine": "2026-09-30T12:00:00-04:00", "uiLink": "u"}
+    fo.send_email_digest([], "x@e.com", "y@e.com", "pw",
+                         ranked=[(4, "why", good)], blocked=[])
+    assert "CANNOT BID" not in sent["body"]
+    assert "Bookkeeping Support" in sent["body"]

@@ -677,8 +677,29 @@ def format_notice_lines(pts, reasons, opp):
     return lines
 
 
+def credential_blocked(opp, description_text, company):
+    """The unmet pass/fail qualification for this notice, or None.
+
+    The credential gate reached the packet checklist and stopped there, so
+    a notice the tool already knew was unwinnable kept arriving at the top
+    of the digest. The Coast Guard NAFI audit says "independent Certified
+    Public Accountant firm or licensed CPA" in its own description, was
+    reported as blocked inside its packet, and was still the first thing in
+    the email three days running.
+    """
+    import packet as packet_builder
+    from company import satisfies
+
+    gates = packet_builder.credential_gates(
+        description_text, opp.get("description"), opp.get("title"))
+    for gate in gates:
+        if satisfies(company, gate) is None:
+            return gate
+    return None
+
+
 def send_email_digest(new_ones, to_addr, from_addr, app_password,
-                      profile_label=None, ranked=None, top_n=10):
+                      profile_label=None, ranked=None, top_n=10, blocked=None):
     """The daily digest. Leads with what's new, then lists the current best
     matches so the mail is useful even on a day when nothing is new — which
     is most days, and otherwise the reader can't tell a quiet day from a
@@ -690,6 +711,10 @@ def send_email_digest(new_ones, to_addr, from_addr, app_password,
     # business or the two digests are indistinguishable.
     who = profile_label or "Proverbs 1821 Consulting"
     ranked = ranked or []
+    blocked = blocked or []
+    blocked_ids = {opp.get("noticeId") for opp, _ in blocked}
+    new_ones = [r for r in new_ones if r[2].get("noticeId") not in blocked_ids]
+    ranked = [r for r in ranked if r[2].get("noticeId") not in blocked_ids]
     new_ids = {opp.get("noticeId") for _, _, opp in new_ones}
 
     lines = [f"SAM.gov daily search — {who}", f"{date.today().strftime('%A, %B %d, %Y')}", ""]
@@ -711,10 +736,27 @@ def send_email_digest(new_ones, to_addr, from_addr, app_password,
         for pts, reasons, opp in others[:top_n]:
             lines += format_notice_lines(pts, reasons, opp)
 
+    # Below the fold, and never in the top matches. A notice requiring a
+    # qualification the business does not hold is not a match, however well
+    # it scores on codes and deadlines, and putting it first is worse than
+    # not mentioning it: it reads as a recommendation.
+    if blocked:
+        lines.append(f"CANNOT BID — QUALIFICATION NOT HELD ({len(blocked)})")
+        lines.append("=" * 40)
+        lines.append("Listed so you know they exist. Do not spend time on these.")
+        lines.append("")
+        for opp, gate in blocked:
+            deadline = (opp.get("responseDeadLine") or "")[:10] or "no deadline"
+            lines.append(f"  {opp.get('title')}")
+            lines.append(f"    due {deadline} — needs {gate}")
+            lines.append(f"    {opp.get('uiLink', '-')}")
+            lines.append("")
+
     lines += [
         "-" * 40,
-        f"{len(ranked)} open notices matched your codes today.",
-        "Review packets for the best matches are in the repo under drafts/.",
+        f"{len(ranked)} open notices matched your codes today"
+        + (f"; {len(blocked)} excluded as unbiddable." if blocked else "."),
+        "Bid packets are in the repo under packets/.",
         "Nothing has been submitted — every bid stays your decision.",
     ]
 
@@ -814,6 +856,24 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
             draft_paths.append(path)
             log(f"  drafted {path}")
 
+    # Check the notices that would actually reach the inbox. One
+    # description call each against a 1,000/day budget, to stop the tool
+    # recommending work the business is barred from — which is what it did
+    # for three days with the Coast Guard NAFI audit.
+    from company import load_company
+    company = load_company(cfg.get("profile") or DEFAULT_PROFILE)
+    blocked = []
+    for pts, reasons, opp in ranked[:cfg.get("digest_top_n", 10) + len(new_ones)]:
+        nid = opp.get("noticeId")
+        text = descriptions.get(nid)
+        if text is None:
+            text = fetch_description(opp, api_key)
+            descriptions[nid] = text or ""
+        gate = credential_blocked(opp, text, company)
+        if gate:
+            blocked.append((opp, gate))
+            log(f"  cannot bid: {opp.get('title')} — needs {gate}")
+
     emailed = False
     have_creds = cfg.get("from_email") and cfg.get("app_password")
     # A scheduled daily digest should arrive even on a quiet day, otherwise
@@ -824,6 +884,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
             new_ones, cfg["to_email"], cfg["from_email"], cfg["app_password"],
             profile_label=cfg.get("profile_label"),
             ranked=ranked,
+            blocked=blocked,
         )
         emailed = True
 
@@ -833,6 +894,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
         "excluded_expired": excluded_expired,
         "excluded_supplies": excluded_supplies,
         "new_ones": new_ones,
+        "blocked": blocked,
         "draft_paths": draft_paths,
         "descriptions": descriptions,
         "emailed": emailed,
@@ -1028,6 +1090,7 @@ def main():
             return
 
     cfg = {
+        "profile": args.profile,
         "naics_codes": (
             [c.strip() for c in args.naics.split(",") if c.strip()]
             if args.naics else list(profile["naics"])
