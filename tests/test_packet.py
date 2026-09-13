@@ -1158,3 +1158,56 @@ def test_a_packets_gate_block_reflects_its_attachments(tmp_path):
     text = open(os.path.join(out, "00-START-HERE.md")).read()
     assert "a security clearance or facility clearance" in text
     assert "nothing on file covers this" in text
+
+
+# ---------- certifications live in exactly one place ----------
+
+def test_certifications_are_not_a_saved_setting():
+    # A WOSB sole source kept reading "Great Match — eligible" in the web
+    # UI for two days after the code stopped claiming WOSB, because
+    # settings.json still said the certification was held. Two copies of a
+    # fact is one copy too many.
+    import sys
+    sys.path.insert(0, os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "webapp"))
+    import app as webapp
+    assert "certifications" not in webapp.PER_PROFILE_KEYS
+    assert "certifications" not in webapp.default_profile_settings("p1821")
+    assert "certifications" not in webapp.DEFAULT_SHARED
+
+
+def test_the_web_ui_reads_held_certs_from_the_one_constant():
+    import sys
+    sys.path.insert(0, os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "webapp"))
+    import app as webapp
+    import find_opportunities as fo
+    held = webapp.held_certifications()
+    assert held["held"] == list(fo.DEFAULT_HELD_CERTS)
+    assert "wosb" not in held["held"]
+    assert "edwosb" not in held["held"]
+    # Every program is still listed, so the page can show what is NOT held.
+    assert set(held["labels"]) == set(fo.CERTIFICATION_HINTS)
+
+
+def test_a_stale_settings_file_claiming_wosb_is_stripped(tmp_path, monkeypatch):
+    import json
+    import sys
+    sys.path.insert(0, os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "webapp"))
+    import app as webapp
+
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({
+        "active_profile": "p1821",
+        "profiles": {"p1821": {"certifications": ["wosb", "edwosb"],
+                               "naics_codes": ["541611"]}},
+    }))
+    monkeypatch.setattr(webapp, "SETTINGS_PATH", str(path))
+
+    loaded = webapp.load_store()
+    assert "certifications" not in loaded["profiles"]["p1821"]
+    # ...and removed from the file, so nothing reads it again.
+    assert "certifications" not in json.loads(path.read_text())["profiles"]["p1821"]
+    # The unrelated setting survives.
+    assert loaded["profiles"]["p1821"]["naics_codes"] == ["541611"]

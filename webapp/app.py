@@ -92,7 +92,7 @@ DEFAULT_SHARED = {
 
 # Settings that differ per business.
 PER_PROFILE_KEYS = (
-    "naics_codes", "certifications", "posted_days", "deadline_min_days",
+    "naics_codes", "posted_days", "deadline_min_days",
     "deadline_max_days", "draft_min_score", "show_ineligible", "generate_drafts",
 )
 
@@ -101,10 +101,7 @@ def default_profile_settings(profile):
     spec = core.PROFILES[profile]
     return {
         "naics_codes": list(spec["naics"]),
-        # Only what is actually held. WOSB/EDWOSB require an SBA
-        # certification the business does not have yet — see
-        # DEFAULT_HELD_CERTS in find_opportunities.py.
-        "certifications": list(core.DEFAULT_HELD_CERTS),
+
         "posted_days": 45,
         "deadline_min_days": 7,
         "deadline_max_days": 60,
@@ -242,6 +239,18 @@ def load_store():
             store["profiles"][profile].update(
                 {k: v for k, v in block.items() if k in PER_PROFILE_KEYS}
             )
+    # A settings file written before certifications moved out still carries
+    # them, and "certifications" is no longer in PER_PROFILE_KEYS so the
+    # loop above already drops it. Stripped from the file too, so nothing
+    # reads a stale copy: a WOSB sole source scored "Great Match — eligible"
+    # in the web UI for two days after the code stopped claiming WOSB,
+    # because this file still said the certification was held.
+    dropped = "certifications" in saved
+    for block in (saved.get("profiles") or {}).values():
+        if isinstance(block, dict) and "certifications" in block:
+            dropped = True
+    if dropped:
+        save_store(store)
     return store
 
 
@@ -283,7 +292,7 @@ def serialize_result(pts, reasons, opp, held_certs=None):
         "notice_id": opp.get("noticeId"),
         "score": pts,
         "reasons": reasons,
-        # Judged against the certifications actually saved in Settings, so the
+        # Judged against DEFAULT_HELD_CERTS, the one place that records what
         # badge matches this business rather than the module default.
         "eligibility": core.eligibility(opp, held_certs) if held_certs is not None else core.eligibility(opp),
         "title": opp.get("title"),
@@ -332,6 +341,17 @@ def api_credentials():
     return jsonify(credential_status())
 
 
+def held_certifications():
+    """What the business holds, and where that is recorded. Read-only on
+    purpose: a checkbox that can re-enable WOSB is a checkbox that will
+    eventually put a false certification on a federal submission."""
+    return {
+        "held": list(core.DEFAULT_HELD_CERTS),
+        "labels": {k: v["label"] for k, v in core.CERTIFICATION_HINTS.items()},
+        "source": "DEFAULT_HELD_CERTS in find_opportunities.py",
+    }
+
+
 @app.route("/api/settings", methods=["GET"])
 def api_get_settings():
     profile = requested_profile()
@@ -341,9 +361,7 @@ def api_get_settings():
         "profiles": [
             {"key": key, "label": spec["label"]} for key, spec in core.PROFILES.items()
         ],
-        "certification_options": [
-            {"key": key, "label": info["label"]} for key, info in core.CERTIFICATION_HINTS.items()
-        ],
+        "certifications": held_certifications(),
     })
 
 
@@ -367,9 +385,6 @@ def api_save_settings():
         codes = [re.sub(r"[^0-9]", "", str(c)) for c in body["naics_codes"]]
         settings["naics_codes"] = [c for c in codes if c]
 
-    if "certifications" in body:
-        valid_keys = set(core.CERTIFICATION_HINTS.keys())
-        settings["certifications"] = [c for c in body["certifications"] if c in valid_keys]
 
     for int_field, minimum in (
         ("posted_days", 1), ("deadline_min_days", 0),
@@ -424,7 +439,9 @@ def api_search():
         "deadline_max": settings["deadline_max_days"],
         "limit": 100,
         "max_retries": 4,
-        "held_certs": settings["certifications"],
+        # One source of truth, in code, tested. Not a saved setting anyone
+        # can leave stale.
+        "held_certs": list(core.DEFAULT_HELD_CERTS),
         "include_restricted": settings["show_ineligible"],
         "include_expired": False,
         "keywords": spec["keywords"],
@@ -448,7 +465,7 @@ def api_search():
         return jsonify({"ok": False, "error": "search_failed", "detail": str(e), "log": log_lines}), 500
 
     ranked_json = [
-        serialize_result(pts, reasons, opp, settings["certifications"])
+        serialize_result(pts, reasons, opp, list(core.DEFAULT_HELD_CERTS))
         for pts, reasons, opp in result["ranked"]
     ]
     new_ids = {opp.get("noticeId") for _, _, opp in result["new_ones"]}

@@ -4,7 +4,7 @@
   const state = {
     activeProfile: null,
     settings: null,
-    certOptions: [],
+    certifications: null,
     naicsCodes: [],
     lastOpportunities: [],
   };
@@ -688,7 +688,7 @@
     state.settings = data.settings;
     state.activeProfile = data.active_profile;
     state.profiles = data.profiles || [];
-    state.certOptions = data.certification_options;
+    state.certifications = data.certifications;
     state.naicsCodes = data.settings.naics_codes.slice();
     renderProfileSwitch();
     renderSettingsForm();
@@ -726,12 +726,21 @@
   function renderSettingsForm() {
     const s = state.settings;
     renderNaicsChips();
-    $("cert-checkboxes").innerHTML = state.certOptions.map((opt) => `
-      <label class="checkbox-row">
-        <input type="checkbox" value="${escapeAttr(opt.key)}" ${s.certifications.includes(opt.key) ? "checked" : ""} />
-        ${escapeHtml(opt.label)}
-      </label>
-    `).join("");
+    // Read-only. What the business holds is a fact recorded in one place,
+    // not a preference — a checkbox that can re-enable WOSB is a checkbox
+    // that will eventually put a false certification on a submission.
+    const certs = state.certifications || { held: [], labels: {}, source: "" };
+    $("cert-checkboxes").innerHTML =
+      '<ul class="cert-held">' +
+      Object.keys(certs.labels).map((key) => {
+        const on = certs.held.includes(key);
+        return '<li class="' + (on ? "cert-yes" : "cert-no") + '">' +
+          (on ? "\u2713 " : "\u2014 ") + escapeHtml(certs.labels[key]) + "</li>";
+      }).join("") + "</ul>" +
+      '<p class="field-help">Contracts reserved for anything unticked are ' +
+      "excluded automatically. Not editable here \u2014 this records what the " +
+      "business actually holds, set in <code>" + escapeHtml(certs.source) +
+      "</code>.</p>";
 
     $("show-ineligible").checked = !!s.show_ineligible;
     $("deadline-max").value = s.deadline_max_days;
@@ -786,7 +795,6 @@
     $("settings-save").disabled = true;
     $("settings-status").textContent = "Saving...";
 
-    const checkedCerts = Array.from($("cert-checkboxes").querySelectorAll("input:checked")).map((i) => i.value);
 
     const companyProfile = {};
     COMPANY_FIELDS.forEach((key) => {
@@ -799,7 +807,6 @@
       body: JSON.stringify({
         company_profile: companyProfile,
         naics_codes: state.naicsCodes,
-        certifications: checkedCerts,
         show_ineligible: $("show-ineligible").checked,
         deadline_max_days: $("deadline-max").value,
         deadline_min_days: $("deadline-min").value,
