@@ -34,6 +34,30 @@ MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 
 META_NAME = ".packet-meta.json"
 GENERATED = ("00-START-HERE.md", "01-proposal.md", "02-price-sheet.csv", "03-quote-email.txt")
+CAPABILITY_GENERATED = ("00-START-HERE.md", "01-capability-statement.md", "02-response-email.txt")
+
+# A notice can change hands between the two paths — a Sources Sought that
+# was packeted as a bid before the type was read, or a notice whose type
+# the API corrects. Leaving the other path's files behind is not untidy,
+# it is dangerous: a market research folder holding a price sheet and a
+# signed-quote email invites sending exactly the thing that must not be
+# sent. Whichever path builds owns the folder, and clears the other's.
+BID_ONLY = ("01-proposal.md", "02-price-sheet.csv", "03-quote-email.txt")
+CAPABILITY_ONLY = ("01-capability-statement.md", "02-response-email.txt")
+
+
+def _clear_other_path(out, names, log=None):
+    """Removes files belonging to the response kind this folder is not."""
+    removed = []
+    for name in names:
+        path = os.path.join(out, name)
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                removed.append(name)
+            except OSError:
+                pass
+    return removed
 
 
 # Requirements that decide the bid before anything else does. The NAFI
@@ -544,6 +568,13 @@ def build_capability_response(opp, description_text, company, root,
     existing = os.path.exists(os.path.join(out, "00-START-HERE.md"))
     fingerprint = company_fingerprint(company)
 
+    # Before anything else, including the early return for an unchanged
+    # packet: a folder that already holds the other path's files is wrong
+    # right now, and "kept" must not mean "left holding a price sheet for
+    # a notice that cannot be priced".
+    if existing:
+        _clear_other_path(out, BID_ONLY)
+
     if existing:
         meta = _read_meta(out)
         missing = {n for n in ("00-START-HERE.md", "01-capability-statement.md")
@@ -554,6 +585,7 @@ def build_capability_response(opp, description_text, company, root,
             return out, meta.get("blanks_left"), "kept"
 
     os.makedirs(out, exist_ok=True)
+    _clear_other_path(out, BID_ONLY)
     text = capability.build_capability_markdown(opp, description_text, company, notice_kind)
     blanks_left = len(re.findall(r"\[\[FILL:", text))
     written = {}
@@ -616,6 +648,7 @@ def build_packet(opp, description_text, company, root, score=None, reasons="", s
     existing = os.path.exists(os.path.join(out, "00-START-HERE.md"))
 
     if existing:
+        _clear_other_path(out, CAPABILITY_ONLY)
         meta = _read_meta(out)
         # A file that is not on disk is nobody's work, so it is always the
         # tool's to write. This is not hypothetical: *.csv in .gitignore
@@ -645,6 +678,7 @@ def build_packet(opp, description_text, company, root, score=None, reasons="", s
 
     os.makedirs(out, exist_ok=True)
 
+    _clear_other_path(out, CAPABILITY_ONLY)
     draft = proposal.build_proposal_markdown(opp, description_text, company, score, reasons)
     blanks_left = len(re.findall(r"\[\[FILL:", draft))
 

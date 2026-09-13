@@ -254,3 +254,49 @@ def test_technical_skills_are_tied_to_the_pws():
     text = capability.build_capability_markdown(SSN, REAL_NOTICE, BANK)
     assert "Technical skills against the draft PWS" in text
     assert "cite" in text and "PWS paragraph" in text
+
+
+# ---------- one folder, one response kind ----------
+
+def test_switching_a_folder_to_capability_removes_the_bid_files(tmp_path):
+    # Live case: IS3 was packeted as a bid before notice types were read.
+    # Once re-routed it held both — a capability statement beside a price
+    # sheet and a signed-quote email for a notice that cannot be quoted.
+    out, _, _ = packet.build_packet(
+        dict(SSN, type="Solicitation"), "Scope.", BANK, str(tmp_path), 4, "")
+    assert os.path.exists(os.path.join(out, "02-price-sheet.csv"))
+
+    again, _, _ = packet.build_capability_response(
+        SSN, NOTICE_TEXT, BANK, str(tmp_path), notice_kind="Sources Sought")
+    assert again == out
+    names = set(os.listdir(out))
+    assert "01-capability-statement.md" in names
+    for priced in ("01-proposal.md", "02-price-sheet.csv", "03-quote-email.txt"):
+        assert priced not in names, f"{priced} must not survive the switch"
+
+
+def test_a_kept_capability_folder_still_loses_stale_bid_files(tmp_path):
+    # The dangerous variant: the fact bank has not changed, so the builder
+    # returns "kept" — which must not mean "kept holding a price sheet".
+    out, _, _ = packet.build_capability_response(
+        SSN, NOTICE_TEXT, BANK, str(tmp_path), notice_kind="Sources Sought")
+    stale = os.path.join(out, "02-price-sheet.csv")
+    with open(stale, "w") as f:
+        f.write("stale price sheet")
+
+    _, _, status = packet.build_capability_response(
+        SSN, NOTICE_TEXT, BANK, str(tmp_path), notice_kind="Sources Sought")
+    assert status == "kept"
+    assert not os.path.exists(stale)
+
+
+def test_switching_back_to_a_bid_removes_the_capability_files(tmp_path):
+    out, _, _ = packet.build_capability_response(
+        SSN, NOTICE_TEXT, BANK, str(tmp_path), notice_kind="Sources Sought")
+    again, _, _ = packet.build_packet(
+        dict(SSN, type="Solicitation"), "Scope.", BANK, str(tmp_path), 4, "")
+    assert again == out
+    names = set(os.listdir(out))
+    assert "02-price-sheet.csv" in names
+    assert "01-capability-statement.md" not in names
+    assert "02-response-email.txt" not in names
