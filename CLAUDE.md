@@ -143,6 +143,10 @@ across it.
 
 ## Open items
 
+- Facts still blank in `company.toml` that every packet asks for:
+  `accounting_system`, the four `secondary_contact_*` keys, `rate_card`
+  rows (labor category + rate — no priced bid can be finished without
+  them), and `insurance_*` / `workers_comp`.
 - Add **NAICS 541219** and **PSC R499** to the SAM registration. Notices
   require small-business status under the assigned NAICS to prime, and the
   registration currently carries neither.
