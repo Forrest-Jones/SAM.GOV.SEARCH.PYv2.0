@@ -60,6 +60,8 @@ LEVERAGE_FIELDS = (
     ("insurance_gl_limit", "general liability limit"),
     ("workers_comp", "workers comp coverage"),
     ("sam_registration_expires", "SAM registration expiry"),
+    ("accounting_system", "accounting system"),
+    ("secondary_contact_name", "secondary point of contact"),
 )
 
 SHARED_KEYS = (
@@ -67,6 +69,9 @@ SHARED_KEYS = (
     "sam_registration_expires", "insurance_carrier", "insurance_gl_limit",
     "workers_comp", "bonding_capacity_single", "bonding_capacity_total",
     "skip_psc", "skip_keywords", "active_profiles",
+    "accounting_system", "accounting_system_review",
+    "secondary_contact_name", "secondary_contact_title",
+    "secondary_contact_phone", "secondary_contact_email",
 )
 
 

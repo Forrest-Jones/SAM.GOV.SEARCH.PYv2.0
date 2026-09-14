@@ -14,8 +14,7 @@ and Administrative Support Services.
   Size:      Small business for NAICS 541219
   Primary:   Forrest A. Jones, Owner / Managing Member
              (832) 562-1355 / forrestjones2010@gmail.com
-  Secondary: [[FILL: secondary point of contact — name, title, phone, email;
-             the notice asks for two]]
+  Secondary: [[FILL: second point of contact — name, title, phone, email]]
 
 Attached:
   - Capability Statement, Proverbs 1821 Consulting LLC (PDF)

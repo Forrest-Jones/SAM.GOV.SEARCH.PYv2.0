@@ -127,6 +127,8 @@
         '<span class="badge ' + u.cls + '">' + u.text + "</span></div>" +
         '<div class="opp-meta">Due ' + escapeHtml(p.deadline || "—") +
         " &middot; " + (p.blanks === null ? "—" : p.blanks) + " blanks left" +
+        (p.drafts ? " &middot; " + p.drafts + " drafts to approve" : "") +
+        (p.kind === "capability" ? " &middot; Sources Sought, no price" : "") +
         " &middot; " + p.attachments + " document" + (p.attachments === 1 ? "" : "s") +
         "</div>";
       card.addEventListener("click", () => openPacket(p.folder));
@@ -205,11 +207,65 @@
       : '<p class="muted">No attachments came back for this notice — open the listing itself, some agencies post documents only in the notice body.</p>';
 
     $("packet-email").value = d.email || "";
-    $("proposal-download").href = withProfile(
-      "/api/packets/" + encodeURIComponent(folder) + "/file/01-proposal.md");
+    desk.kind = d.kind || "bid";
+    desk.drafts = d.drafts || 0;
+    const base = "/api/packets/" + encodeURIComponent(folder);
+    $("proposal-download").href = withProfile(base + "/file/" + (d.response_file || "01-proposal.md"));
+    $("print-view").href = withProfile(base + "/print");
+    $("drafts-read").href = withProfile(base + "/print");
+    $("email-open").href = mailtoFrom(d.email || "");
+
+    // A market research response has no price, so the step is not shown
+    // rather than shown empty — the counter renumbers by itself.
+    $("step-price").hidden = desk.kind === "capability";
 
     renderPrice();
     renderBlanks();
+    renderDrafts();
+    renderSendState();
+  }
+
+  // The cover email as a mailto: link, so "send it" is one click into the
+  // mail app with every address, the subject and the body in place. The
+  // BEFORE SENDING checklist at the bottom of the file is for the reader,
+  // not the contracting officer, so it stops at the rule above it.
+  function mailtoFrom(text) {
+    const lines = text.split("\n");
+    let to = "", subject = "", i = 0;
+    for (; i < lines.length; i++) {
+      const m = lines[i].match(/^(To|Subject):\s*(.*)$/);
+      if (!m) { if (to || subject) break; continue; }
+      if (m[1] === "To") to = m[2].trim(); else subject = m[2].trim();
+    }
+    const body = lines.slice(i).join("\n").split(/\n-{20,}\n/)[0].trim();
+    return "mailto:" + to.replace(/\s+/g, "") +
+      "?subject=" + encodeURIComponent(subject) +
+      "&body=" + encodeURIComponent(body);
+  }
+
+  function renderDrafts() {
+    const block = $("drafts-block");
+    if (!desk.drafts) { block.hidden = true; return; }
+    block.hidden = false;
+    $("drafts-count").innerHTML = "<strong>" + desk.drafts + " draft answer" +
+      (desk.drafts === 1 ? "" : "s") + " waiting for your review.</strong>";
+    $("drafts-state").textContent = "";
+  }
+
+  function renderSendState() {
+    const box = $("send-ready");
+    const blanks = desk.blanks.length, drafts = desk.drafts;
+    box.hidden = false;
+    if (!blanks && !drafts) {
+      box.className = "notice notice-ok";
+      box.innerHTML = "<strong>Ready to send.</strong> Nothing left blank and every draft approved.";
+    } else {
+      box.className = "notice notice-warn";
+      const parts = [];
+      if (blanks) parts.push(blanks + " blank" + (blanks === 1 ? "" : "s") + " to fill");
+      if (drafts) parts.push(drafts + " draft" + (drafts === 1 ? "" : "s") + " to approve");
+      box.innerHTML = "<strong>Not yet.</strong> " + parts.join(" and ") + " in the step above.";
+    }
   }
 
   function renderPrice() {
@@ -323,12 +379,30 @@
     }
     desk.blanks = res.blanks || [];
     renderBlanks();
+    renderSendState();
     $("blanks-saved").textContent = "Saved. " + res.remaining + " left.";
+  }
+
+  async function approveDrafts() {
+    if (!confirm("Remove every [DRAFT — your review] marker? Do this only after reading them.")) return;
+    const res = await api("/api/packets/" + encodeURIComponent(desk.folder) + "/approve-drafts", {
+      method: "POST", body: "{}",
+    });
+    if (!res.ok) { $("drafts-state").textContent = "Could not approve."; return; }
+    desk.drafts = res.drafts || 0;
+    desk.blanks = res.blanks || [];
+    renderDrafts();
+    renderBlanks();
+    renderSendState();
+    // The page's own list is already current; re-open to refresh the file
+    // links too, so the print view reflects the approved text.
+    if (!desk.drafts) $("blanks-saved").textContent = "Drafts approved.";
   }
 
   function wireBidDesk() {
     $("packet-back").addEventListener("click", loadPackets);
     $("blanks-save").addEventListener("click", saveBlanks);
+    $("drafts-approve").addEventListener("click", approveDrafts);
     $("price-add-row").addEventListener("click", () => {
       desk.rows.push({ category: "", unit: "hr", rate: "", hours: "" });
       renderPrice();
@@ -355,8 +429,10 @@
       }
     });
     $("packet-go").addEventListener("click", () => {
-      $("packet-go-state").textContent = "Bidding. Price it, fill the blanks, send it.";
-      $("step-price").scrollIntoView({ behavior: "smooth", block: "start" });
+      $("packet-go-state").textContent = desk.kind === "capability"
+        ? "Responding. Fill the blanks, approve the drafts, send it."
+        : "Bidding. Price it, fill the blanks, send it.";
+      $(desk.kind === "capability" ? "step-fill" : "step-price").scrollIntoView({ behavior: "smooth", block: "start" });
     });
     $("packet-nogo").addEventListener("click", () => {
       $("packet-go-state").textContent =

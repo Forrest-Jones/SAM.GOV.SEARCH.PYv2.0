@@ -42,7 +42,7 @@ profile, relevant experience, then the notice's own questions in the
 notice's own order. Unanswered questions are the usual reason one of
 these gets set aside.
 
-There are **37 blanks** to fill, marked `[[FILL: ...]]`.
+There are **6 blanks** to fill, marked `[[FILL: ...]]`.
 
 **4. Send it.** `02-response-email.txt` is addressed and written.
 Confirm the submission method on the listing first.

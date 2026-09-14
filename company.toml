@@ -32,6 +32,19 @@ email           = "forrestjones2010@gmail.com"
 # Kept current so packets can state it rather than leaving a blank.
 sam_registration_expires = "2027-07-07"     # e.g. "2027-07-07"
 
+# Sources Sought cover pages ask for both of these. The review sentence
+# is true for a firm formed in 2026 with no federal contract: no DCAA or
+# other Government adequacy review has ever been performed.
+accounting_system        = ""               # e.g. "QuickBooks Online"
+accounting_system_review = "No Government accounting-system adequacy review has been performed."
+
+# Second point of contact — most notices ask for two. Once here, it goes
+# on every cover email.
+secondary_contact_name  = ""
+secondary_contact_title = ""
+secondary_contact_phone = ""
+secondary_contact_email = ""
+
 # Insurance and bonding get asked for constantly. Enter once.
 insurance_carrier       = ""
 insurance_gl_limit      = ""      # e.g. "$2,000,000 general aggregate"
@@ -179,8 +192,10 @@ expires    = ""
 [[p1821.past_performance]]
 customer  = "Blackwater Investment Group, Inc. (Montgomery, TX)"
 contract  = ""              # commercial engagement, no contract number
+role      = "Prime / direct contractor"
+share_pct = "100%"          # performed by Proverbs 1821 directly
 value     = ""              # CONFIRM annualized value before submission
-period     = ""             # CONFIRM start month/year
+period    = ""              # CONFIRM start month/year
 scope     = "Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements."
 ref_name  = ""
 ref_phone = ""
@@ -189,6 +204,8 @@ ref_email = ""
 [[p1821.past_performance]]
 customer  = "Solomon Energy of Texas LLC"
 contract  = ""
+role      = "Prime / direct contractor"
+share_pct = "100%"
 value     = ""              # CONFIRM
 period    = ""              # CONFIRM start month/year
 scope     = "Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation."

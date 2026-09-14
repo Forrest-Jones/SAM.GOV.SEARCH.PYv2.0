@@ -105,6 +105,22 @@ def build_capability_markdown(opp, description_text, company, notice_kind=""):
         got = str((company or {}).get(key) or "").strip()
         return got or FILL.format(label)
 
+    # Set-aside status is recorded in exactly one place and read from it,
+    # never typed: a cover page that claims a program the firm is not in
+    # is a false certification, and this is where that would start.
+    import find_opportunities as core
+    held = set(core.DEFAULT_HELD_CERTS)
+    programs = [core.CERTIFICATION_HINTS[k]["label"] for k in sorted(held)
+                if k != "small_business" and k in core.CERTIFICATION_HINTS]
+    socio = ", ".join(programs) if programs else (
+        "None. Small business only; no socio-economic program certification is held or claimed.")
+    eight_a = "Yes" if "8a" in held else "No"
+
+    accounting = value("accounting_system", "accounting system you keep books in (e.g., QuickBooks Online)")
+    review = str((company or {}).get("accounting_system_review") or "").strip()
+    accounting += (" " + review) if review else " " + FILL.format(
+        "whether a Government adequacy review has ever been performed — if none, say so plainly")
+
     lines = [
         f"# Capability Statement — {opp.get('title') or FILL.format('notice title')}",
         "",
@@ -130,9 +146,9 @@ def build_capability_markdown(opp, description_text, company, notice_kind=""):
         f"| Phone / email | {value('phone', 'phone')} / {value('email', 'email')} |",
         f"| Business size | Small business for NAICS {opp.get('naicsCode') or FILL.format('NAICS')} "
         "(self-certified in SAM.gov against the size standard) |",
-        f"| Socio-economic status | {FILL.format('state only what is actually certified — write None if none')} |",
-        f"| 8(a) participant | {FILL.format('yes with graduation date, or No')} |",
-        f"| Accounting system | {FILL.format('what system you keep books in, and whether a Government adequacy review has ever been performed — if none, say so plainly')} |",
+        f"| Socio-economic status | {socio} |",
+        f"| 8(a) participant | {eight_a} |",
+        f"| Accounting system | {accounting} |",
         "",
         "## Company profile",
         "",
@@ -187,15 +203,17 @@ def build_capability_markdown(opp, description_text, company, notice_kind=""):
         "| # | Customer | Contract / order | Prime or sub | Your share (% and $) | Period | Scope, and why it is relevant here |",
         "|---|---|---|---|---|---|---|",
     ]
-    for i in range(1, 4):
-        ref = references[i - 1] if i <= len(references) else {}
+    # Only the references on file, never padded to three with empty rows:
+    # a table of blanks reads as a firm with nothing to show, and every
+    # blank is a field someone has to strike by hand before sending.
+    for i, ref in enumerate(references or [{}], 1):
+        share = ref.get("share_pct") or FILL.format("percentage YOUR company performed")
+        share += " / " + (ref.get("value") or FILL.format("dollar value, or 'not disclosed'"))
         lines.append(
             f"| {i} | {ref.get('customer') or FILL.format('customer')} "
-            f"| {ref.get('contract') or FILL.format('contract number')} "
-            # Both asked for explicitly and routinely: a notice wants to know
-            # what the company itself performed, not what its team did.
-            f"| {FILL.format('prime or subcontractor')} "
-            f"| {FILL.format('percentage and dollar amount YOUR company performed')} "
+            f"| {ref.get('contract') or 'Commercial engagement; no contract number.' if ref else FILL.format('contract number')} "
+            f"| {ref.get('role') or FILL.format('prime or subcontractor')} "
+            f"| {share} "
             f"| {ref.get('period') or FILL.format('start–end')} "
             f"| {(str(ref.get('scope') or '').strip() + ' — ') if ref.get('scope') else ''}"
             f"{FILL.format('why it is relevant to THIS requirement')} |"

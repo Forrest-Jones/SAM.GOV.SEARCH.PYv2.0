@@ -46,6 +46,7 @@ CAPABILITY_GENERATED = ("00-START-HERE.md", "01-capability-statement.md", "02-re
 # sent. Whichever path builds owns the folder, and clears the other's.
 BID_ONLY = ("01-proposal.md", "02-price-sheet.csv", "03-quote-email.txt")
 CAPABILITY_ONLY = ("01-capability-statement.md", "02-response-email.txt")
+CAPABILITY_GENERATED = ("00-START-HERE.md",) + CAPABILITY_ONLY
 
 
 def _clear_other_path(out, names, log=None):
@@ -276,7 +277,7 @@ def _read_meta(out):
         return {}
 
 
-def untouched_files(out, meta):
+def untouched_files(out, meta, names=GENERATED):
     """Which generated files are still exactly as this tool wrote them.
 
     The point is to distinguish "nobody has opened this yet" from "priced
@@ -286,7 +287,7 @@ def untouched_files(out, meta):
     """
     recorded = (meta or {}).get("files") or {}
     return {
-        name for name in GENERATED
+        name for name in names
         if name in recorded and _file_hash(os.path.join(out, name)) == recorded[name]
     }
 
@@ -347,6 +348,16 @@ def build_quote_email(opp, company):
     phone = company.get("phone") or "[[FILL: phone]]"
     email = company.get("email") or "[[FILL: email]]"
     deadline, _ = _deadline_parts(opp)
+    # Many notices ask for two points of contact. On file once, on every
+    # email after that; left out entirely rather than shown as a blank
+    # when the fact bank has none, because a blank there is not a defect.
+    alt = ""
+    if company.get("secondary_contact_name"):
+        alt = (f"\n  Also:     {company['secondary_contact_name']}"
+               f"{', ' + company['secondary_contact_title'] if company.get('secondary_contact_title') else ''}"
+               f" — {company.get('secondary_contact_phone') or ''}"
+               f"{', ' if company.get('secondary_contact_phone') and company.get('secondary_contact_email') else ''}"
+               f"{company.get('secondary_contact_email') or ''}")
 
     return f"""To:      {co_email}
 Subject: {sol} — Quote from {legal} (UEI {uei})
@@ -360,7 +371,7 @@ to perform within the stated period and place of performance.
   Offeror:  {legal}
   UEI:      {uei}
   CAGE:     {cage}
-  Contact:  {signer}, {title_of} — {phone}, {email}
+  Contact:  {signer}, {title_of} — {phone}, {email}{alt}
 
 Attached:
   - Price sheet, signed
@@ -695,58 +706,79 @@ def build_capability_response(opp, description_text, company, root,
     # a notice that cannot be priced".
     if existing:
         _clear_other_path(out, BID_ONLY)
-
-    if existing:
         meta = _read_meta(out)
-        missing = {n for n in ("00-START-HERE.md", "01-capability-statement.md")
-                   if not os.path.exists(os.path.join(out, n))}
-        if meta.get("company_fingerprint") == fingerprint and not missing:
+        missing = {n for n in CAPABILITY_GENERATED if not os.path.exists(os.path.join(out, n))}
+        same_facts = meta.get("company_fingerprint") == fingerprint
+
+        # Per file, on content — the same rule as a bid packet. The answers
+        # to a Sources Sought are days of work; a new phone number in the
+        # fact bank must refresh the checklist and the cover email without
+        # ever touching an edited statement.
+        if same_facts:
+            replaceable, status = missing, ("repaired" if missing else "kept")
+        else:
+            replaceable = untouched_files(out, meta, CAPABILITY_GENERATED) | missing
+            status = "refreshed" if replaceable == set(CAPABILITY_GENERATED) else "partial"
+
+        if not replaceable:
+            attachments_dir = os.path.join(out, "attachments")
+            if (opp.get("resourceLinks") or []) and not has_downloads(attachments_dir):
+                fetch_attachments(opp, attachments_dir, session=session)
             return out, meta.get("blanks_left"), "kept"
-        if untouched_files(out, meta) == set() and not missing:
-            return out, meta.get("blanks_left"), "kept"
+    else:
+        replaceable = set(CAPABILITY_GENERATED)
+        status = "new"
 
     os.makedirs(out, exist_ok=True)
     _clear_other_path(out, BID_ONLY)
-    text = capability.build_capability_markdown(opp, description_text, company, notice_kind)
-    blanks_left = len(re.findall(r"\[\[FILL:", text))
     written = {}
 
     path = os.path.join(out, "01-capability-statement.md")
-    with open(path, "w") as f:
-        f.write(text)
-    written["01-capability-statement.md"] = _file_hash(path)
+    if "01-capability-statement.md" in replaceable:
+        text = capability.build_capability_markdown(opp, description_text, company, notice_kind)
+        with open(path, "w") as f:
+            f.write(text)
+        written["01-capability-statement.md"] = _file_hash(path)
+    # Counted off the statement on disk, which may be the user's edited
+    # copy — the checklist must state what is actually left, not what a
+    # fresh draft would have had.
+    with open(path) as f:
+        blanks_left = len(re.findall(r"\[\[FILL:", f.read()))
 
-    email_path = os.path.join(out, "02-response-email.txt")
-    with open(email_path, "w") as f:
-        f.write(build_quote_email(opp, company)
-                .replace("Quote from", "Capability statement from")
-                .replace("is pleased to submit the attached quote in response to",
-                         "is pleased to submit the attached capability statement in response to")
-                .replace("  - Price sheet, signed\n", "  - Capability statement\n")
-                .replace("The price sheet is signed by the authorized signatory.",
-                         "This is a market research response and contains no price."))
-    written["02-response-email.txt"] = _file_hash(email_path)
+    if "02-response-email.txt" in replaceable:
+        email_path = os.path.join(out, "02-response-email.txt")
+        with open(email_path, "w") as f:
+            f.write(build_quote_email(opp, company)
+                    .replace("Quote from", "Capability statement from")
+                    .replace("is pleased to submit the attached quote in response to",
+                             "is pleased to submit the attached capability statement in response to")
+                    .replace("  - Price sheet, signed\n", "  - Capability statement\n")
+                    .replace("The price sheet is signed by the authorized signatory.",
+                             "This is a market research response and contains no price."))
+        written["02-response-email.txt"] = _file_hash(email_path)
 
     got, failed = fetch_attachments(opp, os.path.join(out, "attachments"), session=session)
 
-    start = os.path.join(out, "00-START-HERE.md")
-    with open(start, "w") as f:
-        f.write(build_start_here(
-            opp, company, blanks_left, got, failed,
-            gates=credential_gates(
-                description_text, opp.get("description"),
-                attachment_text(os.path.join(out, "attachments"))),
-            kind="capability",
-        ))
-    written["00-START-HERE.md"] = _file_hash(start)
+    if "00-START-HERE.md" in replaceable:
+        start = os.path.join(out, "00-START-HERE.md")
+        with open(start, "w") as f:
+            f.write(build_start_here(
+                opp, company, blanks_left, got, failed,
+                gates=credential_gates(
+                    description_text, opp.get("description"),
+                    attachment_text(os.path.join(out, "attachments"))),
+                kind="capability",
+            ))
+        written["00-START-HERE.md"] = _file_hash(start)
 
+    previous = (_read_meta(out).get("files") or {}) if existing else {}
     with open(os.path.join(out, META_NAME), "w") as f:
         json.dump({"company_fingerprint": fingerprint, "blanks_left": blanks_left,
                    "built": date.today().isoformat(),
                    "deadline": _deadline_parts(opp)[0],
                    "response_kind": "capability",
-                   "files": written}, f, indent=2)
-    return out, blanks_left, "new"
+                   "files": {**previous, **written}}, f, indent=2)
+    return out, blanks_left, status
 
 
 def build_packet(opp, description_text, company, root, score=None, reasons="", session=None):

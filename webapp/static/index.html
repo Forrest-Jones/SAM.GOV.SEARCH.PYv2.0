@@ -137,6 +137,15 @@
             <li class="step" id="step-fill">
               <h2>Fill in what's left</h2>
               <p class="field-help">One box per blank, grouped by where it appears. Blank boxes stay blank — nothing is invented on your behalf.</p>
+              <div id="drafts-block" class="notice notice-warn" hidden>
+                <p id="drafts-count"></p>
+                <p class="field-help">Answers written for you from the notice and the PWS, each marked <code>[DRAFT — your review]</code>. Read them in the print view; when they say what you would say, approve them all at once and the markers come off.</p>
+                <div class="row-actions">
+                  <a id="drafts-read" class="btn btn-secondary btn-small" target="_blank" rel="noopener">Read the drafts</a>
+                  <button id="drafts-approve" class="btn btn-primary btn-small">Approve all drafts</button>
+                  <span id="drafts-state" class="muted"></span>
+                </div>
+              </div>
               <p id="blanks-count" class="muted"></p>
               <div id="blanks-form"></div>
               <div class="row-actions">
@@ -148,12 +157,16 @@
             <li class="step" id="step-send">
               <h2>Send it</h2>
               <p class="field-help">Addressed and written. Check the submission method against the solicitation before you send — that's the most common way a good quote gets thrown out.</p>
-              <textarea id="packet-email" class="email-box" rows="18" readonly></textarea>
+              <div id="send-ready" class="notice" hidden></div>
               <div class="row-actions">
+                <a id="print-view" class="btn btn-primary btn-small" target="_blank" rel="noopener">Print / Save as PDF</a>
+                <a id="email-open" class="btn btn-primary btn-small">Open in your mail app</a>
                 <button id="email-copy" class="btn btn-secondary btn-small">Copy email text</button>
-                <a id="proposal-download" class="btn btn-secondary btn-small" download>Download the proposal</a>
+                <a id="proposal-download" class="btn btn-secondary btn-small" download>Download the file</a>
                 <span id="email-copied" class="muted"></span>
               </div>
+              <p class="field-help">Order: save the PDF, open the email, attach the PDF, send. The email opens with every address, the subject and the body already in place.</p>
+              <textarea id="packet-email" class="email-box" rows="18" readonly></textarea>
             </li>
           </ol>
         </div>

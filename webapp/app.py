@@ -38,6 +38,7 @@ sys.path.insert(0, REPO_ROOT)
 
 import company as fact_bank  # noqa: E402
 import fillable  # noqa: E402
+import render  # noqa: E402
 import find_opportunities as core  # noqa: E402
 import packet as packet_builder  # noqa: E402
 import proposal as proposal_builder  # noqa: E402
@@ -601,6 +602,27 @@ PACKET_FILES = {
     "email": "03-quote-email.txt",
 }
 
+# A Sources Sought folder holds a capability statement and a response
+# email in place of a priced proposal and a quote email. Same desk, same
+# steps minus the price.
+CAPABILITY_FILES = {
+    "start_here": "00-START-HERE.md",
+    "proposal": "01-capability-statement.md",
+    "price": None,
+    "email": "02-response-email.txt",
+}
+
+DRAFT_RE = re.compile(r"\*\*\[DRAFT[^\]]*\]\*\*\s*")
+
+
+def packet_kind(path):
+    return "capability" if os.path.exists(
+        os.path.join(path, CAPABILITY_FILES["proposal"])) else "bid"
+
+
+def packet_files(path):
+    return CAPABILITY_FILES if packet_kind(path) == "capability" else PACKET_FILES
+
 
 def packet_path(folder, name=None):
     """Resolves a packet folder (and optionally a file inside it) under the
@@ -658,7 +680,8 @@ def write_price_rows(path, title, solicitation, rows):
 def packet_summary(folder, path):
     """Everything the tray list needs, read off disk rather than from the
     index file, so a packet edited by hand still reports honestly."""
-    proposal_path = os.path.join(path, PACKET_FILES["proposal"])
+    files = packet_files(path)
+    proposal_path = os.path.join(path, files["proposal"])
     text = ""
     if os.path.exists(proposal_path):
         with open(proposal_path) as f:
@@ -695,6 +718,8 @@ def packet_summary(folder, path):
         "deadline": deadline or None,
         "days": days,
         "blanks": fillable.progress(text) if text else None,
+        "drafts": len(DRAFT_RE.findall(text)) if text else 0,
+        "kind": packet_kind(path),
         "attachments": len(attachments),
         "built": meta.get("built"),
     }
@@ -731,7 +756,8 @@ def api_get_packet(folder):
         with open(target) as f:
             return f.read()
 
-    proposal_text = read(PACKET_FILES["proposal"])
+    files = packet_files(path)
+    proposal_text = read(files["proposal"])
     summary = packet_summary(folder, path)
     att_dir = os.path.join(path, "attachments")
     attachments = []
@@ -747,11 +773,14 @@ def api_get_packet(folder):
     return jsonify({
         "ok": True,
         "summary": summary,
-        "start_here": read(PACKET_FILES["start_here"]),
+        "kind": summary["kind"],
+        "response_file": files["proposal"],
+        "drafts": summary["drafts"],
+        "start_here": read(files["start_here"]),
         "proposal": proposal_text,
         "blanks": fillable.blanks(proposal_text),
-        "price_rows": parse_price_sheet(os.path.join(path, PACKET_FILES["price"])),
-        "email": read(PACKET_FILES["email"]),
+        "price_rows": parse_price_sheet(os.path.join(path, files["price"])) if files["price"] else [],
+        "email": read(files["email"]),
         "attachments": attachments,
         "manifest": read(os.path.join("attachments", "MANIFEST.txt")),
     })
@@ -765,7 +794,8 @@ def api_fill_packet(folder):
     single source of truth, so what you see on GitHub, in the folder and in
     the browser can never disagree.
     """
-    path = packet_path(folder, PACKET_FILES["proposal"])
+    base = packet_path(folder)
+    path = packet_path(folder, packet_files(base)["proposal"]) if base else None
     if not path or not os.path.exists(path):
         return jsonify({"ok": False, "error": "not_found"}), 404
 
@@ -788,6 +818,43 @@ def api_fill_packet(folder):
         "remaining": fillable.progress(updated),
         "proposal": updated,
     })
+
+
+@app.route("/api/packets/<folder>/approve-drafts", methods=["POST"])
+def api_approve_drafts(folder):
+    """Strips every "[DRAFT — your review]" marker from the response.
+
+    The markers exist so nothing written on the owner's behalf can reach a
+    contracting officer unread. Approval is one click on purpose: the
+    reading is the work, the marker removal is not, and a reviewer who
+    has read all twenty should not have to edit twenty lines to say so.
+    """
+    base = packet_path(folder)
+    path = packet_path(folder, packet_files(base)["proposal"]) if base else None
+    if not path or not os.path.exists(path):
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    with open(path) as f:
+        text = f.read()
+    updated = DRAFT_RE.sub("", text)
+    with open(path, "w") as f:
+        f.write(updated)
+    return jsonify({"ok": True, "drafts": len(DRAFT_RE.findall(updated)),
+                    "blanks": fillable.blanks(updated),
+                    "remaining": fillable.progress(updated)})
+
+
+@app.route("/api/packets/<folder>/print", methods=["GET"])
+def api_print_packet(folder):
+    """The response as a paged, printable page — Save as PDF is the last
+    step before attaching it to the email."""
+    base = packet_path(folder)
+    path = packet_path(folder, packet_files(base)["proposal"]) if base else None
+    if not path or not os.path.exists(path):
+        return jsonify({"ok": False, "error": "not_found"}), 404
+    with open(path) as f:
+        text = f.read()
+    title = packet_summary(folder, base)["title"]
+    return render.page(title, text), 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
 @app.route("/api/packets/<folder>/price", methods=["POST"])

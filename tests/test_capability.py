@@ -127,8 +127,9 @@ def test_real_identity_is_used_and_missing_facts_stay_blank():
     text = capability.build_capability_markdown(SSN, NOTICE_TEXT, BANK)
     assert "GD83PAK36818" in text
     assert "Proverbs 1821 Consulting LLC" in text
-    # No past performance on file, so all three rows stay visibly empty.
-    assert text.count("[[FILL: customer]]") == 3
+    # No past performance on file: one visibly empty row, never three —
+    # a table padded with blanks reads as a firm with nothing to show.
+    assert text.count("[[FILL: customer]]") == 1
 
 
 def test_held_credentials_are_listed_and_nothing_else_is():
@@ -142,8 +143,28 @@ def test_socioeconomic_status_is_left_blank_not_assumed():
     # The business is not WOSB certified; the field must never be
     # pre-filled with a status it does not hold.
     text = capability.build_capability_markdown(SSN, NOTICE_TEXT, BANK)
-    assert "state only what is actually certified" in text
+    assert "| Socio-economic status | None." in text
+    assert "| 8(a) participant | No |" in text
     assert "WOSB" not in text
+
+
+def test_accounting_system_comes_from_the_fact_bank():
+    bank = dict(BANK, accounting_system="QuickBooks Online",
+                accounting_system_review="No Government adequacy review has been performed.")
+    text = capability.build_capability_markdown(SSN, NOTICE_TEXT, bank)
+    assert "| Accounting system | QuickBooks Online No Government adequacy review" in text
+    blank = capability.build_capability_markdown(SSN, NOTICE_TEXT, BANK)
+    assert "[[FILL: accounting system you keep books in" in blank
+
+
+def test_reference_rows_carry_role_and_share_from_the_fact_bank():
+    bank = dict(BANK, past_performance=[{
+        "customer": "Blackwater Investment Group, Inc.", "contract": "",
+        "role": "Prime / direct contractor", "share_pct": "100%", "value": "",
+        "period": "", "scope": "Investor reporting."}])
+    text = capability.build_capability_markdown(SSN, REAL_NOTICE, bank)
+    assert "| 1 | Blackwater Investment Group, Inc. | Commercial engagement; no contract number. | Prime / direct contractor | 100% / [[FILL: dollar value, or 'not disclosed']] | [[FILL: start–end]] |" in text
+    assert "| 2 |" not in text
 
 
 def test_small_business_size_is_stated_as_self_certified():
@@ -247,7 +268,8 @@ def test_experience_asks_for_role_and_dollar_share():
     # The notice wants what THIS company performed, not what its team did.
     text = capability.build_capability_markdown(SSN, REAL_NOTICE, BANK)
     assert "Prime or sub" in text
-    assert "percentage and dollar amount YOUR company performed" in text
+    assert "[[FILL: prime or subcontractor]]" in text
+    assert "[[FILL: percentage YOUR company performed]]" in text
 
 
 def test_technical_skills_are_tied_to_the_pws():

@@ -1281,3 +1281,104 @@ def test_the_web_proposal_builder_uses_the_fact_bank(tmp_path, monkeypatch):
     assert data["ok"]
     assert "GD83PAK36818" in data["content"]
     assert "[[FILL: UEI" not in data["content"]
+
+
+# ---------- the desk handles a Sources Sought folder ----------
+
+def _capability_tray(tmp_path, monkeypatch):
+    """A packets tray holding one capability response, served by the app."""
+    webapp = _webapp()
+    root = tmp_path / "packets" / "p1821" / "abc123-hqmc-financial"
+    root.mkdir(parents=True)
+    (root / "00-START-HERE.md").write_text("# HQMC Financial\n\n| | |\n|---|---|\n| **Due** | **2099-01-01** |\n")
+    (root / "01-capability-statement.md").write_text(
+        "# Capability Statement — HQMC\n\n## Cover page\n\n| Field | Value |\n|---|---|\n"
+        "| Company | Proverbs 1821 Consulting LLC |\n| Accounting system | [[FILL: accounting system]] |\n\n"
+        "## Company profile\n\nWe do the work.\n\n## Answers\n\n"
+        "**[DRAFT — your review]** Subcontractor.\n\n**[DRAFT — your review]** Yes.\n")
+    (root / "02-response-email.txt").write_text(
+        "To:      a@usmc.mil, b@usmc.mil\nSubject: SSN — Response\n\nSir,\n\nAttached.\n\n"
+        "--------------------------------------------------------------------\nBEFORE SENDING:\n  [ ] x\n")
+    monkeypatch.setattr(webapp, "DATA_DIR", str(tmp_path))
+    webapp.app.config["TESTING"] = True
+    return webapp, "abc123-hqmc-financial"
+
+
+def test_the_desk_reads_blanks_from_a_capability_statement(tmp_path, monkeypatch):
+    # Live failure: the desk only knew 01-proposal.md, so the one packet
+    # actually being submitted showed "Nothing left to fill", a dead
+    # download link and a price step for a notice that forbids a price.
+    webapp, folder = _capability_tray(tmp_path, monkeypatch)
+    with webapp.app.test_client() as c:
+        tray = c.get("/api/packets?profile=p1821").get_json()["packets"]
+        d = c.get(f"/api/packets/{folder}?profile=p1821").get_json()
+    assert tray[0]["kind"] == "capability"
+    assert tray[0]["blanks"] == 1 and tray[0]["drafts"] == 2
+    assert d["kind"] == "capability"
+    assert d["response_file"] == "01-capability-statement.md"
+    assert [b["label"] for b in d["blanks"]] == ["accounting system"]
+    assert d["price_rows"] == []
+    assert d["email"].startswith("To:      a@usmc.mil")
+
+
+def test_filling_writes_into_the_capability_statement(tmp_path, monkeypatch):
+    webapp, folder = _capability_tray(tmp_path, monkeypatch)
+    with webapp.app.test_client() as c:
+        res = c.post(f"/api/packets/{folder}/fill?profile=p1821",
+                     json={"answers": {"0": {"label": "accounting system", "value": "QuickBooks Online"}}}).get_json()
+    assert res["ok"] and res["remaining"] == 0
+    text = (tmp_path / "packets" / "p1821" / folder / "01-capability-statement.md").read_text()
+    assert "| Accounting system | QuickBooks Online |" in text
+
+
+def test_approving_drafts_removes_every_marker_and_nothing_else(tmp_path, monkeypatch):
+    webapp, folder = _capability_tray(tmp_path, monkeypatch)
+    with webapp.app.test_client() as c:
+        res = c.post(f"/api/packets/{folder}/approve-drafts?profile=p1821", json={}).get_json()
+    assert res["ok"] and res["drafts"] == 0
+    text = (tmp_path / "packets" / "p1821" / folder / "01-capability-statement.md").read_text()
+    assert "[DRAFT" not in text
+    assert "Subcontractor.\n\nYes.\n" in text
+    assert "[[FILL: accounting system]]" in text, "approval must not touch blanks"
+
+
+def test_the_print_view_pages_the_statement_and_flags_what_is_left(tmp_path, monkeypatch):
+    webapp, folder = _capability_tray(tmp_path, monkeypatch)
+    with webapp.app.test_client() as c:
+        page = c.get(f"/api/packets/{folder}/print?profile=p1821")
+        html = page.get_data(as_text=True)
+    assert page.status_code == 200 and "text/html" in page.content_type
+    assert "Not ready to send" in html and "1 blank" in html and "2 draft" in html
+    assert html.count(' page-break"') == 2
+    assert "<li>Company profile</li>" in html and "<li>Answers</li>" in html
+    assert 'mark class="fill"' in html and 'mark class="draft"' in html
+    assert "<table>" in html and "<td>Proverbs 1821 Consulting LLC</td>" in html
+    with webapp.app.test_client() as c:
+        c.post(f"/api/packets/{folder}/approve-drafts?profile=p1821", json={})
+        c.post(f"/api/packets/{folder}/fill?profile=p1821",
+               json={"answers": {"0": {"label": "accounting system", "value": "QuickBooks Online"}}})
+        html = c.get(f"/api/packets/{folder}/print?profile=p1821").get_data(as_text=True)
+    assert "Ready." in html and "Not ready" not in html
+
+
+def test_a_fact_bank_change_refreshes_only_untouched_capability_files(tmp_path):
+    import packet
+    from tests.test_capability import SSN, NOTICE_TEXT, BANK
+    out, _, _ = packet.build_capability_response(
+        SSN, NOTICE_TEXT, BANK, str(tmp_path), notice_kind="Sources Sought")
+    answered = os.path.join(out, "01-capability-statement.md")
+    with open(answered, "w") as f:
+        f.write("MY ANSWERS [[FILL: one]]")
+    # A new alternate contact in the fact bank must reach the cover email
+    # and the checklist, and must never touch the edited statement.
+    richer = dict(BANK, secondary_contact_name="Randy White",
+                  secondary_contact_title="Enrolled Agent",
+                  secondary_contact_phone="(555) 000-0000")
+    again, blanks, status = packet.build_capability_response(
+        SSN, NOTICE_TEXT, richer, str(tmp_path), notice_kind="Sources Sought")
+    assert (again, status) == (out, "partial")
+    assert open(answered).read() == "MY ANSWERS [[FILL: one]]"
+    assert blanks == 1, "the checklist counts what is left in the edited file"
+    email = open(os.path.join(out, "02-response-email.txt")).read()
+    assert "Also:     Randy White, Enrolled Agent — (555) 000-0000" in email
+    assert "**1 blanks**" in open(os.path.join(out, "00-START-HERE.md")).read()
