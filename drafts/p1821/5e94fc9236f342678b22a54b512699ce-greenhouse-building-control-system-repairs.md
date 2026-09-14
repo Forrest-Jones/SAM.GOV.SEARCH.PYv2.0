@@ -1,0 +1,39 @@
+# Greenhouse Building Control System Repairs
+
+- **Score:** 6 (set-aside (Small Business Set Aside - Total) — eligible, 8d to deadline, 2 keyword matches)
+- **Eligibility:** eligible_set_aside
+- **NAICS:** 238220  **PSC:** Z2HZ
+- **Set-aside:** Small Business Set Aside - Total
+- **Place of performance:** -, KY
+- **Response deadline:** 2026-09-22
+- **SAM.gov link:** https://sam.gov/workspace/contract/opp/5e94fc9236f342678b22a54b512699ce/view
+
+## Description
+<p>This is a combined synopsis/solicitation for commercial items prepared in accordance with the format in FAR Part 12.&nbsp; This announcement constitutes the only solicitation.&nbsp; Quotations are being requested and a separate written solicitation will not be issued.&nbsp;</p>
+
+<p>Solicitation number 127EAX26Q0105 is issued as a Request for Quotation (RFQ) for Greenhouse Building Control System Repairs</p>
+
+<p>IAW Attachment 1 - Statement of Work:</p>
+
+<p>The USDA FAESRU Greenhouse/Headhouse at 230 Bennett Lane, Bowling Green, KY 42104 has a building control system that requires repairs to achieve proper operations. This project is to establish proper operations through replacement of defective controllers/communications and commission to prove operations.</p>
+
+<p>This acquisition&nbsp; is set-aside for small business concerns.&nbsp; The applicable North American Industry Classification Standard Code is 238220 &ndash; <u>Plumbing, Heating, and Air Conditioning Contractors</u>&nbsp; The small business size standard is $19M.&nbsp; This acquisition is a Total Small Business Set-Aside.&nbsp; All responsible sources may submit a quotation which will be considered by the agency.</p>
+
+
+## Attachments
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/10dd47ef36e149a09e241aa6887df371/download
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2d834eb5dc5d42d3ae2cccb16a2710b3/download
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a32a427d37124f2496e6162be244f6c0/download
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cef1250e9f9b4010885cad837ff26e77/download
+
+## Go / No-Go checklist
+- [ ] Confirmed eligibility and size standard for this NAICS/set-aside
+- [ ] Read the full PWS/SOW/RFP and attachments
+- [ ] Assessed competition (incumbent, similar past awards)
+- [ ] Go / no-go decision made
+- [ ] Technical response drafted
+- [ ] Price proposal drafted
+- [ ] Past performance references gathered
+- [ ] Reps & certs current in SAM.gov profile
+- [ ] Final review before submission
+- [ ] Submitted (manually — this tool never submits automatically)

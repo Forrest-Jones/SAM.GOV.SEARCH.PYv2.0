@@ -1,21 +1,11 @@
-# Bid packets — Proverbs 1821 Consulting — tax, accounting, evaluation
-_2026-09-13 — 4 packet(s), soonest deadline first_
+# Bid packets — Financial, administrative & construction services
+_2026-09-14 — 3 packet(s), soonest deadline first_
 
 | Due | Days | Title | Blanks left | State | Folder |
 |---|---|---|---|---|---|
-| 2026-09-21 | 8 | Industrial Security Support Services (IS3) | 26 | kept | `d8be86a7c0ac4ef8bc9f35a4132a5ea0-industrial-security-support-services-is3/` |
-| 2026-09-22 | 9 | NAFI Audit | 54 | kept | `f76ec48896914f22ab27ab3059083b4d-nafi-audit/` |
-| 2026-09-24 | 11 | International Organization for Standards (ISO) 17025 Accreditation | 57 | kept | `06fb300b3d804d96b14636f855dfdd06-international-organization-for-standards-iso-17025/` |
-| 2026-09-30 | 17 | HQMC  Financial and Administrative Support Services | 40 | kept | `853596d9a5604a12930b311f57973f4d-hqmc-financial-and-administrative-support-services/` |
-
-## Not built
-
-| Title | Why |
-|---|---|
-| USDA Forest Service DPG Dakota Skipper Surveys | NAICS 541620 is outside packet_naics (still shown in the digest) |
-| Confined Space Assessment - Beltsville MD | NAICS 541620 is outside packet_naics (still shown in the digest) |
-| USACE History Office (CEHO) Historical Support Services BPA | NAICS 541720 is outside packet_naics (still shown in the digest) |
-| Gas Leak Survey | PSC H999 is outside packet_psc_prefixes (still shown in the digest) |
+| 2026-09-21 | 7 | UPDATED: 9/8/2026 - 30888PR260000012 - USCG STATION SAN DIEGO - KITCHE | 51 | new | `72303e6802cc4beb82f1d97dfef99d24-updated-9-8-2026-30888pr260000012-uscg-station-san/` |
+| 2026-09-23 | 9 | Flooring Replacement, Stairwell Pad Upgrades, Door/Frame Painting, and | 50 | new | `0c1e1dd5608d4b65bfb9753422b6dd69-flooring-replacement-stairwell-pad-upgrades-door-f/` |
+| 2026-09-30 | 16 | FCI Seagoville Building Elevator Renovation | 48 | new | `cfa41d585d6f449a81e5564995ef818e-fci-seagoville-building-elevator-renovation/` |
 
 Work the top of the table first — those close soonest.
 Each folder's `00-START-HERE.md` is the five-step checklist.
