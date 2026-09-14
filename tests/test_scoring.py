@@ -318,7 +318,10 @@ def test_profiles_cover_every_registered_code():
     covered = set()
     for spec in PROFILES.values():
         covered |= set(spec["naics"])
-    assert covered == set(DEFAULT_NAICS)
+    # Every registered code is searched; the lanes may carry more than the
+    # registration does (the construction trades, added 9/14 for the
+    # in-house general contractor, are not yet on the SAM record).
+    assert covered >= set(DEFAULT_NAICS)
 
 
 def test_profiles_split_professional_from_industrial():
@@ -326,8 +329,10 @@ def test_profiles_split_professional_from_industrial():
     a = set(PROFILES["ares"]["naics"])
     assert {"541211", "541213", "541219"} <= p
     assert {"562998", "811310", "238190"} <= a
-    # Environmental consulting legitimately serves both lanes.
-    assert p & a == {"541620"}
+    assert {"238160", "236220", "238120"} <= p, "construction trades ride the 1821 lane"
+    # Environmental consulting serves both lanes; welding and structural
+    # work moved into the 1821 lane when the Ares lane was switched off.
+    assert p & a == {"541620", "811310", "238190"}
 
 
 def test_ares_holds_a_higher_draft_bar_than_p1821():

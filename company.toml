@@ -105,6 +105,12 @@ packet_naics = [
   "541618",   # other management consulting
   "541690",   # other scientific & technical consulting
   "541990",   # all other professional, scientific & technical services
+  # Construction trades — Jason Teal, general contractor, in-house.
+  "236220", "236118",
+  "238110", "238120", "238130", "238140", "238160", "238170", "238190",
+  "238210", "238220", "238290", "238310", "238320", "238330", "238350",
+  "238390", "238910", "238990",
+  "811310",   # machinery repair — welding and fabrication
 ]
 
 # Which Product Service Code families should get a bid packet.
@@ -122,7 +128,7 @@ packet_naics = [
 #   F = natural resources and conservation  <- field work
 #
 # Empty means every PSC is fair game.
-packet_psc_prefixes = ["R", "B"]
+packet_psc_prefixes = ["R", "B", "Y", "Z", "J"]   # Y, Z construction; J repair (welding)
 
 # Credentials the business actually holds. These answer the pass/fail
 # qualification questions a solicitation asks, so each packet can resolve

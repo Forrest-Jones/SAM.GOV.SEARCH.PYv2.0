@@ -1382,3 +1382,16 @@ def test_a_fact_bank_change_refreshes_only_untouched_capability_files(tmp_path):
     email = open(os.path.join(out, "02-response-email.txt")).read()
     assert "Also:     Randy White, Enrolled Agent — (555) 000-0000" in email
     assert "**1 blanks**" in open(os.path.join(out, "00-START-HERE.md")).read()
+
+
+def test_new_lane_codes_reach_a_settings_file_saved_before_them(tmp_path, monkeypatch):
+    import json
+    webapp = _webapp()
+    path = tmp_path / "settings.json"
+    store = webapp.load_store()
+    store["profiles"]["p1821"]["naics_codes"] = ["541219"]
+    path.write_text(json.dumps(store))
+    monkeypatch.setattr(webapp, "SETTINGS_PATH", str(path))
+    codes = webapp.load_settings("p1821")["naics_codes"]
+    assert codes[0] == "541219"
+    assert "238160" in codes, "roofing, added to the lane after this file was saved"

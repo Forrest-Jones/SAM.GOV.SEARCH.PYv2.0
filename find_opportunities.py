@@ -153,7 +153,7 @@ COMPANY_NAME = "Proverbs 1821 Consulting LLC"
 
 PROFILES = {
     "p1821": {
-        "label": "Financial, accounting & administrative services",
+        "label": "Financial, administrative & construction services",
         "naics": [
             "541211",  # Offices of Certified Public Accountants
             "541213",  # Tax Preparation Services
@@ -167,11 +167,36 @@ PROFILES = {
             "541690",  # Other Scientific & Technical Consulting
             "541720",  # R&D in Social Sciences & Humanities
             "541990",  # Other Professional/Scientific/Technical Services
+            # Construction trades — Jason Teal, general contractor, is
+            # in-house and self-performs most work let under these codes.
+            "236220",  # Commercial & Institutional Building Construction
+            "236118",  # Residential Remodelers
+            "238110",  # Poured Concrete Foundation & Structure
+            "238120",  # Structural Steel & Precast Concrete (welding)
+            "238130",  # Framing
+            "238140",  # Masonry
+            "238160",  # Roofing
+            "238170",  # Siding
+            "238190",  # Other Foundation, Structure & Building Exterior
+            "238210",  # Electrical
+            "238220",  # Plumbing, Heating & Air-Conditioning
+            "238290",  # Other Building Equipment
+            "238310",  # Drywall & Insulation
+            "238320",  # Painting & Wall Covering
+            "238330",  # Flooring
+            "238350",  # Finish Carpentry
+            "238390",  # Other Building Finishing
+            "238910",  # Site Preparation
+            "238990",  # All Other Specialty Trade Contractors
+            "811310",  # Commercial & Industrial Machinery Repair (welding, fabrication)
         ],
         "priority_psc": {"R710", "B505", "R499", "R407"},
         "keywords": [
             "tax", "vita", "evaluation", "accounting", "financial",
             "audit", "irs", "compliance", "remediation",
+            "roof", "roofing", "welding", "construction", "renovation",
+            "repair", "remodel", "concrete", "carpentry", "painting",
+            "hvac", "plumbing", "electrical", "flooring", "demolition",
         ],
         "home_states": {"TX"},
         "draft_min_score": 4,

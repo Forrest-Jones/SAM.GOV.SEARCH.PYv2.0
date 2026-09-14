@@ -141,6 +141,15 @@ app did not exist. It does; that was the wrong directory. Do not treat
 that project as a source for anything here, and do not split this work
 across it.
 
+## Construction lane (decided 2026-09-14)
+
+Jason Teal is the in-house general contractor. The owner wants construction
+work in the daily flow: roofing, welding, and anything a general
+contractor performs. The p1821 search and `packet_naics` carry the 236/238
+trade codes and 811310; `packet_psc_prefixes` include Y, Z and J. Bonding
+capacity is not on file — construction over the Miller Act threshold
+needs a bond, so a packet for one will show that as a gate to clear.
+
 ## Open items
 
 - Facts still blank in `company.toml` that every packet asks for:
@@ -150,6 +159,5 @@ across it.
 - Add **NAICS 541219** and **PSC R499** to the SAM registration. Notices
   require small-business status under the assigned NAICS to prime, and the
   registration currently carries neither.
-- Jason Teal's role is unrecorded.
 - Confirm or strike the dollar values and periods in
   `p1821.past_performance` — every one is currently a placeholder.

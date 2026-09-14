@@ -263,6 +263,11 @@ def load_settings(profile=None):
     settings = {key: store[key] for key in DEFAULT_SHARED}
     settings.update(store["profiles"][profile])
     settings["profile"] = profile
+    # A code added to the lane in code must reach a settings file saved
+    # before it existed, or the browser's search and the morning run would
+    # quietly cover different work.
+    saved = list(settings.get("naics_codes") or [])
+    settings["naics_codes"] = saved + [c for c in core.PROFILES[profile]["naics"] if c not in saved]
     return settings
 
 
