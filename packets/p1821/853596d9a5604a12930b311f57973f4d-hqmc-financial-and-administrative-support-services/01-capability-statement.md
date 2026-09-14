@@ -22,7 +22,7 @@
 | Business size | Small business for NAICS 541219 (self-certified in SAM.gov against the size standard) |
 | Socio-economic status | None. Proverbs 1821 Consulting LLC is a small business. It holds no socio-economic or ownership-status certification. |
 | 8(a) participant | No. |
-| Accounting system | [[FILL: accounting system you keep books in (e.g., QuickBooks Online)]] No Government accounting-system adequacy review has been performed. |
+| Accounting system | QuickBooks. No Government accounting-system adequacy review has been performed. |
 
 ## Company profile
 
@@ -52,9 +52,9 @@ In robotics since 1985, beginning with Navy SEAL mine search and disposal. Found
 
 Enrolled Agent, IRS Circular 230, with unlimited representation rights before the IRS. Not a CPA — does not satisfy a CPA licence requirement.
 
-**Jason Teal**
+**Jason Teal** — General contractor (in-house)
 
-[[FILL: what Jason Teal brings — put it in company.toml under personnel]]
+General contractor, in-house to Proverbs 1821 Consulting LLC. Performs construction-trade work directly — general contracting, repair, renovation and installation — and can self-perform most work let under the construction NAICS codes.
 
 ## Affiliations
 
@@ -72,8 +72,8 @@ who can confirm it.
 
 | # | Customer | Contract / order | Prime or sub | Your share (% and $) | Period | Scope, and why it is relevant here |
 |---|---|---|---|---|---|---|
-| 1 | Blackwater Investment Group, Inc. (Montgomery, TX) | Commercial engagement; no contract number. | Prime / direct contractor. | 100% / [[FILL: dollar value, or 'not disclosed']] | [[FILL: start–end]] | Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements. — **[DRAFT — your review]** Recurring financial operations and reporting for a capital-markets client, plus the sourcing and day-to-day management of a contracted team — the same combination of financial deliverable and surrounding staff work this PWS describes across scope areas (2) and (3). |
-| 2 | Solomon Energy of Texas LLC | Commercial engagement; no contract number. | Prime / direct contractor. | 100% / [[FILL: dollar value, or 'not disclosed']] | [[FILL: start–end]] | Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation. — **[DRAFT — your review]** Assembly of a multi-stage institutional submission against an external reviewer's rubric, coordinating multi-party financial and technical deliverables to a fixed date — directly comparable to the scheduled deliverable discipline in PWS Section 6.0. |
+| 1 | Blackwater Investment Group, Inc. (Montgomery, TX) | Commercial engagement; no contract number. | Prime / direct contractor. | 100% / Engagement value not disclosed | Feb 2026 – present | Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements. Supported $11MM raised to date since Feb 2026; $16.2MM in third-party audited financials available for verification. — **[DRAFT — your review]** Recurring financial operations and reporting for a capital-markets client, plus the sourcing and day-to-day management of a contracted team — the same combination of financial deliverable and surrounding staff work this PWS describes across scope areas (2) and (3). |
+| 2 | Solomon Energy of Texas LLC | Commercial engagement; no contract number. | Prime / direct contractor. | 100% / Engagement value not disclosed | [[FILL: start month/year – end or present]] | Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation. — **[DRAFT — your review]** Assembly of a multi-stage institutional submission against an external reviewer's rubric, coordinating multi-party financial and technical deliverables to a fixed date — directly comparable to the scheduled deliverable discipline in PWS Section 6.0. |
 
 
 Proverbs 1821 Consulting LLC has no federal past performance to report. The firm was formed in February 2026 and its relevant experience to date is commercial financial and administrative support, described above. We are responding to this Sources Sought Notice to register capability and interest, and to be considered as a subcontractor or named team member by primes preparing to compete this requirement. We are not representing ourselves as ready to prime it.

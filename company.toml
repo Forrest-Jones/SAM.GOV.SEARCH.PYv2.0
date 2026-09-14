@@ -35,15 +35,15 @@ sam_registration_expires = "2027-07-07"     # e.g. "2027-07-07"
 # Sources Sought cover pages ask for both of these. The review sentence
 # is true for a firm formed in 2026 with no federal contract: no DCAA or
 # other Government adequacy review has ever been performed.
-accounting_system        = ""               # e.g. "QuickBooks Online"
+accounting_system        = "QuickBooks"
 accounting_system_review = "No Government accounting-system adequacy review has been performed."
 
 # Second point of contact — most notices ask for two. Once here, it goes
 # on every cover email.
-secondary_contact_name  = ""
-secondary_contact_title = ""
-secondary_contact_phone = ""
-secondary_contact_email = ""
+secondary_contact_name  = "Chloe Brooks"
+secondary_contact_title = "Executive Assistant"
+secondary_contact_phone = ""                # FILL: her direct line
+secondary_contact_email = ""                # FILL: her email
 
 # Insurance and bonding get asked for constantly. Enter once.
 insurance_carrier       = ""
@@ -166,8 +166,8 @@ brings = "Enrolled Agent, IRS Circular 230, with unlimited representation rights
 
 [[p1821.personnel]]
 name  = "Jason Teal"
-role  = ""                  # FILL: what he does for the firm
-brings = ""                 # FILL: experience he brings
+role  = "General contractor (in-house)"
+brings = "General contractor, in-house to Proverbs 1821 Consulting LLC. Performs construction-trade work directly — general contracting, repair, renovation and installation — and can self-perform most work let under the construction NAICS codes."
 
 [[p1821.credentials]]
 kind       = "ea"
@@ -194,9 +194,9 @@ customer  = "Blackwater Investment Group, Inc. (Montgomery, TX)"
 contract  = ""              # commercial engagement, no contract number
 role      = "Prime / direct contractor"
 share_pct = "100%"          # performed by Proverbs 1821 directly
-value     = ""              # CONFIRM annualized value before submission
-period    = ""              # CONFIRM start month/year
-scope     = "Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements."
+value     = "Engagement value not disclosed"
+period    = "Feb 2026 – present"
+scope     = "Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements. Supported $11MM raised to date since Feb 2026; $16.2MM in third-party audited financials available for verification."
 ref_name  = ""
 ref_phone = ""
 ref_email = ""
@@ -206,8 +206,8 @@ customer  = "Solomon Energy of Texas LLC"
 contract  = ""
 role      = "Prime / direct contractor"
 share_pct = "100%"
-value     = ""              # CONFIRM
-period    = ""              # CONFIRM start month/year
+value     = "Engagement value not disclosed"
+period    = ""              # FILL: start month/year – end or present
 scope     = "Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation."
 ref_name  = ""
 ref_phone = ""
