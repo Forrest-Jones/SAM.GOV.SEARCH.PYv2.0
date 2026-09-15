@@ -110,6 +110,31 @@ def slugify(text, max_len=50):
     return s[:max_len] or "opportunity"
 
 
+def is_construction(opp):
+    """Construction is bought under NAICS 23xxxx and PSC Y (construction)
+    or Z (repair/alteration of real property)."""
+    naics = str(opp.get("naicsCode") or "")
+    psc = str(opp.get("classificationCode") or "").upper()
+    return naics.startswith("23") or psc[:1] in ("Y", "Z")
+
+
+def references_for(profile, opp):
+    """The past-performance rows that belong on this bid. A roofing quote
+    with two financial-reporting engagements in its experience table
+    fails the pass/fail technical check on its face; rows carry a lane
+    so each kind of work shows its own record."""
+    rows = filled_rows(profile, "past_performance")
+    construction = is_construction(opp)
+    return [r for r in rows
+            if (str(r.get("lane") or "").strip().lower() == "construction") == construction]
+
+
+def capability_for(profile, opp):
+    if is_construction(opp):
+        return (profile.get("capability_statement_construction") or "").strip()
+    return (profile.get("capability_statement") or "").strip()
+
+
 def build_proposal_markdown(opp, description_text, profile, score=None, reasons=""):
     """Returns the proposal draft as markdown text."""
     profile = {**DEFAULT_COMPANY_PROFILE, **(profile or {})}
@@ -174,8 +199,9 @@ def build_proposal_markdown(opp, description_text, profile, score=None, reasons=
         "response. We have reviewed the requirement in full and confirm our ability to perform "
         "within the stated period and place of performance.",
         "",
-        (profile.get("capability_statement") or "").strip()
-        or FILL.format("2-3 sentences on why you're qualified — paste your capability statement into Settings so this fills itself in"),
+        capability_for(profile, opp)
+        or FILL.format("2-3 sentences on why you're qualified for THIS kind of work — "
+                       "capability_statement (or capability_statement_construction) in company.toml"),
         "",
         f"This offer remains valid for {FILL.format('number')} days. Questions may be directed to "
         f"{profile_value(profile, 'signatory_name', 'signatory name')} at "
@@ -253,7 +279,7 @@ def build_proposal_markdown(opp, description_text, profile, score=None, reasons=
         "| # | Customer | Contract # | Value | Period | Scope relevance | Reference contact |",
         "|---|---|---|---|---|---|---|",
     ]
-    references = filled_rows(profile, "past_performance")
+    references = references_for(profile, opp)
     for i in range(1, 4):
         ref = references[i - 1] if i <= len(references) else {}
         contact = ", ".join(

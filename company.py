@@ -68,7 +68,7 @@ SHARED_KEYS = (
     "signatory_name", "signatory_title", "phone", "phone_alt", "email",
     "sam_registration_expires", "insurance_carrier", "insurance_gl_limit",
     "workers_comp", "bonding_capacity_single", "bonding_capacity_total",
-    "skip_psc", "skip_keywords", "active_profiles",
+    "bonding_surety", "skip_psc", "skip_keywords", "active_profiles",
     "accounting_system", "accounting_system_review",
     "secondary_contact_name", "secondary_contact_title",
     "secondary_contact_phone", "secondary_contact_email",
@@ -257,6 +257,12 @@ def satisfies(company, gate):
     for credential in held_credentials(company):
         if CREDENTIAL_SATISFIES.get(credential["kind"]) == gate:
             return credential
+    # Bonding is a standing fact rather than a credential row: a surety
+    # relationship with a stated single-job limit answers the bond gate.
+    if gate.startswith("a corporate surety") and _is_filled(company.get("bonding_capacity_single")):
+        return {"kind": "bonding", "label": "Bonding capacity on file",
+                "holder": str(company["bonding_capacity_single"]).strip(),
+                "identifier": str(company.get("bonding_surety") or "").strip(), "expires": ""}
     return None
 
 

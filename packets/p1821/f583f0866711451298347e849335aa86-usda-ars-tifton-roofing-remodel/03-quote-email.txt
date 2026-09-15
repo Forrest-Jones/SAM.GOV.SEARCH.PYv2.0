@@ -1,38 +1,65 @@
 To:      jennifer.ford2@usda.gov
-Subject: 12C0BA26Q0011 — Quote from Proverbs 1821 Consulting LLC (UEI GD83PAK36818)
+Subject: 12C0BA26Q0011 — USDA-ARS Tifton Roofing Remodel — Quotation from Proverbs 1821 Consulting LLC (UEI GD83PAK36818)
 
-Jennifer Ford,
+Ms. Ford,
 
-Proverbs 1821 Consulting LLC is pleased to submit the attached quote in response to 12C0BA26Q0011,
-USDA-ARS Tifton Roofing Remodel. We have reviewed the requirement in full and confirm our ability
-to perform within the stated period and place of performance.
+Proverbs 1821 Consulting LLC submits the attached quotation in response to
+RFQ 12C0BA26Q0011, USDA-ARS Tifton Roofing Remodel. All eight line items
+in the Schedule of Items are priced as turn-key completed work.
 
-  Offeror:  Proverbs 1821 Consulting LLC
-  UEI:      GD83PAK36818
-  CAGE:     22ND2
-  Contact:  Forrest Andrew Jones, Owner / Managing Member — (832) 562-1355, forrestjones2010@gmail.com
-  Also:     Chloe Brooks, Executive Assistant — 
+  Offeror:   Proverbs 1821 Consulting LLC
+  UEI:       GD83PAK36818
+  CAGE:      22ND2
+  Address:   12103 Hawthorne Dr, Montgomery, TX 77356
+  Size:      Small business, NAICS 238160
+  Contact:   Forrest Andrew Jones, Owner / Managing Member
+             (832) 562-1355 / forrestjones2010@gmail.com
+  Also:      Chloe Brooks, Executive Assistant — [[FILL: Chloe's phone]] / [[FILL: Chloe's email]]
 
 Attached:
-  - Price sheet, signed
-  - [[FILL: any other attachment the solicitation requires — check its
-    instructions paragraph before sending]]
+  - Quotation (Schedule of Items pricing, technical approach, experience,
+    past performance, provisions) — PDF
+  - Bid guarantee, Standard Form 24, signed and sealed by the surety — PDF
+  - [[FILL: any provision the CO confirms must be completed and returned]]
 
-Our representations and certifications are current in SAM.gov.
+Prices are firm for 90 calendar days from the closing date. Performance and
+payment bonds will be furnished at award under FAR 52.228-15.
 
-Please confirm receipt. We are available for any clarification you need
-before the 2026-09-23 closing.
+Please confirm receipt.
 
 Respectfully,
+
 Forrest Andrew Jones
-Owner / Managing Member, Proverbs 1821 Consulting LLC
-(832) 562-1355 | forrestjones2010@gmail.com
+Owner / Managing Member
+Proverbs 1821 Consulting LLC
+(832) 562-1355 | (832) 662-1812
+forrestjones2010@gmail.com
 
 --------------------------------------------------------------------
-BEFORE SENDING, CHECK:
-  [ ] This is the submission method the solicitation actually names.
-      Some require a portal, a specific form, or a different address.
-      Do not assume email.
-  [ ] The price sheet is signed by the authorized signatory.
-  [ ] Sent before 2026-09-23 — confirm the closing TIME and time zone.
+SEND THESE FIRST (separate emails, before the quote):
+
+  1. To Joel.Blanchett@usda.gov — by Wed 16 Sep 2026, 4:00 PM ET
+     Subject: 12C0BA26Q0011 — site visit registration
+     "Please register the following for the 17 September site visit:
+      [[FILL: attendee name(s)]], Proverbs 1821 Consulting LLC,
+      representing Proverbs 1821 Consulting LLC."
+
+  2. To jennifer.ford2@usda.gov — before Mon 21 Sep 2026, 12:00 PM ET
+     Subject: 12C0BA26Q0011 — USDA-ARS Tifton Roofing Remodel — questions
+     "(1) The RFQ does not state the submission method or address for
+      quotations. Should quotations be emailed to you, and in what
+      format? (2) Which of the 'applicable if checked' provisions in the
+      RFQ are checked and must be completed with the quote? (3) Is the
+      Schedule of Items one base CLIN plus seven options (page 2) or six
+      (page 18)?"
+
+BEFORE SENDING THE QUOTE:
+  [ ] Submission method confirmed by the CO (see question 1).
+  [ ] SF24 bid bond attached — signed AND sealed by the surety. Without
+      it the quote is rejected, no exceptions short of FAR 28.101-4.
+  [ ] All eight CLINs priced.
+  [ ] Section 5.5 of the quotation names real standing seam roofing
+      projects with contacts — the Pass/Fail item.
+  [ ] NAICS 238160 added to the SAM registration.
+  [ ] Sent before Wed 23 Sep 2026, 4:00 PM EASTERN (3:00 PM Houston).
 --------------------------------------------------------------------

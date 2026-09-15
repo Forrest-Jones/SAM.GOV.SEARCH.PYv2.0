@@ -1417,3 +1417,36 @@ def test_a_hand_picked_notice_gets_a_packet_regardless_of_score(tmp_path, monkey
     assert out and os.path.exists(os.path.join(out, "01-proposal.md"))
     assert os.path.exists(os.path.join(out, "02-price-sheet.csv"))
     assert fo.build_one("nope", "p1821", fo.PROFILES["p1821"], "key", str(tmp_path), log=lambda m: None) is None
+
+
+def test_a_bond_requirement_is_a_gate_answered_only_by_bonding_on_file():
+    # Tifton: "Bid, Performance, and Payment Bonds are required" and a
+    # quote without an SF24 is rejected outright. Nothing in the proposal
+    # substitutes for a surety.
+    import packet
+    from company import satisfies
+    from tests.test_capability import BANK
+    gates = packet.credential_gates("Bid, Performance, and Payment Bonds are required.")
+    assert gates == ["a corporate surety — bid, performance and payment bonds"]
+    assert satisfies(BANK, gates[0]) is None
+    bonded = dict(BANK, bonding_capacity_single="$500,000", bonding_surety="Merchants Bonding")
+    assert satisfies(bonded, gates[0])["holder"] == "$500,000"
+
+
+def test_construction_bids_use_construction_references_and_statement():
+    import proposal
+    from tests.test_capability import BANK
+    bank = dict(BANK,
+                capability_statement="Financial reporting for capital-markets clients.",
+                capability_statement_construction="Roofing through our in-house general contractor.",
+                past_performance=[
+                    {"customer": "Blackwater Investment Group", "scope": "Investor reporting."},
+                    {"customer": "Tift County Schools", "lane": "construction",
+                     "scope": "Standing seam metal roof, 9,000 SF."}])
+    roofing = {"noticeId": "r1", "title": "Roof", "naicsCode": "238160", "classificationCode": "Y1JZ"}
+    text = proposal.build_proposal_markdown(roofing, "Replace roof.", bank)
+    assert "in-house general contractor" in text and "capital-markets" not in text
+    assert "Tift County Schools" in text and "Blackwater" not in text
+    finance = {"noticeId": "f1", "title": "Audit", "naicsCode": "541219", "classificationCode": "R710"}
+    text = proposal.build_proposal_markdown(finance, "Audit support.", bank)
+    assert "capital-markets" in text and "Tift County Schools" not in text

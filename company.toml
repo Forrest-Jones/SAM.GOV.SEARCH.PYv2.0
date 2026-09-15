@@ -49,8 +49,9 @@ secondary_contact_email = ""                # FILL: her email
 insurance_carrier       = ""
 insurance_gl_limit      = ""      # e.g. "$2,000,000 general aggregate"
 workers_comp            = ""      # e.g. "Statutory, TX"
-bonding_capacity_single = ""      # leave blank if you do not bond
-bonding_capacity_total  = ""
+bonding_capacity_single = ""      # e.g. "$500,000" — leave blank if you do not bond
+bonding_capacity_total  = ""      # e.g. "$1,500,000"
+bonding_surety          = ""      # e.g. "Merchants Bonding Company (Treasury Circular 570)"
 
 # Work the conveyor belt should never build a packet for, no matter how
 # well it scores. This is the brake: add a PSC or a phrase the first time
@@ -78,6 +79,10 @@ capability_statement = """Proverbs 1821 Consulting LLC provides financial manage
 The firm is principal-led. Work is performed by Forrest A. Jones, who brings twenty-five years in capital markets and corporate finance, a Certified Healthcare Financial Professional designation, an active IRS PTIN, and formal software engineering training, and who scales the firm by contracting named specialists under written agreements rather than by staffing junior labor against senior rates. That structure matters to a customer buying financial and administrative support: the person analyzing the budget is the person briefing it, and the firm's fixed overhead does not get billed into the rate. A second element of how the firm works is automation. The principal builds the reporting infrastructure himself — API integrations, recurring report generation, pipeline and exception monitoring — so that status reporting that is normally hand-assembled every cycle is produced on a schedule and audited rather than rebuilt.
 
 Proverbs 1821 is a young company registered and positioned for federal work: SAM registration is active, the firm carries a CAGE code, and it is currently pursuing its first federal award. It is not an incumbent on this or any comparable requirement, and it is not in a position to claim a federal past performance record it does not have."""
+
+# Used on construction bids (NAICS 23xxxx, PSC Y/Z) in place of the
+# financial statement above. Jason Teal is the in-house general contractor.
+capability_statement_construction = """Proverbs 1821 Consulting LLC performs construction-trade work through its in-house general contractor, Jason Teal, who supervises and self-performs general contracting, roofing, structural steel and welding, repair, renovation and installation. [[FILL: Jason Teal — years in the trade, state licence(s) and numbers, crew size, and two or three standing-seam metal roof projects with square footage and year]] The firm carries [[FILL: general liability and workers compensation coverage, or strike]] and bonds through [[FILL: surety, or strike]]."""
 
 # Which of your registered NAICS codes should get a bid packet built.
 #
@@ -215,6 +220,23 @@ share_pct = "100%"
 value     = "Engagement value not disclosed"
 period    = ""              # FILL: start month/year – end or present
 scope     = "Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation."
+ref_name  = ""
+ref_phone = ""
+ref_email = ""
+
+# Construction references — Jason Teal's projects. lane = "construction"
+# puts a row on construction bids and keeps it off financial ones.
+# Fill customer, scope (with square footage and roof type), value, period
+# and a reference contact who will answer the phone.
+[[p1821.past_performance]]
+lane      = "construction"
+customer  = ""
+contract  = ""
+role      = "Prime / direct contractor"
+share_pct = "100%"
+value     = ""
+period    = ""
+scope     = ""
 ref_name  = ""
 ref_phone = ""
 ref_email = ""

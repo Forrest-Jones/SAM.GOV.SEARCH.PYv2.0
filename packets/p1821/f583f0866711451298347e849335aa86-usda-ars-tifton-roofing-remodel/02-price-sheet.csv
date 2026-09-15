@@ -1,16 +1,14 @@
-PRICE SHEET — USDA-ARS Tifton Roofing Remodel
+"PRICE SHEET — USDA-ARS Tifton Roofing Remodel"
 Solicitation: 12C0BA26Q0011
 
 Labor category,Unit,Rate,Hours / Qty,Extended
-,hr,,,
-,hr,,,
-,hr,,,
-,hr,,,
+"CLIN 0001 Base — 660200B067 Crop Genetics Storage/Potting & Shop, 2508 Moore Hwy — 2,000 SF, no penetrations",LS,,1,
+"CLIN 1001 Option 1 — 660200B019 Head House, 2294 Rainwater Rd — 1,400 SF; fume hood, chimney, 4 drain vents; gutters",LS,,1,
+"CLIN 2001 Option 2 — 660200B060 Crop Genetics Storage, 2508 Moore Hwy — 2,400 SF; replace greenhouse awning; gutters",LS,,1,
+"CLIN 3001 Option 3 — 660200B008 Insectary/Field Lab Rm 1, 107 Bermuda Dr — 700 SF, 2 drain vents",LS,,1,
+"CLIN 4001 Option 4 — 660200B036 Soil Processing Lab, 2377-E Rainwater Rd — 600 SF; gutters",LS,,1,
+"CLIN 5001 Option 5 — 660200B037 Storage Shed, 2377-C Rainwater Rd — 1,250 SF; gutters",LS,,1,
+"CLIN 6001 Option 6 — 660200B053 Storage Shed, 2377-A Rainwater Rd — 1,100 SF; gutters",LS,,1,
+"CLIN 7001 Option 7 — 660200B007 Equipment Shed with roll-up door, 2377 Rainwater Rd — 1,200 SF; gutters",LS,,1,
 
 TOTAL,,,,
-
-No rate card on file — add [[profile.rate_card]] entries to,company.toml and every future price sheet fills its own rates.
-
-"Other direct costs (travel, materials):",
-Basis of estimate:,
-Offer valid for (days):,

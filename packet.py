@@ -98,6 +98,13 @@ CREDENTIAL_GATES = (
     ("a named third-party certification",
      r"\bISO\s*\d{4,5}\b|certified\s+industrial\s+hygienist"
      r"|certified\s+safety\s+professional|\bPMP\b\s+certif"),
+    # Construction over the Miller Act threshold: a bid bond travels with
+    # the quote and the quote is rejected without it, so a firm with no
+    # surety has nothing to submit however good the price is.
+    ("a corporate surety — bid, performance and payment bonds",
+     r"bid\s+(?:guarantee|bond)|performance,?\s+(?:and|&)\s+payment\s+bonds?"
+     r"|\bbonds?\s+(?:are|is)\s+required|\bMiller\s+Act\b|52\.228-15\b"
+     r"|Standard\s+Form\s+24\b|\bSF\s*-?\s*24\b"),
 )
 
 
