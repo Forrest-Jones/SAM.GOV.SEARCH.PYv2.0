@@ -143,7 +143,7 @@ across it.
 
 ## Construction lane (decided 2026-09-14)
 
-Jason Teal is the in-house general contractor. The owner wants construction
+Jason Teal is the in-house general contractor. Aaron Mumaki and Ashley Mumaki (owners of AMWR Roofing, 20 years in roofing, surety-bond track record, OSHA-trained) are in-house roofers; cite AMWR's roofing record as the firm's own, attributed "AMWR Roofing, in-house to Proverbs 1821". The owner wants construction
 work in the daily flow: roofing, welding, and anything a general
 contractor performs. The p1821 search and `packet_naics` carry the 236/238
 trade codes and 811310; `packet_psc_prefixes` include Y, Z and J. Bonding

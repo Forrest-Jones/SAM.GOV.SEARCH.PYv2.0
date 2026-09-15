@@ -50,6 +50,7 @@
 | Authorized signatory | Forrest Andrew Jones, Owner / Managing Member |
 | Business size | Small business under NAICS 238160 (size standard $19M), self-certified in SAM.gov |
 | Superintendent (FAR 52.236-6) | Jason Teal, General Contractor (in-house) |
+| Roofing crew leads | Aaron Mumaki and Ashley Mumaki, Roofers (in-house; owners of AMWR Roofing, 20 years in the trade) |
 
 ## 3. Cover letter
 
@@ -63,7 +64,7 @@ Via email: jennifer.ford2@usda.gov
 
 Proverbs 1821 Consulting LLC submits the attached quotation for the Tifton roofing remodel. We have read the Request for Quotation and Attachment 1, Statement of Work, in full, and we quote all eight line items — the base building and the seven options — as turn-key completed work.
 
-**[DRAFT — your review]** Proverbs 1821 Consulting LLC performs construction-trade work through its in-house general contractor, Jason Teal, who will superintend this project and self-perform the roofing with the firm's own crew. [[FILL: Jason Teal — years in the trade, Georgia or other state licence(s) and numbers, crew size, and two or three standing-seam metal roof projects with square footage and year]]
+**[DRAFT — your review]** Proverbs 1821 Consulting LLC performs construction-trade work with its own in-house bench. Jason Teal, general contractor, will superintend this project. The roofing is performed by Aaron Mumaki and Ashley Mumaki, roofers with twenty years in the trade as the owners of AMWR Roofing, with a surety bond track record on bonded roofing work and OSHA safety training. [[FILL: state licence(s) and numbers, crew size, and two or three standing seam metal roof projects with square footage and year]]
 
 **[DRAFT — your review]** Our approach follows the Statement of Work in its own order: each roof is stripped to underlayment, the decking is inspected and any defect reported to the COR as a differing site condition before installation begins, and the replacement 26-gauge standing seam system, its profile and its color (hunter or forest green, from a chart we supply) are submitted for approval before any material is ordered. The technical approach, schedule and key personnel are in the attached quotation.
 
@@ -126,7 +127,8 @@ The RFQ rates technical approach Pass or Fail on one thing: whether the quote "c
 ### 5.4 Personnel, safety, compliance
 
 - **Superintendent (FAR 52.236-6):** Jason Teal, General Contractor, on site for the duration. [[FILL: licences, OSHA training held, years]]
-- **Crew:** [[FILL: size and trades — roofers, laborers]]; all personnel presented for USDA PIV/LincPass enrollment per AGAR 452.204-71, with the firm's own identity and work-authorization verification before anyone is presented.
+- **Roofing crew leads:** Aaron Mumaki and Ashley Mumaki, roofers, twenty years in the trade (AMWR Roofing, in-house to Proverbs 1821), OSHA-trained. [[FILL: OSHA course levels held (10-hour / 30-hour), licences]]
+- **Crew:** [[FILL: size — roofers, laborers]]; all personnel presented for USDA PIV/LincPass enrollment per AGAR 452.204-71, with the firm's own identity and work-authorization verification before anyone is presented.
 - **Labor standards:** Davis-Bacon rates and fringes per General Decision GA20260060 paid to every laborer and mechanic on site; weekly certified payrolls (WH-347) submitted under FAR 52.222-8.
 - **Permits (SOW 4.1):** all building and trade permits, inspections and fees obtained and paid by the firm.
 - **Quality control (SOW 4.4):** [[FILL: who inspects each roof before it is offered to the COR, and against what checklist]]
@@ -134,7 +136,7 @@ The RFQ rates technical approach Pass or Fail on one thing: whether the quote "c
 
 ### 5.5 Relevant experience — standing seam metal roofing (the Pass/Fail item)
 
-**Only real, verifiable projects.** The evaluator is checking that this firm has removed and replaced standing seam metal roofs before. Each entry needs the building, the square footage, the roof system, when, and who can confirm it.
+**Only real, verifiable projects.** The evaluator is checking that this firm has removed and replaced standing seam metal roofs before. AMWR Roofing's projects count — its owners are in-house — cited as performed by AMWR Roofing, in-house to Proverbs 1821, so a reference call confirms exactly what is written. Each entry needs the building, the square footage, the roof system, when, and who can confirm it.
 
 | # | Project | Owner / contact | Square footage and system | Year | Role |
 |---|---|---|---|---|---|
