@@ -1363,7 +1363,7 @@ def test_the_print_view_pages_the_statement_and_flags_what_is_left(tmp_path, mon
 
 def test_a_fact_bank_change_refreshes_only_untouched_capability_files(tmp_path):
     import packet
-    from tests.test_capability import SSN, NOTICE_TEXT, BANK
+    from test_capability import SSN, NOTICE_TEXT, BANK
     out, _, _ = packet.build_capability_response(
         SSN, NOTICE_TEXT, BANK, str(tmp_path), notice_kind="Sources Sought")
     answered = os.path.join(out, "01-capability-statement.md")
@@ -1402,7 +1402,7 @@ def test_a_hand_picked_notice_gets_a_packet_regardless_of_score(tmp_path, monkey
     # daily top three left it out. The owner wants it; the belt's ranking
     # is not a veto.
     import find_opportunities as fo
-    from tests.test_capability import BANK
+    from test_capability import BANK
     opp = {"noticeId": "f583", "title": "USDA-ARS Tifton Roofing Remodel",
            "type": "Combined Synopsis/Solicitation", "naicsCode": "238160",
            "classificationCode": "Y1JZ", "solicitationNumber": "12C0BA26Q0011",
@@ -1425,7 +1425,7 @@ def test_a_bond_requirement_is_a_gate_answered_only_by_bonding_on_file():
     # substitutes for a surety.
     import packet
     from company import satisfies
-    from tests.test_capability import BANK
+    from test_capability import BANK
     gates = packet.credential_gates("Bid, Performance, and Payment Bonds are required.")
     assert gates == ["a corporate surety — bid, performance and payment bonds"]
     assert satisfies(BANK, gates[0]) is None
@@ -1435,7 +1435,7 @@ def test_a_bond_requirement_is_a_gate_answered_only_by_bonding_on_file():
 
 def test_construction_bids_use_construction_references_and_statement():
     import proposal
-    from tests.test_capability import BANK
+    from test_capability import BANK
     bank = dict(BANK,
                 capability_statement="Financial reporting for capital-markets clients.",
                 capability_statement_construction="Roofing through our in-house general contractor.",
