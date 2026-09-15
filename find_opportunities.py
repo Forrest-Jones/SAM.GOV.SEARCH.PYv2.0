@@ -932,6 +932,89 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
     }
 
 
+def keyed_session(api_key):
+    """A requests session that carries the API key onto every URL —
+    attachment links on SAM.gov need the same key the search uses."""
+    import requests
+
+    session = requests.Session()
+    original_get = session.get
+
+    def keyed_get(url, **kw):
+        if "api_key=" not in url:
+            url += ("&" if "?" in url else "?") + "api_key=" + api_key
+        return original_get(url, **kw)
+
+    session.get = keyed_get
+    return session
+
+
+def fetch_notice(notice_id, api_key, max_retries=4):
+    """One notice by id, or None. The search endpoint takes a noticeid
+    filter but still insists on a posted-date window, so the widest one
+    it allows is used."""
+    today = date.today()
+    params = {
+        "api_key": api_key,
+        "noticeid": notice_id,
+        "postedFrom": (today - timedelta(days=364)).strftime("%m/%d/%Y"),
+        "postedTo": today.strftime("%m/%d/%Y"),
+        "limit": 10,
+        "offset": 0,
+    }
+    resp = request_with_retry(params, max_retries)
+    if resp is None:
+        return None
+    for opp in resp.json().get("opportunitiesData", []) or []:
+        if opp.get("noticeId") == notice_id:
+            return opp
+    return None
+
+
+def build_one(notice_id, profile_key, profile, api_key, packets_root,
+              log=lambda m: print(m, file=sys.stderr)):
+    """A packet for one notice the owner has chosen by hand.
+
+    The daily batch takes the top N by score; a notice the owner wants
+    that did not make the cut still deserves the same folder, with the
+    government's own documents in it. The score floor and the NAICS/PSC
+    packet filters are the belt's rules for choosing, not the owner's, so
+    they do not apply here. What still applies: an award notice or other
+    unbiddable type gets nothing, and a market research notice gets a
+    capability response rather than a priced packet.
+    """
+    import packet
+    from company import load_company
+
+    opp = fetch_notice(notice_id, api_key)
+    if not opp:
+        log(f"  notice {notice_id} not found on SAM.gov (or outside the last year)")
+        return None
+    unbiddable = not_biddable_reason(opp)
+    kind = notice_type(opp)
+    capability_kind = kind if unbiddable and kind.lower() in ("sources sought", "special notice") else None
+    if unbiddable and not capability_kind:
+        log(f"  {opp.get('title')}: {unbiddable}")
+        return None
+
+    pts, reasons = score(
+        opp, 0, 365, DEFAULT_HELD_CERTS, keywords=profile["keywords"],
+        priority_psc=profile["priority_psc"], home_states=profile["home_states"])
+    company = load_company(profile_key)
+    description_text = fetch_description(opp, api_key)
+    session = keyed_session(api_key)
+    if capability_kind:
+        out, blanks_left, status = packet.build_capability_response(
+            opp, description_text, company, packets_root,
+            notice_kind=capability_kind, session=session)
+    else:
+        out, blanks_left, status = packet.build_packet(
+            opp, description_text, company, packets_root, pts, reasons, session=session)
+    left = "-" if blanks_left is None else f"{blanks_left} blanks left"
+    log(f"  {'capability' if capability_kind else 'packet'} [{status}] {os.path.basename(out)} — {left}")
+    return out
+
+
 def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
                 packets_root, log=lambda m: print(m, file=sys.stderr)):
     """The conveyor belt: turn the top N open matches into packet folders.
@@ -940,8 +1023,6 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
     the goal is N packets in the tray today — a notice that was new
     yesterday and is still open is still worth bidding.
     """
-    import requests
-
     import packet
     from company import load_company, missing_fields, skip_reason
 
@@ -955,16 +1036,7 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
         log("     packets still build, but those blanks repeat on every one — "
             "run: python3 company.py --profile " + profile_key)
 
-    # Attachment URLs on SAM.gov need the same API key the search uses.
-    session = requests.Session()
-    original_get = session.get
-
-    def keyed_get(url, **kw):
-        if "api_key=" not in url:
-            url += ("&" if "?" in url else "?") + "api_key=" + api_key
-        return original_get(url, **kw)
-
-    session.get = keyed_get
+    session = keyed_session(api_key)
 
     # The target is N NEW packets to work on, so only first-time builds count
     # against it. Counting reused ones would mean a stable top N produces
@@ -1066,6 +1138,9 @@ def main():
                     help="build N submission-ready bid packets from the top matches "
                          "(the conveyor belt: folder each, with price sheet, cover email "
                          "and the solicitation's own attachments)")
+    ap.add_argument("--notice", action="append", metavar="ID", default=[],
+                    help="build a packet for this notice id, chosen by hand, and do "
+                         "nothing else (repeatable)")
     ap.add_argument("--packets-dir", type=str, default=None,
                     help="default: packets/<profile>")
     ap.add_argument("--include-restricted-set-asides", action="store_true")
@@ -1134,6 +1209,12 @@ def main():
             print(f"  Fill it in company.toml under [{args.profile}] and this resumes"
                   " on the next run.", file=sys.stderr)
             return
+
+    if args.notice:
+        packets_root = args.packets_dir or os.path.join("packets", args.profile)
+        for notice_id in args.notice:
+            build_one(notice_id, args.profile, profile, api_key, packets_root)
+        return
 
     cfg = {
         "profile": args.profile,

@@ -1,0 +1,56 @@
+name: build-packet
+
+# A packet for one notice the owner has picked by hand — one that did not
+# make the daily top three, or that arrived in the digest and is wanted
+# now. The runner holds the SAM.gov key; a laptop or a sandbox may not.
+on:
+  workflow_dispatch:
+    inputs:
+      notice_id:
+        description: "SAM.gov notice id (the 32-character id in the listing URL)"
+        required: true
+      profile:
+        description: "Which lane's fact bank to build from"
+        default: "p1821"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Build the packet
+        env:
+          SAM_API_KEY: ${{ secrets.SAM_API_KEY }}
+          NOTICE_ID: ${{ inputs.notice_id }}
+          PROFILE: ${{ inputs.profile }}
+        run: python3 find_opportunities.py --profile "$PROFILE" --notice "$NOTICE_ID" --no-email
+
+      - name: Commit the packet
+        env:
+          NOTICE_ID: ${{ inputs.notice_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          [ -e packets ] && git add -A packets
+          if git diff --cached --quiet; then
+            echo "nothing new to commit"
+            exit 0
+          fi
+          git commit -m "chore: packet for notice $NOTICE_ID"
+          for attempt in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            echo "push attempt $attempt failed; retrying"
+            sleep 5
+          done
+          echo "could not push the packet after 3 attempts" >&2
+          exit 1

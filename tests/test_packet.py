@@ -1395,3 +1395,25 @@ def test_new_lane_codes_reach_a_settings_file_saved_before_them(tmp_path, monkey
     codes = webapp.load_settings("p1821")["naics_codes"]
     assert codes[0] == "541219"
     assert "238160" in codes, "roofing, added to the lane after this file was saved"
+
+
+def test_a_hand_picked_notice_gets_a_packet_regardless_of_score(tmp_path, monkeypatch):
+    # Tifton scored 6 and three construction notices scored higher, so the
+    # daily top three left it out. The owner wants it; the belt's ranking
+    # is not a veto.
+    import find_opportunities as fo
+    from tests.test_capability import BANK
+    opp = {"noticeId": "f583", "title": "USDA-ARS Tifton Roofing Remodel",
+           "type": "Combined Synopsis/Solicitation", "naicsCode": "238160",
+           "classificationCode": "Y1JZ", "solicitationNumber": "12C0BA26Q0011",
+           "responseDeadLine": "2099-09-23T16:00:00-04:00",
+           "typeOfSetAsideDescription": "Small Business Set Aside - Total",
+           "pointOfContact": [{"type": "primary", "email": "joel@usda.gov", "fullName": "Joel Blanchett"}],
+           "resourceLinks": []}
+    monkeypatch.setattr(fo, "fetch_notice", lambda nid, key, max_retries=4: opp if nid == "f583" else None)
+    monkeypatch.setattr(fo, "fetch_description", lambda o, key: "Replace roofing. Bonds required.")
+    monkeypatch.setattr("company.load_company", lambda profile: BANK)
+    out = fo.build_one("f583", "p1821", fo.PROFILES["p1821"], "key", str(tmp_path), log=lambda m: None)
+    assert out and os.path.exists(os.path.join(out, "01-proposal.md"))
+    assert os.path.exists(os.path.join(out, "02-price-sheet.csv"))
+    assert fo.build_one("nope", "p1821", fo.PROFILES["p1821"], "key", str(tmp_path), log=lambda m: None) is None
