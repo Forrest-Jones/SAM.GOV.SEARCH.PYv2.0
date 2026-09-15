@@ -1,0 +1,15 @@
+Attachments listed on SAM.gov notice 6814b8f6c8cb4313b0d10c2104ea37e2
+Listing: https://sam.gov/workspace/contract/opp/6814b8f6c8cb4313b0d10c2104ea37e2/view
+
+[downloaded] Attachment-6---SITE-VISIT-INSTRUCTIONS-.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4c061010b3e943049c9f97e2620b6c38/download
+[downloaded] RFQ-N6660426Q0473-0001.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/66f2fa22a0b14ad0a5ae52cbd88ecb98/download
+[downloaded] Attachment-3---RI20260001-Davis-Bacon-_7_30_26.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/912499c281df4988b571444adc156fcb/download
+[downloaded] Attachment-5---08_5090-8-Generator-Usage-Log.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c2f5df28db3946cba78139e6bc301cda/download
+[downloaded] Attachment-4---07_5090-7-Hazmat-Usage-Log.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e11e014e7a654d309523e5b86b5f4e90/download
+[downloaded] RFQ-N6660426Q0473.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e4b054be234e42e78a5c84606acd44c4/download

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Due** | **2026-09-30 (16 days out)** |
+| **Due** | **2026-09-30 (15 days out)** |
 | Closing time | 10:00 (UTC-05) |
 | Notice type | Combined Synopsis/Solicitation |
 | Solicitation | 15B51426Q00000025 |
@@ -27,6 +27,7 @@ this date? If no, delete this folder and add a line to `skip_keywords` in
 
 > - Needs **a licensed CPA or CPA firm** — nothing on file covers this. **Do you have it?**
 > - Needs **a named third-party certification** — on file: Third-party certification — Forrest A. Jones (Certified Healthcare Financial Professional (CHFP)). **Covered.**
+> - Needs **a corporate surety — bid, performance and payment bonds** — nothing on file covers this. **Do you have it?**
 >
 
 > Nothing on file answers the requirement(s) marked above. If you
@@ -39,7 +40,7 @@ this date? If no, delete this folder and add a line to `skip_keywords` in
 
 **3. Price it.** Open `02-price-sheet.csv`. Your rates are already in it — no rate card on file yet. Enter **hours** only; the extended column totals itself.
 
-**4. Tailor the draft.** `01-proposal.md` has **48 blanks** left, marked `[[FILL: ...]]`. Search for that string and work through them.
+**4. Tailor the draft.** `01-proposal.md` has **56 blanks** left, marked `[[FILL: ...]]`. Search for that string and work through them.
 
 **5. Send it.** `03-quote-email.txt` is addressed and written. Confirm the submission method on the listing, sign the price sheet, send.
 
@@ -62,4 +63,4 @@ this date? If no, delete this folder and add a line to `skip_keywords` in
   a submission but never sends one.
 
 ---
-_Packet built 2026-09-14. Draft, not a submission._
+_Packet built 2026-09-15. Draft, not a submission._

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Due** | **2026-09-23 (9 days out)** |
+| **Due** | **2026-09-23 (8 days out)** |
 | Closing time | 12:00 (UTC-05) |
 | Notice type | Combined Synopsis/Solicitation |
 | Solicitation | 1232SA26Q1466 |
@@ -21,9 +21,24 @@
 this date? If no, delete this folder and add a line to `skip_keywords` in
 `company.toml` so it never reaches you again.
 
+> **This one is pass/fail before anything else.** The solicitation text
+> asks for the qualifications below. No amount of proposal writing
+> substitutes for one the business does not hold.
+
+> - Needs **a corporate surety — bid, performance and payment bonds** — nothing on file covers this. **Do you have it?**
+>
+
+> Nothing on file answers the requirement(s) marked above. If you
+> cannot produce it, this one is over — stop here and take the next
+> packet. Five minutes now, or the whole week after the proposal is
+> written.
+>
+> If you do hold it, add it to `credentials` in `company.toml` and
+> every future packet answers this by itself.
+
 **3. Price it.** Open `02-price-sheet.csv`. Your rates are already in it — no rate card on file yet. Enter **hours** only; the extended column totals itself.
 
-**4. Tailor the draft.** `01-proposal.md` has **50 blanks** left, marked `[[FILL: ...]]`. Search for that string and work through them.
+**4. Tailor the draft.** `01-proposal.md` has **58 blanks** left, marked `[[FILL: ...]]`. Search for that string and work through them.
 
 **5. Send it.** `03-quote-email.txt` is addressed and written. Confirm the submission method on the listing, sign the price sheet, send.
 
@@ -46,4 +61,4 @@ this date? If no, delete this folder and add a line to `skip_keywords` in
   a submission but never sends one.
 
 ---
-_Packet built 2026-09-14. Draft, not a submission._
+_Packet built 2026-09-15. Draft, not a submission._

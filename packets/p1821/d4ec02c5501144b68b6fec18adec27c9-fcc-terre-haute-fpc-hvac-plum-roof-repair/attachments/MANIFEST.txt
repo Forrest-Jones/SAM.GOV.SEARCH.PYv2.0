@@ -1,0 +1,9 @@
+Attachments listed on SAM.gov notice d4ec02c5501144b68b6fec18adec27c9
+Listing: https://sam.gov/workspace/contract/opp/d4ec02c5501144b68b6fec18adec27c9/view
+
+[downloaded] Market-Research-Questionnaire-CAMP-ROOF.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/aa5c64d729444f3fadbe878aaa4c4c03/download
+[downloaded] CAMP-Plumb-Roof-Drawing.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/df5f94ecf623420fb1e2d30ad70f9995/download
+[downloaded] SOW-CAMP-HVAC-PLUMB-COMM-SHOPS.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e8319c5a758c4123b5ae4713466578d6/download

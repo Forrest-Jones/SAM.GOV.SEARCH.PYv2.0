@@ -36,7 +36,7 @@
 
 ## 3. Cover letter
 
-September 14, 2026
+September 15, 2026
 
 [[FILL: Contracting Officer name]]
 AGRICULTURE, DEPARTMENT OF.AGRICULTURAL RESEARCH SERVICE.USDA ARS AFM APD
@@ -45,11 +45,7 @@ AGRICULTURE, DEPARTMENT OF.AGRICULTURAL RESEARCH SERVICE.USDA ARS AFM APD
 
 Proverbs 1821 Consulting LLC is pleased to submit this response. We have reviewed the requirement in full and confirm our ability to perform within the stated period and place of performance.
 
-Proverbs 1821 Consulting LLC provides financial management, analysis, and administrative support services to organizations whose reporting and compliance obligations outrun their internal staffing. The core of the work is recurring financial operations: budget preparation and execution tracking, variance and burn-rate analysis, reconciliation, funding-document control, recurring management and stakeholder reporting, and the preparation of decision-support materials for executives who have to defend a number in front of a board, a lender, or an oversight body. The firm also supplies administrative and executive staff support around that work — document control, records management, calendar and correspondence support, meeting preparation and minutes, and action-item tracking — because in practice the financial deliverable and the staff work that surrounds it are the same job.
-
-The firm is principal-led. Work is performed by Forrest A. Jones, who brings twenty-five years in capital markets and corporate finance, a Certified Healthcare Financial Professional designation, an active IRS PTIN, and formal software engineering training, and who scales the firm by contracting named specialists under written agreements rather than by staffing junior labor against senior rates. That structure matters to a customer buying financial and administrative support: the person analyzing the budget is the person briefing it, and the firm's fixed overhead does not get billed into the rate. A second element of how the firm works is automation. The principal builds the reporting infrastructure himself — API integrations, recurring report generation, pipeline and exception monitoring — so that status reporting that is normally hand-assembled every cycle is produced on a schedule and audited rather than rebuilt.
-
-Proverbs 1821 is a young company registered and positioned for federal work: SAM registration is active, the firm carries a CAGE code, and it is currently pursuing its first federal award. It is not an incumbent on this or any comparable requirement, and it is not in a position to claim a federal past performance record it does not have.
+Proverbs 1821 Consulting LLC performs construction-trade work with an in-house bench: Jason Teal, general contractor, who supervises and self-performs general contracting, structural steel and welding, repair, renovation and installation; and Aaron Mumaki and Ashley Mumaki, roofers with twenty years in the trade as the owners of AMWR Roofing, with a surety bond track record on bonded roofing work and OSHA safety training. [[FILL: state licence(s) and numbers, crew size, and two or three standing-seam metal roof projects with square footage and year]] The firm carries [[FILL: general liability and workers compensation coverage, or strike]] and bonds through [[FILL: surety, or strike]].
 
 This offer remains valid for [[FILL: number]] days. Questions may be directed to Forrest Andrew Jones at (832) 562-1355 or forrestjones2010@gmail.com.
 
@@ -92,8 +88,8 @@ One row per stated requirement, so nothing in the PWS goes unanswered — the mo
 
 | # | Customer | Contract # | Value | Period | Scope relevance | Reference contact |
 |---|---|---|---|---|---|---|
-| 1 | Blackwater Investment Group, Inc. (Montgomery, TX) | [[FILL: contract number]] | Engagement value not disclosed | Feb 2026 – present | Contracted financial and capital-markets support: investor reporting, capitalization records and subscription document control, pipeline and status reporting, and the sourcing, contracting and day-to-day management of a three-person outbound team engaged under Proverbs 1821 independent contractor agreements. Supported $11MM raised to date since Feb 2026; $16.2MM in third-party audited financials available for verification. — [[FILL: why it is relevant to THIS requirement]] | [[FILL: name, phone, email]] |
-| 2 | Solomon Energy of Texas LLC | [[FILL: contract number]] | Engagement value not disclosed | [[FILL: start–end]] | Financial packaging and institutional reporting support: assembly of a seven-stage institutional review submission against an external sponsor rubric, coordination of multi-party technical and financial deliverables against a fixed deadline, and remediation of scored deficiencies including administrator designation and written succession documentation. — [[FILL: why it is relevant to THIS requirement]] | [[FILL: name, phone, email]] |
+| 1 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: $ value]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] | [[FILL: name, phone, email]] |
+| 2 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: $ value]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] | [[FILL: name, phone, email]] |
 | 3 | [[FILL: customer]] | [[FILL: contract number]] | [[FILL: $ value]] | [[FILL: start–end]] | [[FILL: why it is relevant to THIS requirement]] | [[FILL: name, phone, email]] |
 
 ## 7. Price proposal
@@ -146,4 +142,4 @@ Requested on most commercial-item buys. Values come from the fact bank.
 
 ---
 
-_Draft generated 2026-09-14 from SAM.gov notice 0c1e1dd5608d4b65bfb9753422b6dd69 (triage score 6: set-aside (Small Business Set Aside - Total) — eligible, 9d to deadline, 4 keyword matches)._ _Not a submission._
+_Draft generated 2026-09-15 from SAM.gov notice 0c1e1dd5608d4b65bfb9753422b6dd69 (triage score 6: set-aside (Small Business Set Aside - Total) — eligible, 8d to deadline, 4 keyword matches)._ _Not a submission._
