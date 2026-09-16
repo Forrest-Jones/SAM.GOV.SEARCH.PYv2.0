@@ -1,0 +1,31 @@
+Attachments listed on SAM.gov notice a8f311ad6c554493bb4f4e817fe6c65e
+Listing: https://sam.gov/workspace/contract/opp/a8f311ad6c554493bb4f4e817fe6c65e/view
+
+[downloaded] Attachment-10_East-Pocket_SHEETS_2-5_FINAL_EPLO-SHT5_1_127EAX26Q0074.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/3f9273a878a6491bbb8163d4f0773b22/download
+[downloaded] Attachment-6_Fire-Plan_127EAX26Q0074.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4ac52aea08944c59bceabcdd8875cbe8/download
+[downloaded] Attachment-12_Sustainable-Products-links-and-information_127EAX26Q0074.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/6ba2775521f04b7486f7673433c49aba/download
+[downloaded] Attachment-7_Wage-Determination_AZ20260012_05.18.2026_127EAX26Q0074.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8a50d56dee5e47c4b25a46a11a219640/download
+[downloaded] Attachment-8_RFI-Questions-and-Responses_RFQ-127EAX26Q0074-281-29.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8c3de136c0874d78a9e1bfabbfd80471/download
+[downloaded] Attachment-3_CAD-Drawings_127EAX26Q0074.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9a3f79fdca17425c9fab7645cfe29408/download
+[downloaded] Attachment-2_SOI_127EAX26Q0074_Amendment-001.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9b4e28585d6048d1a4e9f8671e5a0c51/download
+[downloaded] Attachment-4_Specifications_127EAX26Q0074_Amendment-001.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9e00e4def1dc46469328782e3040a8b8/download
+[downloaded] Attachment-9_Mount-Elden-design-loads_-image-285-29_127EAX26Q0074.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a320ac9c6be947bfb1f62355ef98d996/download
+[downloaded] Attachment-1_SOW_127EAX26Q0074_Amendment-001.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c5d0235aa0364d30adb6024911d844de/download
+[downloaded] 127EAX26Q0074_Amendment-001.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e2a84b5ca84a4f3d9e27038e19608f0b/download
+[downloaded] Attachment-11_Elden-Tower_Plans_127EAX26Q0074.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/eb4f10eca01e4c64ba749d72e1971805/download
+[downloaded] Attachment-5_Map_127EAX26Q0074.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/eddf664b29164c519303b8878c7643e7/download
+[downloaded] 127EAX26Q0074.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/fffa6624666f4e82b19f6b7b1822f624/download

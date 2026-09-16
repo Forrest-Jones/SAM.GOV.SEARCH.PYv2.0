@@ -1,0 +1,9 @@
+Attachments listed on SAM.gov notice 4d7cf162384b44eabd2b83b0bccf958a
+Listing: https://sam.gov/workspace/contract/opp/4d7cf162384b44eabd2b83b0bccf958a/view
+
+[downloaded] C04_12C0BA26Q0011-Tifton-Roffing-SOW-FINAL.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/22ab67f2fb3849dea4e24f42ac743ed0/download
+[downloaded] C04_12C0BA26Q0011-FINAL-RFQ.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/29b19feb06144595bcaa58bea6660de1/download
+[downloaded] C04_Attachment-2-General-Decision-No.-GA20260060-dated-5-18-2026.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/5ec128515498491b9f36ad90a17148fe/download
