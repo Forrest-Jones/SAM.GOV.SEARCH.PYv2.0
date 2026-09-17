@@ -1,0 +1,11 @@
+Attachments listed on SAM.gov notice cd0c77ccee5d4c669bc10a70e63248d6
+Listing: https://sam.gov/workspace/contract/opp/cd0c77ccee5d4c669bc10a70e63248d6/view
+
+[downloaded] C04-Attach-02-Wage-Decision-ND20260015-05-18-2026.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/154736b99f9a40eab5ebcab77e90b490/download
+[downloaded] C04-Attach-01-PWS-Bldg-1A-Replace-Ribbed-roof-panels.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/31147e5f27614010af721edb9b4fa485/download
+[downloaded] C04-127EAX26Q0112-RFQ-1A-Bridge-Conf-Roof.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/3d100d4097c74672956f6f5cb041c679/download
+[downloaded] C04-Attach-00-Schedule-of-Items---Fillable.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c206c22480b84f389e7ecbeffa934d2e/download

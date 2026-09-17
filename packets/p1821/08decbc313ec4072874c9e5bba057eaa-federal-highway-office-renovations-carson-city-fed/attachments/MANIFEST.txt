@@ -1,0 +1,11 @@
+Attachments listed on SAM.gov notice 08decbc313ec4072874c9e5bba057eaa
+Listing: https://sam.gov/workspace/contract/opp/08decbc313ec4072874c9e5bba057eaa/view
+
+[downloaded] Attachment-B_SOW_FHWA-Carson-Office-Renovation_2026-06-09.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9f8930f477de47759be01239b22339a9/download
+[downloaded] Attachment-A_SF1442.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a4db1aea89824bee82a89d95ba78787e/download
+[downloaded] Solicitation-47PD5526Q0051_Federal-Highway-Office-Renovations.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/da6215288dc743298a4ae497cb132965/download
+[downloaded] Attachment-C_Wage-Determination-NV20260090_2026-07-30.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e010a09d1fc0468bb95e424f39aacb30/download

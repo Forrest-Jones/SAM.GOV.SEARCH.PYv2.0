@@ -1,0 +1,23 @@
+Attachments listed on SAM.gov notice 86fc7504d3b84a418dc9eaf22ab8dcbb
+Listing: https://sam.gov/workspace/contract/opp/86fc7504d3b84a418dc9eaf22ab8dcbb/view
+
+[downloaded] 08.3-INFO---Repair-RTS---Multiple-Bldgs-PDPG262040.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/048f303bead54a5f83cfd6bca398b877/download
+[downloaded] 08.1-DWG---Repair-RTS---Multiple-Bldgs-PDPG262040.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/079931e367f244929ec5e6c31c8cecf4/download
+[downloaded] 08-SOW---Repair-RTS---Multiple-Bldgs-PDPG262040.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/26e6b95fd26c4e4b9ca8af9773d0937a/download
+[downloaded] 08.2-SPECS---Repair-RTS---Multiple-Bldgs-PDPG262040.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2e694c720be74e9886dd6a917b5a8850/download
+[downloaded] SIGN-IN-ROSTER.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/36eafdc830504e4a97de0447417c084a/download
+[downloaded] Wages-14-July-26.gov.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/715ac2cfa1b949cd9fe20b623d194b0b/download
+[downloaded] Solicitation---W50S7426QA022.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8c97ff99969443449e6a784e9568a430/download
+[downloaded] Base-Pass-Request_.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9aba17755e994a609aec2d163aefcc6a/download
+[downloaded] Solicitation-Amendment-W50S7426QA0220001-SF-30.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d2e6180f05f043b680c72755519783b0/download
+[downloaded] Solicitation-Amendment-W50S7426QA0220002-SF-30.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e392d5e385e14b0c99f7702ec98eaa9f/download
