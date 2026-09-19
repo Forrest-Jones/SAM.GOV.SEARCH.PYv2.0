@@ -1,0 +1,17 @@
+Attachments listed on SAM.gov notice 6e38dc3f19aa4a83b516dc5985888a5a
+Listing: https://sam.gov/workspace/contract/opp/6e38dc3f19aa4a83b516dc5985888a5a/view
+
+[downloaded] T10-Amendment-0001.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/078bb19c72a74d7eba80d8e7cf655c8b/download
+[downloaded] Solicitation-Package-2847PD5526R0042-29.zip
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2262a2d8f8f8487f87516733ce8b0fd1/download
+[downloaded] T10-Agr_SBSA_GC_MAY-2026.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4b43a87522ab48ba925258759aad861c/download
+[downloaded] T05-Blaine-MT20260026-05182026.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/67f758ea608c49169b7e95a5f468ad08/download
+[downloaded] T02-Turner-Roof_Building-Envelope-SOW-5_04_2026.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/762a6b939fee423b909b6f7f7e5446bb/download
+[downloaded] T10-Sol_SBSA_LPTA_MAY-2026.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d4deaba0e65f49e2a719d6a90ea0a970/download
+[downloaded] T10--SF1442-47PD5526R0042-Form.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e0ebf2cf8f5a4a148d8dd8c3449261ba/download
