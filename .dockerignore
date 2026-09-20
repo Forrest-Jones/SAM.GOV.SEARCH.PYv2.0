@@ -1,0 +1,18 @@
+# Nothing secret or bulky goes into the image. The API key lives in
+# .env.local on a laptop and in the host's environment when deployed —
+# baking it into an image that gets pushed to a registry would publish it.
+.env.local
+.env
+.git
+.github
+.log
+__pycache__
+*.pyc
+tests
+packets
+drafts
+state-*.sqlite3
+state.sqlite3
+last_results*.json
+*.md
+!README.md

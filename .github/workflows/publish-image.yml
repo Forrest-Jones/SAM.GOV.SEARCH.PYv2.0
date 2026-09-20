@@ -1,0 +1,52 @@
+name: publish-image
+
+# Builds the web app's container and publishes it as a GitHub Package on
+# ghcr.io, so any host that runs containers (Railway, Fly, a VPS, a Mac
+# with Docker) can run the same image with one command:
+#
+#   docker run -p 8080:8080 -e SAM_API_KEY=... -e APP_PASSWORD=... \
+#     -v samgov-data:/data ghcr.io/forrest-jones/sam-gov-search:latest
+#
+# Rebuilt on code pushes only; the daily search commits (packets, drafts,
+# heartbeat) do not change the app and are ignored.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "packets/**"
+      - "drafts/**"
+      - ".log/**"
+      - "state-*.sqlite3"
+      - "**.md"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/forrest-jones/sam-gov-search
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.description=Proverbs 1821 SAM.gov contract finder and bid desk
+            org.opencontainers.image.licenses=MIT
