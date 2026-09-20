@@ -1,0 +1,5 @@
+Attachments listed on SAM.gov notice 918752ce25934ad6ab1b0c7d77ca6c6a
+Listing: https://sam.gov/workspace/contract/opp/918752ce25934ad6ab1b0c7d77ca6c6a/view
+
+[NOT downloaded — get it yourself] https://sam.gov/api/prod/opps/v3/opportunities/resources/files/1fcadd07c4af4a0eba955ce2b5435490/download
+    reason: larger than 15MB — download it by hand
