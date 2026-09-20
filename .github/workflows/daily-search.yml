@@ -125,13 +125,17 @@ jobs:
       # To switch the heartbeat off, set KEEPALIVE below to "off". The search
       # and the email still run; only the daily commit stops (and the 60-day
       # clock starts counting again).
+      # Authored as the owner, not as github-actions[bot], on purpose: the
+      # contribution graph on a GitHub profile counts only commits whose
+      # author email belongs to the account. Five days of bot-authored
+      # heartbeats kept the schedule alive and painted nothing.
       - name: Commit results and keep the schedule alive
         if: always() && steps.gate.outputs.skip != 'true'
         env:
           KEEPALIVE: "on"
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "Forrest Jones"
+          git config user.email "forrestjones2010@gmail.com"
 
           # Stage the real output first, so the heartbeat line can record
           # whether this run actually found anything. Each path is checked
