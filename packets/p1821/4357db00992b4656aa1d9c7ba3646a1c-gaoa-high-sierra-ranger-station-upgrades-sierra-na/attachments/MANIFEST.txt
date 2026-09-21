@@ -1,0 +1,17 @@
+Attachments listed on SAM.gov notice 4357db00992b4656aa1d9c7ba3646a1c
+Listing: https://sam.gov/workspace/contract/opp/4357db00992b4656aa1d9c7ba3646a1c/view
+
+[downloaded] C04-Attachment-1-Solicitation-HS-Upgrades.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/236af8a58c134704812f251f1c41fe34/download
+[downloaded] C04-Attachment-3-Specifications-HS-Upgrades.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4f74a7645a4d42efb3ea9c720616ab13/download
+[downloaded] C04-Attachment-2-SOI-High-Sierra-Upgrades.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ac7cf42b12d347ffb9cf4b8a08b74f52/download
+[downloaded] Amendment-01-High-Sierra-Upgrades.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c174d4f89c0f4c4bb348a6ad9b8dd81e/download
+[downloaded] C04-Attachment-5-Fire-Plan-HS-Upgrades.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c8e8aff9936a40ee8a492051ac5384a6/download
+[downloaded] C04-Attachment-4-Drawings-HS-Upgrades.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f9f56f528e074335a3935362e0d34a43/download
+[NOT downloaded — get it yourself] https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a7317c11f469400cb0234efb5d3a9e03/download
+    reason: larger than 15MB — download it by hand

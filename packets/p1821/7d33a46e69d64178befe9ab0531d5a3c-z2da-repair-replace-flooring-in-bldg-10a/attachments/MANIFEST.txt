@@ -1,0 +1,7 @@
+Attachments listed on SAM.gov notice 7d33a46e69d64178befe9ab0531d5a3c
+Listing: https://sam.gov/workspace/contract/opp/7d33a46e69d64178befe9ab0531d5a3c/view
+
+[downloaded] S02-RFQ-36C24727Q0033_1.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2d08863c14a44a1982808e66b6ce04a5/download
+[downloaded] 36C24727Q0033.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/348e7aacecd943ebb010b116d6c1820d/download
