@@ -1,0 +1,15 @@
+Attachments listed on SAM.gov notice bdfd76f0dd2141b6b41280a870e56ae9
+Listing: https://sam.gov/workspace/contract/opp/bdfd76f0dd2141b6b41280a870e56ae9/view
+
+[downloaded] C04-Specs-1240LT27Q0199.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/76ff2d6638a9419286c0072f3bc78e1d/download
+[downloaded] C04-SF-1442-1240LT26Q0199.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/91e952496d6f44e595fcf090c12fffa6/download
+[downloaded] C04-1240LT26Q0199.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9227c17cc5864871939599ff6a5e1e8c/download
+[downloaded] C04-Adams-Valley-County-Idaho-1240LT27Q0199.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9a528016d3be4847bc57b9f7e40f3454/download
+[downloaded] C04-SOW-1240LT27Q0199.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a953e4d7636c4a018e0604619e8d29a4/download
+[downloaded] C04-Drawings-1240LT27Q0199.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d54ce49877d5432eaf7a712c4bbd39d5/download

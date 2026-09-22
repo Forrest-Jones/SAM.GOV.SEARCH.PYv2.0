@@ -1,0 +1,55 @@
+Attachments listed on SAM.gov notice c0ced81066e94e66af1066632158bf28
+Listing: https://sam.gov/workspace/contract/opp/c0ced81066e94e66af1066632158bf28/view
+
+[downloaded] RFQ-28CSS-29-1305M326Q0455-Amend-0001.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/001be7f419814b6d91c1fe8e92d625ce/download
+[downloaded] Exhibit-12---Project-Construction-Progress-Schedule.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/20900822385b4aa98106e5e7eff3212b/download
+[downloaded] Exhibit-1---12.1-FCU-Chiller-RM-406-Magic-Aire-Model-HBB20ABAAAAAB6CB5BAABBM.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/23c2627661f64cc4b928ca248edfcdaf/download
+[downloaded] REQUIREMENTS-26-4251-HVAC-Brand-Name-Justification-BAS-System_Redacted.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2f444f5724d64676919318cb6dd1d448/download
+[downloaded] Exhibit-5---12.5-DOAS-AOML-Hurricane-Repairs--100_Drawings-July-2019.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/347c3ea89815466796a138e6e0a0ad5e/download
+[downloaded] 1305M326Q0455-Inquiries-and-Answers_Amend-0002.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4532c97afc644e7c88d44797966e5b07/download
+[downloaded] Exhibit-13---Section-019100-Total-Building-Commissioning.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/563c7cb6d90a43479735b4895bcaf5d2/download
+[downloaded] Exhibit-3---12.3-Chiller-Room-Refrigerant-Detector-Evacuation-Unit-Information.p
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/5d515a7537f940d4bcc8c5aacc25d6da/download
+[downloaded] Exhibit-8---12.8-FCU-Basement-Unit.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/645e92d44cdb44c99481f1593c43fac3/download
+[downloaded] Exhibit-6---12.6-1st-Floor-Conference-Room-Split-Unit.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8304cfdefa1e417f8ad2486c674d0db5/download
+[downloaded] Exhibit-14---BUILDER_Inventory_Update_Form_Template.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/876dfbdd125a434399cb4c27d47f697b/download
+[downloaded] 2.-Attachment-1---Statement-of-Work-2C-AOML-HVAC.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9e1b349661a14fa2a0a1200b5e2c23dc/download
+[downloaded] Attachment-2-Davis-Bacon-Act-WDFL20260215-Mod-1_5182026.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a07b6dcd815b4292853267c1a0da462c/download
+[downloaded] Exhibit-4---12.4-Drawings-1st-Floor-VAV-33-35-Mechanical-and-Electrical-Drawings
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a3a31f0fd4cc45d0b9f94bc1de54dcba/download
+[downloaded] 1.-RFQ-28CSS-29-1305M326Q0455.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/abb5689b34ad4e47ba0ef8f3ce16d96b/download
+[downloaded] RFQ-28CSS-29-1305M326Q0455-Amend-0002.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ae27e6c9d48d4bb2b41f0029fdb6c295/download
+[downloaded] Exhibit-7---12.7-Submittals-for-VAVs-33-67.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c08af9479a194db58cde2ddda911f5cd/download
+[downloaded] 6.-Attachment-2-Davis-Bacon-Act-WD-23FL20260215-Mod-1-2C-5.18.2026.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cab5d33e22cc47b9a24e9ebc84312207/download
+[downloaded] 5.-SOW-Exhibit-3-BUILDER_Inventory_Update_Form_Template.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cb23b73dcbdc46acade9b394c5ae955f/download
+[downloaded] 3.-SOW-Exhibit-1-Project-Construction-Progress-Schedule.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cda7b45eafae4c778fc18acc366117b4/download
+[downloaded] Attachment-1---Statement-of-Work-_AOML-HVAC_1305M326Q0455-Revision-1.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d9f481caf08a40789be1ab17b954e897/download
+[downloaded] Exhibit-2---12.2-Sherlock-Infrared-Refrigerant-Gas-Sensor-and-Evacuation-System.
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e89f73e1d5fc4db18def4aaec654c32d/download
+[downloaded] Exhibit-10---12.10-Drawings-1st-Floor-VAV-1-17-Mechanical-Admin-Area.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/eb09d49db3004166ba9c85fee0bf6ada/download
+[downloaded] Exhibit-9---12.9-Drawings-VAV-36-67-AOML-Hurricane-Repairs--100_Drawings-July-20
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/eda323a19b5d41ccab10adb18bacd946/download
+[downloaded] 4.-SOW-Exhibit-2-Section-019100-Total-Building-Commissioning.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f81e9faa00ff4c7abd476bd7b5e4ed8a/download
+[NOT downloaded — get it yourself] https://sam.gov/api/prod/opps/v3/opportunities/resources/files/b31bc4e6c4084ff395b0a8cb8bfe6c3b/download
+    reason: larger than 15MB — download it by hand

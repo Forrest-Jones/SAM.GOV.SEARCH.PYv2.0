@@ -1,0 +1,11 @@
+Attachments listed on SAM.gov notice 91587043094649b4810bc8160e21303a
+Listing: https://sam.gov/workspace/contract/opp/91587043094649b4810bc8160e21303a/view
+
+[downloaded] Attachment-1---Statement-of-Work.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/7fd862c667154772addc24329af39802/download
+[downloaded] Attachment-3--QnA.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c845b7a2d9424a6391538abe5f46bb93/download
+[downloaded] Attachment-2---Wage-Determination.txt
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cab29658200b48fe85176ddbced4753d/download
+[NOT downloaded — get it yourself] https://sam.gov/api/prod/opps/v3/opportunities/resources/files/3f98b33a9ea84be0bb2e9342a028b48f/download
+    reason: 400 Client Error: Bad Request for url: https://sam.gov/api/prod/opps/v3/opportunities/resources/files/3f98b33a9ea84be0bb
