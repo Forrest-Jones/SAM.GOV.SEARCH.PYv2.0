@@ -1,0 +1,15 @@
+Attachments listed on SAM.gov notice 36b53aadbf284016a2e5f9a187b9065c
+Listing: https://sam.gov/workspace/contract/opp/36b53aadbf284016a2e5f9a187b9065c/view
+
+[downloaded] ELTY-0648C.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/38f010800e6c451cb4d580e4ead00ab0/download
+[downloaded] Questions-and-Answers.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9b4463732c4a487eb132badf7fa17c92/download
+[downloaded] Solicitation-W51AA1-26-Q-A097.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a3888c61d11142e4a1e61604e17d0444/download
+[downloaded] Attachment-II--Pricing-Sheet.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e050513a3fdc4aaaa9b5ea3e05bdcf8c/download
+[downloaded] Attachment-III--Addendum-to-FAR-52.212-1-2C-Instructions-to-Offerors.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e95cfc9f8ace4e7b909382da2da71b1a/download
+[downloaded] Attachment-I--Performance-Work-Statement.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/fdbb3a2c3f6648c9a5c6085668a1b7ad/download

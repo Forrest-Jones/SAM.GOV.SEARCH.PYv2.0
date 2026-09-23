@@ -1,0 +1,11 @@
+Attachments listed on SAM.gov notice e07ce1bdbcbb4c9caac4d3f0a8b9a50e
+Listing: https://sam.gov/workspace/contract/opp/e07ce1bdbcbb4c9caac4d3f0a8b9a50e/view
+
+[downloaded] Attachment-1---Statement-of-Work.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/7fd862c667154772addc24329af39802/download
+[downloaded] Attachment-3--QnA.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/c845b7a2d9424a6391538abe5f46bb93/download
+[downloaded] Attachment-2---Wage-Determination.txt
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cab29658200b48fe85176ddbced4753d/download
+[downloaded] W5S077-26-Q-1CKX---00001-HVAC-Replacement.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ee88db30d0344b359152f5d84991ec95/download
