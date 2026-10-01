@@ -1,0 +1,15 @@
+Attachments listed on SAM.gov notice f2e9d92d3e584a08b05d14d695b92bc8
+Listing: https://sam.gov/workspace/contract/opp/f2e9d92d3e584a08b05d14d695b92bc8/view
+
+[downloaded] 1240LT26Q0035_Solicitation_jh.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/19f10a69c8f947a49d80a00af2954252/download
+[downloaded] SF-1442-2812_2022-29.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/220a102a1cee4128bfe8e6a8f984c6e1/download
+[downloaded] Attachment-4---Drawings.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4afefca2c95b4fd5be27fd36877497d3/download
+[downloaded] Attachment-2---Specifications.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/5cc329d02cc44de2b8ce6a5037cbc30f/download
+[downloaded] WD_ID20260004.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/6ac7f19ff4b94addb3db4477c7e349b9/download
+[downloaded] Attachment-3---Schedule-of-Items.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/949fee3613fb428f827c69e37f97fe70/download
