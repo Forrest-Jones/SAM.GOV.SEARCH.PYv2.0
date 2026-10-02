@@ -1,0 +1,9 @@
+Attachments listed on SAM.gov notice 8a0fcd8aee9540bd834a32878905fdb7
+Listing: https://sam.gov/workspace/contract/opp/8a0fcd8aee9540bd834a32878905fdb7/view
+
+[downloaded] RESPONSE-INSTRUCTIONS.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/049889d83b454584b6c5d24953f5ddca/download
+[downloaded] PWS-MC-CBRN.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/0a245a8c9f03491cb0510e0d7871750f/download
+[downloaded] MC-CBRN-Questions.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e03bb46bedc84b0dbf5f185294fe6e34/download

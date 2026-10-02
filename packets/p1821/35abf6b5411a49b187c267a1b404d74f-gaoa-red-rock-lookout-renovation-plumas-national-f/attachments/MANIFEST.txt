@@ -1,0 +1,41 @@
+Attachments listed on SAM.gov notice 35abf6b5411a49b187c267a1b404d74f
+Listing: https://sam.gov/workspace/contract/opp/35abf6b5411a49b187c267a1b404d74f/view
+
+[downloaded] Attachment-5---Amend-05-Plans_Drawings.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/0072fde0a59c47e4ab67a5e7f8484f5e/download
+[downloaded] Amendment-04-Red-Rock-Lookout.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/0d51e5bc968948dc9f101e59cfd19733/download
+[downloaded] Attachment-5---Plan_Drawings-Red-Rock-Lookout-Renovation.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/164241d7113944ee87d397d634f7ea61/download
+[downloaded] Amendment-05-Red-Rock-Lookout.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/170024c75b914f53a96988d26d38e7f7/download
+[downloaded] Attachment-2---Amend-05-SOI-Red-Rock.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/1b6e3718b14846c6b075f89ef86b13b6/download
+[downloaded] Attachment-3-SOW-Amend-04-091626.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/2979998f67d349bfb5a52af54b73dd59/download
+[downloaded] Attachment-3---SOW_Red-Rock-Lookout-Renovation.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/307c82c2cbb243ca88c5a7013c245273/download
+[downloaded] Amend-04-RFI2-Red-Rock-Drafting-Location.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/35f20bdcc16c467982dde545a9bc7c3d/download
+[downloaded] Amendment-01-Red-Rock-Lookout-Renovation.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/3b8d8d585ced4232a719d5ef5186ff0c/download
+[downloaded] Amendment-02-Red-Rock-Lookout-Renovation.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/45972c8c484443b285d3bcafbd1c30e1/download
+[downloaded] Attachment-3---Amend-05-SOW-Red-Rock.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4a2be9ea20cc4f83b415f40ecf677154/download
+[downloaded] Attachment-6---Map-to-Red-Rock-Lookout.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/73431d8cbfe54aa4a59318664350f52b/download
+[downloaded] Attachment-1---Solicitation-Red-Rock-Lookout-Renovation.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9c24619f78e64f37bc2d0a58ffe900d3/download
+[downloaded] Amendment-03-Red-Rock-Lookout.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9f43311fc7a44240a826a5e645b011c7/download
+[downloaded] Amend-04-RFI1-Site-Photos.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ac3775e6a5104465ad749d890202ff1f/download
+[downloaded] Attachment-2---SOI-Red-Rock-Lookout-Renovation.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e3736dd1a22a470e9d0e19d7fe29d3de/download
+[downloaded] Attachment-7---DBA-WD-CA20260007-Plumas-Co-051826.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e5187cd4831248ec837d6e6bbaf80fd4/download
+[downloaded] Attachment-4---Specifications-Red-Rock-Lookout-Renovation.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ea6bed0435584b3b9db1b4a3ed45ca94/download
+[NOT downloaded — get it yourself] https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e9581d55e17f4722abd23f016d880023/download
+    reason: larger than 15MB — download it by hand
