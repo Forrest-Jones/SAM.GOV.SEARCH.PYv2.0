@@ -1,0 +1,13 @@
+Attachments listed on SAM.gov notice 77330529de4c44e2bf3046754dfa377f
+Listing: https://sam.gov/workspace/contract/opp/77330529de4c44e2bf3046754dfa377f/view
+
+[downloaded] C04_Attachment-2-SOW.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/08853c6505164ab6924953933e4f6d32/download
+[downloaded] C04_Attachment-1-SOI.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4ebe9dc95c6f45feb00949920edbf55b/download
+[downloaded] 12639527Q0003.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/856e6969004a4687afcd95fa923e424e/download
+[downloaded] A02_SOW-v2-9-October-2026.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/aad983d0eb704536bbe60fbc2bf1d008/download
+[downloaded] C04_Attachment-4-Wage-Determination.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/dc3c51c95b494e85ac343ab409af95aa/download
