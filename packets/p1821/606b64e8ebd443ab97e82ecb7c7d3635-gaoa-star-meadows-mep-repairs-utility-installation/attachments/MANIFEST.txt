@@ -1,0 +1,19 @@
+Attachments listed on SAM.gov notice 606b64e8ebd443ab97e82ecb7c7d3635
+Listing: https://sam.gov/workspace/contract/opp/606b64e8ebd443ab97e82ecb7c7d3635/view
+
+[downloaded] C04d-Attachment-4-Drawings-1240BH27Q0001.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/08bd09c8ff424622aa86e0618ecf64a4/download
+[downloaded] C04g-Attachment-7-Site-Visit-Info-1240BH27Q0001.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/3f10491dedf64c9a9aa8b5b6029ce7ef/download
+[downloaded] C04-SF1442-1240BH27Q0001.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/520d6aea2a35408ab1c7099266b492a2/download
+[downloaded] C04c-Attachment-3-Specifications-1240BH27Q0001.doc
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/817fa826b8064ffbb60b7ca045033608/download
+[downloaded] C04f-Attachment-6-General-Decision-MT20260032.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cbc7e033a43f407894788b84b51b8694/download
+[downloaded] C04b-Attachment-2-SOW-1240BH27Q0001.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ee78c700bab04bd9b6e9d0da1f2343a7/download
+[downloaded] C04e-Attachment-5-RFI-Form-1240BH27Q0001.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f18c3f9fd8af489c9d8bf9a136ab3cff/download
+[downloaded] C04a-Attachment-1-SOI-1240BH27Q0001.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/fca2ba1a57d046c6a529d3868d81c051/download
