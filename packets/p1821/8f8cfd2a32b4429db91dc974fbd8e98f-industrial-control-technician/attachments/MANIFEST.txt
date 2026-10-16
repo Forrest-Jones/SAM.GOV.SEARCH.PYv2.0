@@ -1,0 +1,5 @@
+Attachments listed on SAM.gov notice 8f8cfd2a32b4429db91dc974fbd8e98f
+Listing: https://sam.gov/workspace/contract/opp/8f8cfd2a32b4429db91dc974fbd8e98f/view
+
+[downloaded] ICT-PWS-Reacquisition-29-Sep-26.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9b4c22e9f12b4c14ac4f7045b582ee02/download
