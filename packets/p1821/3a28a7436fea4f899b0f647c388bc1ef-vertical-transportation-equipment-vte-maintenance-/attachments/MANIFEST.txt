@@ -1,0 +1,11 @@
+Attachments listed on SAM.gov notice 3a28a7436fea4f899b0f647c388bc1ef
+Listing: https://sam.gov/workspace/contract/opp/3a28a7436fea4f899b0f647c388bc1ef/view
+
+[downloaded] Combo-Synopsis---FA446027Q0005-.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/3e7cceb2962744318690aa0bebae84b0/download
+[downloaded] Solicitation---FA446027Q0005.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8d3638b45a1b46a19039181b7b33391f/download
+[downloaded] PWS-VTE-Maintenance-and-Repair-Services.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8f97d4f9b98644efb2f53d1c14468b8c/download
+[downloaded] Attachment-2---Wage-Determinations---2015-5117-21-Aug-26.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f5b2ffbdae5245709bec1a34116b29e7/download

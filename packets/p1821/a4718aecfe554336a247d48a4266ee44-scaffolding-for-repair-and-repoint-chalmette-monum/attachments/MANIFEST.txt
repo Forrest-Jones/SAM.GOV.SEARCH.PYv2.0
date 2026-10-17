@@ -1,0 +1,19 @@
+Attachments listed on SAM.gov notice a4718aecfe554336a247d48a4266ee44
+Listing: https://sam.gov/workspace/contract/opp/a4718aecfe554336a247d48a4266ee44/view
+
+[downloaded] B08_SOL_Attachment_1_Statement_of_Work.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/0c3df5f6c3734ad7b7a292210e824fad/download
+[downloaded] B08_SOL_140D0427Q0915_Chalmette_Scaffolding.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/0dcae62b939b4a25ac9f1aacde0dee8c/download
+[downloaded] B08_SOL_Attachment_6_Limitation_on_Subcontracting_Report_Template.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/31993ce0bfe84f109e4d57716793b9d6/download
+[downloaded] B08_SOL_Attachment_4_Davis_Bacon_Wage_Rates.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9a7267731e4d4488a57a2f43e5341574/download
+[downloaded] B08_SOL_Attachment_5_Past_Performance_Questionnaire.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d43a0d062bdc4597a87fe6952b5f3d1f/download
+[downloaded] B08_SOL_Attachment_2_Pricing_Spreadsheet.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/db2d6e11f25d48a38199cd4199e736cb/download
+[downloaded] Sol_140D0427Q0915.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/e980d2b79a7e46a48c3037ca9c245cf3/download
+[downloaded] B08_SOL_Attachment_3_Questions_Form.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ff78ae0d4cbf4cc6b5661c83de070455/download

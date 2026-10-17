@@ -1,0 +1,13 @@
+Attachments listed on SAM.gov notice 00e404d7c6264b59b5a407820cf5b085
+Listing: https://sam.gov/workspace/contract/opp/00e404d7c6264b59b5a407820cf5b085/view
+
+[downloaded] Attachment-C_Davis-Bacon-Act-WD-NY20260009.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/8c168254a9f14d2c9d4f10bc94da302a/download
+[downloaded] Attachment-D_Reference-Drawings-and-Attachments.zip
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/9119b3ae52844a668b9b94ecb608dcf3/download
+[downloaded] Attachment-A_SOW.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/95f7aeb4377e4165a8fafc817d2d5089/download
+[downloaded] Attachment-B_Pricing-Sheet.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d664064ccf4b495cb8066ed87a44a2d9/download
+[downloaded] RFQ-6923G527Q0001.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/dac3d7a5b7c146d6b4e92096a5b29ee6/download
