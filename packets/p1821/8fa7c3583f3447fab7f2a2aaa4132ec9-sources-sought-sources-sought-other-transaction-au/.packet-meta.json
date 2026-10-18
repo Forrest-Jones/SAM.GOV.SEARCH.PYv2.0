@@ -1,0 +1,12 @@
+{
+  "company_fingerprint": "cde29c05e7ce977a",
+  "blanks_left": 13,
+  "built": "2026-10-18",
+  "deadline": "2026-11-13",
+  "response_kind": "capability",
+  "files": {
+    "01-capability-statement.md": "7f5417adc7b78834",
+    "02-response-email.txt": "d0c9d57f8e18c2b7",
+    "00-START-HERE.md": "aff807f0b6419767"
+  }
+}
