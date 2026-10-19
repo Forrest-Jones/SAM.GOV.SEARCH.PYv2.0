@@ -1,0 +1,13 @@
+Attachments listed on SAM.gov notice 30dd9bbc4be84c528732b9322fd046d7
+Listing: https://sam.gov/workspace/contract/opp/30dd9bbc4be84c528732b9322fd046d7/view
+
+[downloaded] C04-Attachment-3---Specifications-Powell-Duplex.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/0497ed073296432a8092c5c041bd2c5c/download
+[downloaded] C04-Attachment-4---Drawings-Powell-Duplex.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/1e127bbd45614f04b88074bb9be3ae3e/download
+[downloaded] C04-Attachment-1---Solicitation-Powell-Duplex.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/230a097e7b7d4a30be9db640e7916f52/download
+[downloaded] C04-Attachment-2---SOI_Powell-Duplex.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a7dce7ce8567454883cff78348c2a81b/download
+[downloaded] C04-Attachment-5---DBA-WB-ID20260002-051826.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/f9c36f45f0a445bc82659d91c9a7c3ed/download

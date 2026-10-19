@@ -1,0 +1,21 @@
+Attachments listed on SAM.gov notice f8c7fa8e0f474b4090bb838a538caed7
+Listing: https://sam.gov/workspace/contract/opp/f8c7fa8e0f474b4090bb838a538caed7/view
+
+[downloaded] 127EAX26Q0069-Amendment-00001.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/00e3acd038fe4929a2f59f5e3005cf23/download
+[downloaded] C04-Attachment-5-WD-NM20260028.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/60517ab9527e4e059f23447e53f151f2/download
+[downloaded] C04-Attachment-4-Fire-Plan-and-Guidelines.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/75a7f40f0cfa408685d6d37383cd6d35/download
+[downloaded] 127EAX26Q0069-Amendment-00001-Provisions-and-Clauses.docx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/7777a1d994c149afb42a22e4d0c7d40a/download
+[downloaded] C04-Attachment-2-Sched-of-Items.xlsx
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/908f9aa9691749e8b1f722859c6b3144/download
+[downloaded] C04-Attachment-3-Specifications.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a12c343619a5439f9b9ebff9ad0b9da1/download
+[downloaded] C04-127EAX26Q0069.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a937b35d0ee34ea0bd583414f1c27d7e/download
+[downloaded] C04-Attachment-1-Statement-of-Work.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/b9fe5b11356b44dab7f1fe165ba1ff31/download
+[downloaded] C04-Attachment-6-WD-NM20260026.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/cdd4447a038b422ab8c04f3edca7b11e/download
