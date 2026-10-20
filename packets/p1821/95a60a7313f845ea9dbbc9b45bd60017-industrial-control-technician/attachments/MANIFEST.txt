@@ -1,0 +1,5 @@
+Attachments listed on SAM.gov notice 95a60a7313f845ea9dbbc9b45bd60017
+Listing: https://sam.gov/workspace/contract/opp/95a60a7313f845ea9dbbc9b45bd60017/view
+
+[downloaded] ICT-PWS-Reacquisition-29-Sep-26_MRAS.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4d4f7122084d426a9b35c9c8738a30fa/download

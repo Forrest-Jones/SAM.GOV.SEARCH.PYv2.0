@@ -1,0 +1,11 @@
+Attachments listed on SAM.gov notice 50dfba6388644afdacd71eafb6ae4d39
+Listing: https://sam.gov/workspace/contract/opp/50dfba6388644afdacd71eafb6ae4d39/view
+
+[downloaded] B03_-_Wage_Determination_-_TX20260152_05-18-2026_Building.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/057baefe3c1344deadcb9e45797c1234/download
+[downloaded] Visitor_Center_Trailer_-_Back.jpg
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/185ebc98bf5641369df9ce33f67bcba6/download
+[downloaded] Sol_140FF027Q0012.pdf
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/4a77a39bf617418583f184c2a3d80453/download
+[downloaded] Auxiliary_Trailer_-_Side.jpg
+             https://sam.gov/api/prod/opps/v3/opportunities/resources/files/a56677c258be4e299f4122145c616a2d/download
