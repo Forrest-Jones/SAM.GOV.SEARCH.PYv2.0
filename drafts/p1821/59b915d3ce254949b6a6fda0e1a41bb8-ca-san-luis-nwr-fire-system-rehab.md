@@ -1,0 +1,32 @@
+# CA-SAN LUIS NWR-FIRE SYSTEM REHAB
+
+- **Score:** 4 (set-aside (Small Business Set Aside - Total) — eligible, 31d to deadline)
+- **Eligibility:** eligible_set_aside
+- **NAICS:** 238220  **PSC:** Z2JZ
+- **Set-aside:** Small Business Set Aside - Total
+- **Place of performance:** -, -
+- **Response deadline:** 2026-11-30
+- **SAM.gov link:** https://sam.gov/workspace/contract/opp/59b915d3ce254949b6a6fda0e1a41bb8/view
+
+## Description
+This is a combined synopsis/solicitation for commercial items prepared in accordance with the format in Federal Acquisition Regulation (FAR) Subpart 12.6, as supplemented with additional information included in this notice. This announcement constitutes only solicitation; quotes are being requested and a separate written solicitation will not be issued. <br/><br/>The U.S. Fish & Wildlife Service, San Luis National Wildlife Refuge, Region 8, needs contractor rehabilitation of its fire protection and domestic water systems to restore life-safety compliance, operational reliability, and compliance with NFPA, California Building/Plumbing/Electrical Codes, AWWA, and ASSE standards.<br/><br/>The construction magnitude is estimated to be between $200,000.00 to $225,000.00. <br/><br/>The office is located - San Luis National Wildlife Refuge Visitor Center, located at 8975 Wolfsen Road, Los Banos, California 93635, approximately 10 miles west of the City of Los Banos, California.<br/><br/>The anticipated performance period shall be completed within 180 days of Notice to Proceed (NTP) being issued. <br/><br/>Wage Rates:<br/>General Wage Rate Decision Number: CA20260005 (01/02/2026)<br/>State: California <br/>County: Del Norte, Humboldt, Lake and Mendocino Counties in California<br/><br/>This Request for Proposal (RFP) is a TOTAL SMALL BUSINESS SET ASIDE and is conducted under the procedures of FAR Parts 12 and 13, incorporating provisions and clauses in effect through Federal Acquisition Circular 2024-03. The NAICS code is 238220 and the small business size standard is $19.0m.<br/><br/>Instructions to offeror:<br/>All responsible small business sources shall review all documentation and submit a proposal, which shall be considered by the agency. The contractor MUST show within the bid relevant experience by demonstrating the ability to successfully complete as follows; all state and local law; provides appropriate licenses and certified within the state of California for handling of Water system repairs; Sprinkler System with replacement/installation, replace restroom components and disposal. Offerors shall submit Bids electronically via email in accordance with the instructions below. Failure to submit all required documents may result in the proposal being determined non-responsive.<br/><br/>Furthermore, read the entity¿s solicitation packet with statement of work (SOW) and attachments for additional details to create bid with technical approach to the standard Award that will be made as a firm-fixed-price contract. The basis of contract will be on technical approach and Price, as acceptability for this requirement below. Award of the contract will be made to a responsible source pursuant to FAR subpart 9.1.<br/><br/>Please submit your proposal with solicitation document (showing unit and total price) on company letterhead; Pricing Form; SAM.gov UEI code; point of contact phone number and e- mail address. Refer to FAR provision 52.212-1 Instructions to Offerors ¿ Commercial Items for additional submission guidance and include a copy of FAR provision 52.212-3 Offeror Representations and Certifications -- Commercial Items with applicable sections completed.<br/><br/>Bonds:<br/>A bid bond is required. Contractors are reminded that any amount awarded over $35,000 requires submission of a Payment Bond. Any amount over $150,000.00 requires both payment and performance bonds. Bonds are due no later than 10 calendar days after award. Due to the project magnitude, both payment and performance bonds will be required.<br/><br/>Format for Proposals:<br/>1.Proposals shall be 8 ½¿x 11¿<br/>2.A page is defined as one face of a sheet of paper containing information<br/>3.Typing shall not be less than 12 pitches (Times New Roman/Ariel/Etc.), 1-inch border, no artistic script fonts for readability<br/>4.Elaborate formats, bindings or color presentations are not desired or required<br/><br/>Any and all questions shall be submitted via email only; no verbal questions will be accepted. Please be sure to include the solicitation number in your proposal and in the subject line of any email submitted.<br/><br/>E-Mail Submission for Questions & Proposals: terrence_anderson@fws.gov <br/><br/>Site Visit: 9:00 AM PST - Tuesday, November 10, 2026 <br/>Question Deadline Date: 9:00 AM PST  Monday, November 16, 2026 <br/>Proposal/Bid Due: 1:00 pm PST  Monday, November 30, 2026<br/><br/>Solicitation Package:<br/>¿SF1449 - Solicitation <br/>¿Pricing Form <br/>¿Clauses & Provisions (Terms and Conditions) Wage Rate Determination<br/>¿Statement of Work (SOW) <br/>¿Four (4) Attachments<br/><br/>In order to have a quote considered for award, respondent must be registered at the System for Award Management (SAM) website (https://www.sam.gov ) as an active vendor by the time an award decision is necessary.<br/>
+
+## Attachments
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/088d6a3e5aa5463fbda9b52b3e0e22bd/download
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/0970993796904ed18daee71ec7d2e24f/download
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/0b19a9919e9a4befacead5ccce2bb207/download
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/69f891007d2c4ba29dd54494227818f9/download
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/d883a2c3c9474a9a8add777502711a02/download
+- https://sam.gov/api/prod/opps/v3/opportunities/resources/files/ec12396daa604003bc9bcd4478ec8376/download
+
+## Go / No-Go checklist
+- [ ] Confirmed eligibility and size standard for this NAICS/set-aside
+- [ ] Read the full PWS/SOW/RFP and attachments
+- [ ] Assessed competition (incumbent, similar past awards)
+- [ ] Go / no-go decision made
+- [ ] Technical response drafted
+- [ ] Price proposal drafted
+- [ ] Past performance references gathered
+- [ ] Reps & certs current in SAM.gov profile
+- [ ] Final review before submission
+- [ ] Submitted (manually — this tool never submits automatically)
