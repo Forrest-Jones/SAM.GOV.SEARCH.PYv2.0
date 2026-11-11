@@ -47,7 +47,8 @@ OPTIONS
   --deadline-min N      Skip anything closing sooner than N days (default 7)
   --deadline-max N      Skip anything closing later than N days (default 60)
   --naics CODE[,CODE]   Override the profile's NAICS list
-  --csv PATH            Also write full ranked results to a CSV file
+  --csv PATH            Write the full ranked list to a CSV file
+  --top N               Print and email only the N highest-ranked notices (default 2)
   --limit N             Max results per NAICS call (default 100)
   --max-retries N       Retry attempts per API call on 429/5xx/network error (default 4)
   --db PATH             State file of previously-seen notices (default state-<profile>.sqlite3)
@@ -66,9 +67,10 @@ OPTIONS
 
 OUTPUT
 ------
-Ranked shortlist printed to the terminal, optionally written to CSV.
-New (never-before-seen) high scorers get a markdown review scaffold in
---drafts-dir and, if configured, an email digest.
+The top 2 by rank printed to the terminal (--top changes the count).
+The full ranked list can also be written to CSV. New high scorers inside
+that top cut get a markdown review scaffold in --drafts-dir and, if
+configured, an email digest of the same top cut.
 
 The score is a triage heuristic, not a bid decision — read the actual
 PWS/SOW before committing capture time to anything, and confirm your
@@ -83,7 +85,7 @@ import re
 import sqlite3
 import sys
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import requests
 
@@ -224,7 +226,11 @@ PROFILES = {
     },
 }
 DEFAULT_PROFILE = "p1821"
-NOTICE_TYPES = "p,k,r"  # presolicitation, combined synopsis/solicitation, sources sought
+# SAM.gov ptype codes: o solicitation, k combined synopsis/solicitation,
+# p presolicitation, r sources sought. Standalone solicitations (o) are
+# how most bids are actually posted; leaving them out meant the daily
+# shortlist never saw them.
+NOTICE_TYPES = "o,k,p,r"
 
 # Title keywords worth a point each (capped at 2). The first group serves the
 # tax/accounting/evaluation lanes; the second was added alongside the
@@ -437,6 +443,19 @@ DEFAULT_DB_PATH = "state.sqlite3"
 DEFAULT_DRAFTS_DIR = "drafts"
 DEFAULT_TO_EMAIL = "forrestjones2010@gmail.com"
 
+# How many ranked notices a run prints and emails. The full set is still
+# scored and sorted; this only cuts the daily output. --top overrides it
+# for a one-off look at a longer list.
+DEFAULT_DAILY_TOP_N = 2
+
+# How many preliminary leaders get a description fetch and a second
+# score before the daily cut. Clearance, LPTA, and site-visit language
+# usually lives in the description, not the title. Twelve calls stays
+# well under the 1,000/day SAM.gov budget.
+WINNABILITY_PRESCREEN = 12
+MAX_BACKOFF_SECONDS = 60
+MAX_FETCH_PAGES = 25
+
 STATE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS seen (
     notice_id TEXT PRIMARY KEY,
@@ -451,40 +470,93 @@ CREATE TABLE IF NOT EXISTS seen (
 """
 
 
-def request_with_retry(params, max_retries):
-    """GET API_URL with exponential backoff on 429/5xx/network errors.
-    Returns the Response, or None if every attempt failed."""
-    for attempt in range(1, max_retries + 1):
+class SamApiError(RuntimeError):
+    """The search cannot continue. The message is safe to show a person
+    and does not include the API key."""
+
+
+def redact_secrets(text):
+    return re.sub(r"(api_key=)[^&\s]+", r"\1REDACTED", str(text))
+
+
+def retry_after_seconds(header, attempt):
+    """Seconds to wait. Retry-After may be an integer or an HTTP date.
+    A date we cannot read falls back to exponential backoff, capped."""
+    if header:
         try:
-            resp = requests.get(API_URL, params=params, timeout=30)
+            return min(max(int(float(str(header).strip())), 0), MAX_BACKOFF_SECONDS)
+        except (TypeError, ValueError):
+            try:
+                from email.utils import parsedate_to_datetime
+                when = parsedate_to_datetime(str(header))
+                if when is not None:
+                    if when.tzinfo is None:
+                        when = when.replace(tzinfo=timezone.utc)
+                    wait = (when - datetime.now(timezone.utc)).total_seconds()
+                    return min(max(int(wait), 0), MAX_BACKOFF_SECONDS)
+            except (TypeError, ValueError, OverflowError, OSError):
+                pass
+    return min(2 ** max(attempt, 0), MAX_BACKOFF_SECONDS)
+
+
+def request_with_retry(params, max_retries, url=None):
+    """GET with exponential backoff on 429, 5xx, and network errors.
+
+    Returns the Response, or None if every attempt failed. A missing key
+    or a 401/403 raises SamApiError immediately — retrying those cannot
+    succeed, and a stack trace from requests is not a useful message.
+    """
+    url = url or API_URL
+    params = dict(params or {})
+    if not params.get("api_key"):
+        raise SamApiError(
+            "SAM.gov API key is missing. Set SAM_API_KEY "
+            "(sam.gov → Account Details → Get API Key) and run again."
+        )
+    attempts = max(int(max_retries or 1), 1)
+    for attempt in range(1, attempts + 1):
+        try:
+            resp = requests.get(url, params=params, timeout=30)
         except requests.exceptions.RequestException as e:
-            if attempt == max_retries:
-                print(f"  [network error, giving up after {max_retries} attempts: {e}]", file=sys.stderr)
+            if attempt == attempts:
+                print(f"  [network error, giving up after {attempts} attempts: {redact_secrets(e)}]",
+                      file=sys.stderr)
                 return None
-            wait = 2 ** attempt
-            print(f"  [network error, retry {attempt}/{max_retries} in {wait}s: {e}]", file=sys.stderr)
+            wait = retry_after_seconds(None, attempt)
+            print(f"  [network error, retry {attempt}/{attempts} in {wait}s: {redact_secrets(e)}]",
+                  file=sys.stderr)
             time.sleep(wait)
             continue
 
-        if resp.status_code == 429:
-            if attempt == max_retries:
-                print(f"  [rate limited, giving up after {max_retries} attempts]", file=sys.stderr)
+        if resp.status_code in (401, 403):
+            raise SamApiError(
+                f"SAM.gov rejected the API key (HTTP {resp.status_code}). "
+                "Check SAM_API_KEY at sam.gov → Account Details → Get API Key. "
+                "If this key was ever pasted into a chat, rotate it first."
+            )
+        if resp.status_code == 400:
+            detail = redact_secrets((resp.text or "")[:180]).replace("\n", " ")
+            raise SamApiError(f"SAM.gov rejected the query (HTTP 400). {detail}".strip())
+        # A missing description is normal. The caller decides whether an
+        # empty page ends the search; it is not a bad key.
+        if resp.status_code == 404:
+            return resp
+
+        if resp.status_code == 429 or resp.status_code >= 500:
+            if attempt == attempts:
+                print(f"  [HTTP {resp.status_code}, giving up after {attempts} attempts]",
+                      file=sys.stderr)
                 return None
-            wait = int(resp.headers.get("Retry-After") or 2 ** attempt)
-            print(f"  [rate limited, retry {attempt}/{max_retries} in {wait}s]", file=sys.stderr)
+            wait = retry_after_seconds(resp.headers.get("Retry-After"), attempt)
+            print(f"  [HTTP {resp.status_code}, retry {attempt}/{attempts} in {wait}s]",
+                  file=sys.stderr)
             time.sleep(wait)
             continue
 
-        if resp.status_code >= 500:
-            if attempt == max_retries:
-                print(f"  [server error {resp.status_code}, giving up after {max_retries} attempts]", file=sys.stderr)
-                return None
-            wait = 2 ** attempt
-            print(f"  [server error {resp.status_code}, retry {attempt}/{max_retries} in {wait}s]", file=sys.stderr)
-            time.sleep(wait)
-            continue
-
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise SamApiError(f"SAM.gov returned HTTP {resp.status_code}. {redact_secrets(e)}")
         return resp
     return None
 
@@ -494,7 +566,9 @@ def fetch(naics_code, posted_from, posted_to, api_key, limit, max_retries):
     combining multiple codes in a single call has been unreliable before."""
     results = []
     offset = 0
-    while True:
+    page = 0
+    while page < MAX_FETCH_PAGES:
+        page += 1
         params = {
             "api_key": api_key,
             "postedFrom": posted_from,
@@ -505,15 +579,25 @@ def fetch(naics_code, posted_from, posted_to, api_key, limit, max_retries):
             "offset": offset,
         }
         resp = request_with_retry(params, max_retries)
-        if resp is None:
+        if resp is None or resp.status_code == 404:
+            print(f"  [NAICS {naics_code}: stopped early at offset {offset}; "
+                  "this code's list may be incomplete]", file=sys.stderr)
             break
-        data = resp.json()
-        batch = data.get("opportunitiesData", [])
+        try:
+            data = resp.json()
+        except ValueError:
+            print(f"  [NAICS {naics_code}: response was not JSON at offset {offset}; "
+                  "this code's list may be incomplete]", file=sys.stderr)
+            break
+        batch = data.get("opportunitiesData", []) or []
         results.extend(batch)
-        total = data.get("totalRecords", len(batch))
+        total = data.get("totalRecords", len(results))
         offset += limit
         if offset >= total or not batch:
             break
+    else:
+        print(f"  [NAICS {naics_code}: stopped after {MAX_FETCH_PAGES} pages; "
+              "more records may exist]", file=sys.stderr)
     return results
 
 
@@ -530,10 +614,16 @@ def days_until_deadline(opp):
 
 
 def score(opp, deadline_min, deadline_max, held_certs=DEFAULT_HELD_CERTS,
-          keywords=None, priority_psc=None, home_states=None):
+          keywords=None, priority_psc=None, home_states=None, description_text=None):
     """Triage score for one notice. keywords/priority_psc/home_states come
     from the active profile; the module-level defaults keep direct callers
-    and the CLI's --naics override working without one."""
+    and the CLI's --naics override working without one.
+
+    description_text is optional. The first pass scores the search record.
+    Leaders are scored again once the description has been fetched, so a
+    clearance requirement or an LPTA clause that is not in the title can
+    still move the notice.
+    """
     keywords = KEYWORDS if keywords is None else keywords
     priority_psc = PRIORITY_PSC if priority_psc is None else priority_psc
     home_states = HOME_STATES if home_states is None else home_states
@@ -569,7 +659,194 @@ def score(opp, deadline_min, deadline_max, held_certs=DEFAULT_HELD_CERTS,
         pts += 1
         reasons.append(state)
 
+    extra, extra_reasons = winnability_adjustment(
+        opp, description_text, home_states=home_states)
+    pts += extra
+    reasons.extend(extra_reasons)
+
     return pts, ", ".join(reasons)
+
+
+_VALUE_PATTERNS = (
+    re.compile(
+        r"estimated (?:total )?(?:value|cost|amount|price)[^$\n]{0,40}"
+        r"\$\s*[\d,]+(?:\.\d+)?(?:\s*(?:million|billion))?",
+        re.I,
+    ),
+    re.compile(
+        r"not to exceed[^$\n]{0,30}\$\s*[\d,]+(?:\.\d+)?(?:\s*(?:million|billion))?",
+        re.I,
+    ),
+    re.compile(
+        r"between \$\s*[\d,]+(?:\.\d+)?(?:\s*million)? and "
+        r"\$\s*[\d,]+(?:\.\d+)?(?:\s*million)?",
+        re.I,
+    ),
+    re.compile(
+        r"magnitude of (?:this )?(?:requirement|contract|acquisition)[^.\n]{0,140}",
+        re.I,
+    ),
+)
+
+
+def _notice_text(opp, description_text):
+    parts = [opp.get("title") or ""]
+    if description_text:
+        parts.append(description_text)
+    return "\n".join(parts)
+
+
+def winnability_adjustment(opp, description_text=None, home_states=None):
+    """Points for whether a small firm with no federal past performance
+    can win this notice. Reasons are written to be read, not decoded.
+
+    Scans the title, and the description when one was fetched. Calling
+    it twice on the same text does not stack: score() adds the result
+    of one call.
+    """
+    home_states = HOME_STATES if home_states is None else set(home_states)
+    text = _notice_text(opp, description_text).lower()
+    pts = 0
+    reasons = []
+
+    kind = notice_type(opp).lower()
+    if kind in BIDDABLE_NOTICE_TYPES:
+        pts += 1
+        reasons.append("solicitation open for bids")
+    elif kind in ("sources sought", "presolicitation", "special notice"):
+        pts -= 1
+        reasons.append("not a solicitation yet")
+
+    if re.search(r"\b(lpta|lowest[\s-]+price technically acceptable)\b", text):
+        pts += 2
+        reasons.append("LPTA — price can win without past performance")
+    elif re.search(r"best[\s-]+value", text) and re.search(r"past performance", text):
+        pts -= 2
+        reasons.append("best value weighs past performance we do not have")
+
+    if re.search(
+        r"facility clearance|\btop secret\b|\bts/sci\b|\bsecret clearance\b|cleared personnel",
+        text,
+    ):
+        pts -= 4
+        reasons.append("clearance required — none held")
+
+    if re.search(
+        r"certified public accountant|\bcpa firm\b|\blicensed cpa\b|\bindependent cpa\b",
+        text,
+    ):
+        pts -= 4
+        reasons.append("CPA licence required — an enrolled agent does not satisfy it")
+
+    if re.search(
+        r"site visit|site survey|pre-?proposal conference|pre-?bid conference|pre-?bid site",
+        text,
+    ):
+        pts -= 1
+        reasons.append("site visit or pre-bid conference")
+
+    if re.search(r"\bincumbent\b|\brecompete\b|follow-?on", text):
+        pts -= 1
+        reasons.append("incumbent or recompete")
+
+    naics = str(opp.get("naicsCode") or "")
+    psc = (opp.get("classificationCode") or "").upper()
+    state = ((opp.get("placeOfPerformance") or {}).get("state") or {}).get("code")
+    field_work = naics.startswith("23") or psc[:1] in {"Y", "Z"}
+    if field_work and state and state not in home_states:
+        places = ", ".join(sorted(home_states)) or "the home state"
+        pts -= 2
+        reasons.append(f"field work outside {places}")
+
+    return pts, reasons
+
+
+def estimated_value_label(opp, description_text=None):
+    """A short phrase for the card, or 'not stated'.
+
+    Open notices rarely carry a structured amount. The award object is
+    used when SAM.gov sent one; otherwise the first value sentence in
+    the title or description.
+    """
+    award = opp.get("award") if isinstance(opp.get("award"), dict) else {}
+    amount = award.get("amount") if award else None
+    if amount not in (None, "", "0", 0):
+        return f"${amount} (award amount on the notice)"
+    blob = _notice_text(opp, description_text)
+    for pattern in _VALUE_PATTERNS:
+        match = pattern.search(blob)
+        if match:
+            phrase = re.sub(r"\s+", " ", match.group(0)).strip()
+            if phrase.lower().startswith("estimated"):
+                money = re.search(
+                    r"\$\s*[\d,]+(?:\.\d+)?(?:\s*(?:million|billion))?", phrase, re.I)
+                if money:
+                    return re.sub(r"\$\s+", "$", money.group(0))
+            return phrase[:160]
+    return "not stated"
+
+
+def decision_risks(opp, description_text=None, home_states=None):
+    """The risks a person should see before picking this notice to bid.
+
+    The standing past-performance line is always there: the firm has
+    none, and hiding that makes a best-value notice look safer than it is.
+    """
+    risks = ["no federal past performance — weak where experience is a scored factor"]
+    _pts, reasons = winnability_adjustment(opp, description_text, home_states=home_states)
+    for reason in reasons:
+        if reason in ("solicitation open for bids",) or reason.startswith("LPTA"):
+            continue
+        risks.append(reason)
+    blob = _notice_text(opp, description_text).lower()
+    if re.search(r"bid bond|performance and payment bond|miller act", blob):
+        risks.append("bonds required — bonding capacity is not on file")
+    return risks
+
+
+def format_deadline_ct(raw):
+    """Deadline on a Central Time clock, which is the clock in Montgomery.
+
+    A date with no time stays a date. A zoned timestamp is converted to
+    America/Chicago so a 5pm Eastern close does not read as 5pm here.
+    """
+    if not raw:
+        return "not stated"
+    text = str(raw).strip()
+    days = days_until_deadline({"responseDeadLine": text})
+    if days is None:
+        day_bit = ""
+    elif days < 0:
+        day_bit = f" ({abs(days)} days past)"
+    elif days == 0:
+        day_bit = " (today)"
+    else:
+        day_bit = f" ({days} day{'s' if days != 1 else ''})"
+    if len(text) <= 10:
+        return text[:10] + " (time not stated)" + day_bit
+    try:
+        from zoneinfo import ZoneInfo
+        moment = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except (ImportError, ValueError):
+        return text[:10] + day_bit
+    if moment.tzinfo is None:
+        return moment.date().isoformat() + " (time zone not stated)" + day_bit
+    ct = moment.astimezone(ZoneInfo("America/Chicago"))
+    hour = ct.strftime("%I").lstrip("0") or "12"
+    clock = f"{hour}:{ct.strftime('%M')} {ct.strftime('%p')}"
+    shown = f"{ct.strftime('%a')} {ct.strftime('%b')} {ct.day}, {ct.year}, {clock} CT"
+    return shown + day_bit
+
+
+def decision_lines(opp, description_text=None, indent="     "):
+    risks = "; ".join(decision_risks(opp, description_text))
+    set_aside = opp.get("typeOfSetAsideDescription") or "none (open to everyone)"
+    return [
+        f"{indent}Set-aside: {set_aside}",
+        f"{indent}Deadline: {format_deadline_ct(opp.get('responseDeadLine'))}",
+        f"{indent}Estimated value: {estimated_value_label(opp, description_text)}",
+        f"{indent}Risks: {risks}",
+    ]
 
 
 def open_state(db_path):
@@ -611,24 +888,30 @@ def diff_and_record(conn, ranked):
     return new_ones
 
 
-def fetch_description(opp, api_key):
+def fetch_description(opp, api_key, max_retries=4):
     """Best-effort full-text description fetch. The v2 search response
-    only gives a URL to the v1 noticedesc endpoint — this hits it once
-    per draft candidate (not per result) to stay well under the daily
-    call budget."""
+    only gives a URL to the v1 noticedesc endpoint. A rejected key is
+    raised; a single notice whose text will not download returns None
+    so the rest of the run continues."""
     url = opp.get("description")
-    if not url:
+    if not url or not str(url).startswith("http"):
         return None
     try:
-        resp = requests.get(url, params={"api_key": api_key}, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        if isinstance(data, dict):
-            return data.get("description") or data.get("body")
-        return str(data)
-    except Exception as e:
-        print(f"  [could not fetch description for {opp.get('noticeId')}: {e}]", file=sys.stderr)
+        resp = request_with_retry({"api_key": api_key}, max_retries, url=url)
+    except SamApiError:
+        raise
+    if resp is None or resp.status_code >= 400:
+        print(f"  [could not fetch description for {opp.get('noticeId')}]", file=sys.stderr)
         return None
+    try:
+        data = resp.json()
+    except ValueError as e:
+        print(f"  [could not fetch description for {opp.get('noticeId')}: {redact_secrets(e)}]",
+              file=sys.stderr)
+        return None
+    if isinstance(data, dict):
+        return data.get("description") or data.get("body")
+    return str(data)
 
 
 def slugify(text, max_len=50):
@@ -687,20 +970,58 @@ def write_draft(opp, pts, reasons, elig, description_text, drafts_dir):
     return path
 
 
-def format_notice_lines(pts, reasons, opp):
-    days_left = days_until_deadline(opp)
-    deadline = (opp.get("responseDeadLine") or "")[:10] or "not listed"
-    if days_left is not None and days_left >= 0:
-        deadline += f" ({days_left}d left)"
+def daily_shortlist(ranked, top_n=DEFAULT_DAILY_TOP_N):
+    """The notices a run shows, highest rank first.
+
+    `ranked` is already sorted best to worst. This does not rescore
+    anything; it only keeps the top of that list. A negative count shows
+    nothing — a negative slice would otherwise keep almost the whole list.
+    """
+    if top_n is None:
+        top_n = DEFAULT_DAILY_TOP_N
+    try:
+        n = int(top_n)
+    except (TypeError, ValueError):
+        n = DEFAULT_DAILY_TOP_N
+    if n < 0:
+        n = 0
+    return list(ranked)[:n]
+
+
+def format_ranked_stdout(ranked, top_n=DEFAULT_DAILY_TOP_N, descriptions=None):
+    """The terminal shortlist: one block per notice, highest rank first."""
+    descriptions = descriptions or {}
+    lines = []
+    for pts, reasons, opp in daily_shortlist(ranked, top_n):
+        pop = opp.get("placeOfPerformance") or {}
+        city = (pop.get("city") or {}).get("name", "-")
+        state = (pop.get("state") or {}).get("code", "-")
+        kind = notice_type(opp) or "type not stated"
+        blocked = not_biddable_reason(opp)
+        text = descriptions.get(opp.get("noticeId")) or None
+        lines.append(f"[{pts}] {opp.get('title')}")
+        lines.append(f"     {kind}{' — NOT BIDDABLE: ' + blocked if blocked else ''}")
+        lines.append(
+            f"     NAICS {opp.get('naicsCode')} | PSC {opp.get('classificationCode')} | {city}, {state}"
+        )
+        lines.extend(decision_lines(opp, text, indent="     "))
+        if reasons:
+            lines.append(f"     why: {reasons}")
+        lines.append(f"     {opp.get('uiLink', '-')}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def format_notice_lines(pts, reasons, opp, description_text=None):
     pop = opp.get("placeOfPerformance") or {}
     where = ", ".join(
         p for p in ((pop.get("city") or {}).get("name"), (pop.get("state") or {}).get("code")) if p
     ) or "not listed"
     lines = [
         f"[{pts}] {opp.get('title')}",
-        f"  due {deadline} | {where} | NAICS {opp.get('naicsCode')}",
-        f"  set-aside: {opp.get('typeOfSetAsideDescription') or 'none (open to everyone)'}",
+        f"  {notice_type(opp) or 'type not stated'} | {where} | NAICS {opp.get('naicsCode')}",
     ]
+    lines.extend(decision_lines(opp, description_text, indent="  "))
     if reasons:
         lines.append(f"  why it matched: {reasons}")
     lines.append(f"  {opp.get('uiLink', '-')}")
@@ -730,11 +1051,16 @@ def credential_blocked(opp, description_text, company):
 
 
 def send_email_digest(new_ones, to_addr, from_addr, app_password,
-                      profile_label=None, ranked=None, top_n=10, blocked=None):
-    """The daily digest. Leads with what's new, then lists the current best
-    matches so the mail is useful even on a day when nothing is new — which
-    is most days, and otherwise the reader can't tell a quiet day from a
-    broken search."""
+                      profile_label=None, ranked=None, top_n=DEFAULT_DAILY_TOP_N,
+                      blocked=None, descriptions=None):
+    """The daily digest. Lists the top N by rank and nothing below that.
+
+    The whole set was scored. Notices under the cut are counted in the
+    footer and are not listed, so the mail is the two to choose from
+    rather than a long recap. top_n stays a parameter so a caller can ask
+    for a longer list. A quiet day still says so, which is how a reader
+    tells "nothing new" from a search that never ran.
+    """
     import smtplib
     from email.mime.text import MIMEText
 
@@ -744,33 +1070,47 @@ def send_email_digest(new_ones, to_addr, from_addr, app_password,
     ranked = ranked or []
     blocked = blocked or []
     blocked_ids = {opp.get("noticeId") for opp, _ in blocked}
-    new_ones = [r for r in new_ones if r[2].get("noticeId") not in blocked_ids]
-    ranked = [r for r in ranked if r[2].get("noticeId") not in blocked_ids]
+    # The cut is by rank, taken before blocked notices are pulled out, so a
+    # blocked leader does not get replaced by whatever ranked third. The
+    # third was scored; it is not one of today's two.
+    shortlist = daily_shortlist(ranked, top_n)
+    short_ids = {opp.get("noticeId") for _, _, opp in shortlist}
+    blocked_shown = [(opp, gate) for opp, gate in blocked if opp.get("noticeId") in short_ids]
     new_ids = {opp.get("noticeId") for _, _, opp in new_ones}
+    shown = [r for r in shortlist if r[2].get("noticeId") not in blocked_ids]
+    new_shown = [r for r in shown if r[2].get("noticeId") in new_ids]
+    unblocked_new = [r for r in new_ones if r[2].get("noticeId") not in blocked_ids]
 
     lines = [f"SAM.gov daily search — {who}", f"{date.today().strftime('%A, %B %d, %Y')}", ""]
 
-    if new_ones:
-        lines.append(f"NEW SINCE YESTERDAY ({len(new_ones)})")
-        lines.append("=" * 40)
+    if new_shown:
+        lines.append(f"NEW SINCE YESTERDAY ({len(new_shown)})")
+        lines.append("Listed below in rank order.")
         lines.append("")
-        for pts, reasons, opp in new_ones:
-            lines += format_notice_lines(pts, reasons, opp)
-    else:
+    elif not unblocked_new:
         lines += ["Nothing new since yesterday.", ""]
+    else:
+        lines.append(
+            f"{len(unblocked_new)} new since yesterday, below the top {top_n} and not listed."
+        )
+        lines.append("")
 
-    others = [r for r in ranked if r[2].get("noticeId") not in new_ids and r[0] > 0]
-    if others:
-        lines.append(f"STILL OPEN — TOP MATCHES ({min(len(others), top_n)} of {len(others)})")
+    if shown:
+        lines.append(f"STILL OPEN — TOP MATCHES ({len(shown)} of {len(ranked)} ranked)")
         lines.append("=" * 40)
         lines.append("")
-        for pts, reasons, opp in others[:top_n]:
-            lines += format_notice_lines(pts, reasons, opp)
+        descriptions = descriptions or {}
+        for pts, reasons, opp in shown:
+            lines += format_notice_lines(
+                pts, reasons, opp, descriptions.get(opp.get("noticeId")) or None)
 
     # Below the fold, and never in the top matches. A notice requiring a
     # qualification the business does not hold is not a match, however well
     # it scores on codes and deadlines, and putting it first is worse than
-    # not mentioning it: it reads as a recommendation.
+    # not mentioning it: it reads as a recommendation. Only a blocked notice
+    # that actually sat in the top cut is named; the rest were not going
+    # to be shown.
+    blocked = blocked_shown
     if blocked:
         lines.append(f"CANNOT BID — QUALIFICATION NOT HELD ({len(blocked)})")
         lines.append("=" * 40)
@@ -792,8 +1132,8 @@ def send_email_digest(new_ones, to_addr, from_addr, app_password,
     ]
 
     msg = MIMEText("\n".join(lines))
-    if new_ones:
-        msg["Subject"] = f"SAM.gov: {len(new_ones)} new for {who}"
+    if unblocked_new:
+        msg["Subject"] = f"SAM.gov: {len(unblocked_new)} new for {who}"
     else:
         msg["Subject"] = f"SAM.gov: nothing new for {who}"
     msg["From"] = from_addr
@@ -866,13 +1206,45 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
         ranked.append((pts, reasons, opp))
     ranked.sort(key=lambda r: r[0], reverse=True)
 
+    # Second pass on the leaders only. Description text is where LPTA,
+    # clearance, and site-visit requirements actually appear, and those
+    # change which two notices are worth a day.
+    descriptions = {}
+    window = max(WINNABILITY_PRESCREEN, int(cfg.get("digest_top_n") or DEFAULT_DAILY_TOP_N))
+    rescored = []
+    for index, (pts, reasons, opp) in enumerate(ranked):
+        if index < window:
+            nid = opp.get("noticeId")
+            text = fetch_description(opp, api_key, cfg.get("max_retries") or 4)
+            descriptions[nid] = text or ""
+            if text:
+                pts, reasons = score(
+                    opp, cfg["deadline_min"], cfg["deadline_max"], held_certs,
+                    keywords=cfg.get("keywords"),
+                    priority_psc=cfg.get("priority_psc"),
+                    home_states=cfg.get("home_states"),
+                    description_text=text,
+                )
+                log(f"  rescored with description: {opp.get('title')} → {pts}")
+        rescored.append((pts, reasons, opp))
+    ranked = rescored
+    ranked.sort(key=lambda r: r[0], reverse=True)
+
     conn = open_state(cfg["db_path"])
     new_ones = diff_and_record(conn, ranked)
     conn.close()
 
     draft_paths = []
-    descriptions = {}
-    draft_candidates = [r for r in new_ones if r[0] >= cfg["draft_min_score"]]
+    # Scaffolds only for new notices inside the daily cut. A high scorer
+    # below it was ranked; it does not get a file of its own.
+    top_n = cfg.get("digest_top_n", DEFAULT_DAILY_TOP_N)
+    shortlist_ids = {
+        opp.get("noticeId") for _, _, opp in daily_shortlist(ranked, top_n)
+    }
+    draft_candidates = [
+        r for r in new_ones
+        if r[0] >= cfg["draft_min_score"] and r[2].get("noticeId") in shortlist_ids
+    ]
     if draft_candidates and cfg["generate_drafts"]:
         for pts, reasons, opp in draft_candidates:
             description_text = fetch_description(opp, api_key)
@@ -894,7 +1266,10 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
     from company import load_company
     company = load_company(cfg.get("profile") or DEFAULT_PROFILE)
     blocked = []
-    for pts, reasons, opp in ranked[:cfg.get("digest_top_n", 10) + len(new_ones)]:
+    # Only the notices that will actually be shown. A blocked notice further
+    # down the list is not in today's output, so it does not spend a
+    # description call.
+    for pts, reasons, opp in daily_shortlist(ranked, top_n):
         nid = opp.get("noticeId")
         text = descriptions.get(nid)
         if text is None:
@@ -915,7 +1290,9 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
             new_ones, cfg["to_email"], cfg["from_email"], cfg["app_password"],
             profile_label=cfg.get("profile_label"),
             ranked=ranked,
+            top_n=top_n,
             blocked=blocked,
+            descriptions=descriptions,
         )
         emailed = True
 
@@ -1113,7 +1490,8 @@ def main():
     # only at exit, so the whole list lands after every stderr line and the
     # counts end up buried mid-log instead of under the results they
     # describe. Line buffering keeps the two streams in real order.
-    sys.stdout.reconfigure(line_buffering=True)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
 
     ap = argparse.ArgumentParser(description="Pull and rank SAM.gov opportunities for one business profile.")
     ap.add_argument("--profile", choices=sorted(PROFILES), default=DEFAULT_PROFILE,
@@ -1124,7 +1502,11 @@ def main():
     ap.add_argument("--deadline-max", type=int, default=60)
     ap.add_argument("--naics", type=str, default=None,
                     help="override the profile's NAICS list")
-    ap.add_argument("--csv", type=str, default=None)
+    ap.add_argument("--csv", type=str, default=None,
+                    help="write the full ranked list to this CSV; the terminal still shows --top")
+    ap.add_argument("--top", type=int, default=DEFAULT_DAILY_TOP_N, metavar="N",
+                    help="print and email only the N highest-ranked notices "
+                         f"(default {DEFAULT_DAILY_TOP_N}). Every notice is still scored")
     ap.add_argument("--limit", type=int, default=100)
     ap.add_argument("--max-retries", type=int, default=4)
     ap.add_argument("--db", type=str, default=None,
@@ -1247,6 +1629,7 @@ def main():
         "app_password": app_password,
         "send_email": not args.no_email,
         "always_email": args.always_email,
+        "digest_top_n": args.top,
     }
 
     result = run_search(cfg, api_key)
@@ -1272,25 +1655,16 @@ def main():
             f"use --include-restricted-set-asides to see them)",
             file=sys.stderr,
         )
+    top_n = cfg["digest_top_n"]
+    shown = daily_shortlist(ranked, top_n)
+    print(
+        f"showing the top {len(shown)} of {len(ranked)} by rank",
+        file=sys.stderr,
+    )
     print()
-
-    for pts, reasons, opp in ranked[:40]:
-        pop = opp.get("placeOfPerformance") or {}
-        city = (pop.get("city") or {}).get("name", "-")
-        state = (pop.get("state") or {}).get("code", "-")
-        deadline_raw = opp.get("responseDeadLine")
-        deadline_str = deadline_raw[:10] if deadline_raw else "-"
-        set_aside = opp.get("typeOfSetAsideDescription") or "no set-aside"
-
-        print(f"[{pts}] {opp.get('title')}")
-        kind = notice_type(opp) or "type not stated"
-        blocked = not_biddable_reason(opp)
-        print(f"     {kind}{' — NOT BIDDABLE: ' + blocked if blocked else ''}")
-        print(f"     NAICS {opp.get('naicsCode')} | PSC {opp.get('classificationCode')} | {set_aside}")
-        print(f"     {city}, {state} | deadline {deadline_str}")
-        if reasons:
-            print(f"     why: {reasons}")
-        print(f"     {opp.get('uiLink', '-')}\n")
+    text = format_ranked_stdout(ranked, top_n, result.get("descriptions"))
+    if text:
+        print(text)
 
     if args.csv:
         with open(args.csv, "w", newline="") as f:

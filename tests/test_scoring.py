@@ -441,3 +441,326 @@ def test_an_unblocked_digest_has_no_cannot_bid_section(monkeypatch):
                          ranked=[(4, "why", good)], blocked=[])
     assert "CANNOT BID" not in sent["body"]
     assert "Bookkeeping Support" in sent["body"]
+
+
+def _capture_digest(monkeypatch):
+    """Returns a dict that gains a 'body' key when a digest is 'sent'."""
+    import smtplib
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def login(self, *a): pass
+        def sendmail(self, frm, to, text):
+            import email as email_mod
+            sent["body"] = email_mod.message_from_string(text).get_payload(
+                decode=True).decode("utf-8")
+
+    monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
+    return sent
+
+
+def _notice_titles(text):
+    """Titles from shortlist blocks, in the order they were printed."""
+    titles = []
+    for line in text.splitlines():
+        if line.startswith("[") and "] " in line:
+            titles.append(line.split("] ", 1)[1])
+    return titles
+
+
+def test_daily_output_is_exactly_the_top_two_in_rank_order(monkeypatch):
+    # Five notices, already ranked. The terminal and the digest must name
+    # the first two, in that order, and must not name the other three.
+    import find_opportunities as fo
+
+    ranked = []
+    for i, (pts, title) in enumerate((
+        (9, "ALPHA-NOTICE"),
+        (7, "BRAVO-NOTICE"),
+        (5, "CHARLIE-NOTICE"),
+        (3, "DELTA-NOTICE"),
+        (1, "ECHO-NOTICE"),
+    )):
+        ranked.append((pts, f"reason {pts}", make_opp(
+            noticeId=f"n{i}", title=title, uiLink=f"https://sam.gov/{title}",
+        )))
+
+    text = fo.format_ranked_stdout(ranked)
+    assert _notice_titles(text) == ["ALPHA-NOTICE", "BRAVO-NOTICE"]
+    for absent in ("CHARLIE-NOTICE", "DELTA-NOTICE", "ECHO-NOTICE"):
+        assert absent not in text
+
+    # The count stays a knob: asking for four returns four, still in order.
+    assert _notice_titles(fo.format_ranked_stdout(ranked, top_n=4)) == [
+        "ALPHA-NOTICE", "BRAVO-NOTICE", "CHARLIE-NOTICE", "DELTA-NOTICE",
+    ]
+
+    sent = _capture_digest(monkeypatch)
+    fo.send_email_digest([], "x@e.com", "y@e.com", "pw", ranked=ranked)
+    body = sent["body"]
+    assert _notice_titles(body) == ["ALPHA-NOTICE", "BRAVO-NOTICE"]
+    assert body.index("ALPHA-NOTICE") < body.index("BRAVO-NOTICE")
+    for absent in ("CHARLIE-NOTICE", "DELTA-NOTICE", "ECHO-NOTICE"):
+        assert absent not in body
+
+
+def test_a_mocked_search_outputs_only_its_top_two(monkeypatch, tmp_path):
+    # End to end against fixture notices, with the SAM.gov client replaced.
+    # Ranking is the real scorer. More than two clear the draft floor;
+    # the run still writes scaffolds and a digest for the top two only.
+    import find_opportunities as fo
+
+    deadline = (date.today() + timedelta(days=20)).isoformat() + "T17:00:00-06:00"
+    far = (date.today() + timedelta(days=200)).isoformat() + "T17:00:00-06:00"
+
+    def opp(**kw):
+        base = make_opp(
+            type="Solicitation",
+            classificationCode="R999",
+            responseDeadLine=deadline,
+            placeOfPerformance={"city": {"name": "Denver"}, "state": {"code": "CO"}},
+        )
+        base.update(kw)
+        return base
+
+    opps = [
+        opp(noticeId="a", title="Alpha Tax Accounting Support", classificationCode="R710",
+            typeOfSetAsideDescription="Small Business Set Aside - Total",
+            placeOfPerformance={"city": {"name": "Houston"}, "state": {"code": "TX"}},
+            uiLink="https://sam.gov/a"),
+        opp(noticeId="b", title="Beta Roofing Repair", classificationCode="R499",
+            typeOfSetAsideDescription="Small Business Set Aside - Total",
+            uiLink="https://sam.gov/b"),
+        opp(noticeId="c", title="Gamma Financial Audit Services", classificationCode="R407",
+            uiLink="https://sam.gov/c"),
+        opp(noticeId="d", title="Delta Electrical Repair", classificationCode="Z2JZ",
+            uiLink="https://sam.gov/d"),
+        opp(noticeId="e", title="Epsilon Warehouse Coordination", classificationCode="S100",
+            responseDeadLine=far, uiLink="https://sam.gov/e"),
+    ]
+    profile = fo.PROFILES["p1821"]
+    scored = []
+    for item in opps:
+        pts, _reasons = fo.score(
+            item, 7, 60, ["small_business"],
+            keywords=profile["keywords"], priority_psc=profile["priority_psc"],
+            home_states=profile["home_states"],
+        )
+        scored.append((pts, item["title"]))
+    scored.sort(reverse=True)
+    assert len({pts for pts, _ in scored}) == 5
+    assert sum(1 for pts, _ in scored if pts >= profile["draft_min_score"]) > 2
+    expected = [title for _pts, title in scored[:2]]
+
+    monkeypatch.setattr(fo, "fetch", lambda *a, **k: opps)
+    monkeypatch.setattr(fo, "fetch_description", lambda *a, **k: "Routine support services.")
+    cfg = {
+        "profile": "p1821",
+        "naics_codes": ["541219"],
+        "profile_label": profile["label"],
+        "keywords": profile["keywords"],
+        "priority_psc": profile["priority_psc"],
+        "home_states": profile["home_states"],
+        "posted_days": 45,
+        "deadline_min": 7,
+        "deadline_max": 60,
+        "limit": 100,
+        "max_retries": 1,
+        "held_certs": ["small_business"],
+        "include_restricted": False,
+        "include_expired": False,
+        "include_supplies": False,
+        "db_path": str(tmp_path / "state.sqlite3"),
+        "drafts_dir": str(tmp_path / "drafts"),
+        "draft_min_score": profile["draft_min_score"],
+        "generate_drafts": True,
+        "to_email": "x@e.com",
+        "from_email": "y@e.com",
+        "app_password": "pw",
+        "send_email": True,
+        "always_email": True,
+        "digest_top_n": fo.DEFAULT_DAILY_TOP_N,
+    }
+    sent = _capture_digest(monkeypatch)
+    result = fo.run_search(cfg, "fixture-key", log=lambda m: None)
+
+    assert len(result["ranked"]) == 5
+    assert fo.DEFAULT_DAILY_TOP_N == 2
+    text = fo.format_ranked_stdout(result["ranked"], fo.DEFAULT_DAILY_TOP_N)
+    assert _notice_titles(text) == expected
+    assert _notice_titles(sent["body"]) == expected
+    for _pts, title in scored[2:]:
+        assert title not in text
+        assert title not in sent["body"]
+    assert len(result["draft_paths"]) == 2
+
+
+def test_lpta_outranks_a_best_value_award_that_weighs_past_performance():
+    import find_opportunities as fo
+    opp = make_opp(type="Solicitation")
+    lpta, lpta_why = fo.score(opp, 7, 60, description_text="Award will be lowest price technically acceptable.")
+    best, best_why = fo.score(
+        opp, 7, 60,
+        description_text="Award is best value. Past performance is a significant evaluation factor.",
+    )
+    assert lpta > best
+    assert "LPTA" in lpta_why
+    assert "past performance" in best_why
+
+
+def test_a_cpa_requirement_is_scored_as_unwinnable():
+    import find_opportunities as fo
+    opp = make_opp(type="Solicitation", title="NAFI Audit")
+    plain, _ = fo.score(opp, 7, 60, description_text="Review the books and report findings.")
+    cpa, why = fo.score(
+        opp, 7, 60,
+        description_text="The contractor shall be a licensed CPA or an independent CPA firm.",
+    )
+    assert cpa <= plain - 4
+    assert "CPA" in why
+
+
+def test_clearance_language_in_the_description_drops_the_score():
+    import find_opportunities as fo
+    opp = make_opp(type="Solicitation")
+    clean, _ = fo.score(opp, 7, 60, description_text="Bookkeeping support for the finance office.")
+    blocked, why = fo.score(opp, 7, 60, description_text="Key personnel must hold a Secret clearance.")
+    assert blocked <= clean - 4
+    assert "clearance" in why
+
+
+def test_construction_outside_texas_scores_below_the_same_job_at_home():
+    import find_opportunities as fo
+    away = make_opp(
+        title="Roof repair", naicsCode="238160", classificationCode="Z2JZ", type="Solicitation",
+        placeOfPerformance={"city": {"name": "Denver"}, "state": {"code": "CO"}},
+    )
+    home = make_opp(
+        title="Roof repair", naicsCode="238160", classificationCode="Z2JZ", type="Solicitation",
+        placeOfPerformance={"city": {"name": "Houston"}, "state": {"code": "TX"}},
+    )
+    home_pts, _ = fo.score(home, 7, 60, home_states={"TX"})
+    away_pts, away_why = fo.score(away, 7, 60, home_states={"TX"})
+    assert home_pts > away_pts
+    assert "outside" in away_why
+
+
+def test_a_solicitation_outranks_market_research():
+    import find_opportunities as fo
+    sol, sol_why = fo.score(make_opp(type="Solicitation"), 7, 60)
+    sought, sought_why = fo.score(make_opp(type="Sources Sought"), 7, 60)
+    assert sol > sought
+    assert "solicitation open for bids" in sol_why
+    assert "not a solicitation yet" in sought_why
+
+
+def test_estimated_value_is_read_from_the_notice_or_left_unstated():
+    import find_opportunities as fo
+    stated = fo.estimated_value_label(make_opp(), "The estimated value is $180,000.")
+    assert "$180,000" in stated
+    assert fo.estimated_value_label(make_opp(), None) == "not stated"
+    award = fo.estimated_value_label(make_opp(award={"amount": "250000"}), None)
+    assert "250000" in award
+
+
+def test_deadline_is_shown_on_a_central_time_clock():
+    import find_opportunities as fo
+    # 3:00 PM Eastern in July is 2:00 PM in Houston.
+    summer = fo.format_deadline_ct("2026-07-15T15:00:00-04:00")
+    assert "2:00 PM CT" in summer
+    assert "Jul 15, 2026" in summer
+    winter = fo.format_deadline_ct("2026-12-01T17:00:00-06:00")
+    assert "5:00 PM CT" in winter
+    assert "time not stated" in fo.format_deadline_ct("2026-12-01")
+
+
+def test_the_top_two_card_carries_the_decision_facts():
+    import find_opportunities as fo
+    opp = make_opp(
+        title="Alpha Tax Accounting Support",
+        type="Solicitation",
+        responseDeadLine="2026-12-01T17:00:00-06:00",
+        uiLink="https://sam.gov/a",
+        typeOfSetAsideDescription="Small Business Set Aside - Total",
+    )
+    text = fo.format_ranked_stdout(
+        [(8, "set-aside eligible", opp)],
+        descriptions={"N1": "Estimated value $180,000. Award is lowest price technically acceptable."},
+    )
+    assert "Set-aside: Small Business Set Aside - Total" in text
+    assert "5:00 PM CT" in text
+    assert "Estimated value:" in text and "$180,000" in text
+    assert "Risks:" in text and "no federal past performance" in text
+    assert "https://sam.gov/a" in text
+    assert text.index("[8] Alpha Tax Accounting Support") < text.index("https://sam.gov/a")
+
+
+def test_description_rescore_demotes_a_distant_site_visit(monkeypatch, tmp_path):
+    # Preliminary rank would keep the Colorado roof. The description says
+    # the site visit is mandatory and the work is out of state, so the
+    # daily two should be the accounting notice and the in-window audit,
+    # not the roof.
+    import find_opportunities as fo
+    deadline = (date.today() + timedelta(days=20)).isoformat() + "T17:00:00-06:00"
+    profile = fo.PROFILES["p1821"]
+
+    def opp(**kw):
+        base = make_opp(type="Solicitation", responseDeadLine=deadline,
+                        placeOfPerformance={"city": {"name": "Denver"}, "state": {"code": "CO"}})
+        base.update(kw)
+        return base
+
+    opps = [
+        opp(noticeId="a", title="Alpha Tax Accounting Support", classificationCode="R710",
+            naicsCode="541219", typeOfSetAsideDescription="Small Business Set Aside - Total",
+            placeOfPerformance={"city": {"name": "Houston"}, "state": {"code": "TX"}},
+            uiLink="https://sam.gov/a",
+            description="https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=a"),
+        opp(noticeId="b", title="Beta Roof Repair", classificationCode="Z2JZ", naicsCode="238160",
+            typeOfSetAsideDescription="Small Business Set Aside - Total",
+            uiLink="https://sam.gov/b",
+            description="https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=b"),
+        opp(noticeId="c", title="Gamma Financial Audit Services", classificationCode="R407",
+            naicsCode="541219", uiLink="https://sam.gov/c",
+            description="https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=c"),
+    ]
+    texts = {
+        "a": "Accounting support. Estimated value $180,000. Lowest price technically acceptable.",
+        "b": "Roof repair in Colorado. A mandatory site visit is required before bidding.",
+        "c": "Financial audit support for an office. No site visit.",
+    }
+    monkeypatch.setattr(fo, "fetch", lambda *a, **k: opps)
+    monkeypatch.setattr(fo, "fetch_description", lambda opp, key, max_retries=4: texts[opp["noticeId"]])
+    result = fo.run_search({
+        "profile": "p1821",
+        "naics_codes": ["541219"],
+        "profile_label": profile["label"],
+        "keywords": profile["keywords"],
+        "priority_psc": profile["priority_psc"],
+        "home_states": profile["home_states"],
+        "posted_days": 45,
+        "deadline_min": 7,
+        "deadline_max": 60,
+        "limit": 100,
+        "max_retries": 1,
+        "held_certs": ["small_business"],
+        "include_restricted": False,
+        "include_expired": False,
+        "include_supplies": False,
+        "db_path": str(tmp_path / "state.sqlite3"),
+        "drafts_dir": str(tmp_path / "drafts"),
+        "draft_min_score": 4,
+        "generate_drafts": False,
+        "send_email": False,
+        "digest_top_n": 2,
+    }, "fixture-key", log=lambda m: None)
+    shown = fo.format_ranked_stdout(result["ranked"], 2, result["descriptions"])
+    titles = _notice_titles(shown)
+    assert titles[0].startswith("Alpha")
+    assert "Gamma" in titles[1]
+    assert "Beta" not in shown
+    assert "$180,000" in shown
+    assert "5:00 PM CT" in shown or "PM CT" in shown

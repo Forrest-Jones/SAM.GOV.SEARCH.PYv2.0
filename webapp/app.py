@@ -451,6 +451,9 @@ def api_search():
         "from_email": os.environ.get("GMAIL_USER"),
         "app_password": os.environ.get("GMAIL_APP_PASSWORD"),
         "send_email": settings["send_email"],
+        # Same cut as the daily CLI run. The Contracts tab still receives
+        # the full ranked list; this only limits a digest sent from here.
+        "digest_top_n": core.DEFAULT_DAILY_TOP_N,
     }
 
     log_lines = []
