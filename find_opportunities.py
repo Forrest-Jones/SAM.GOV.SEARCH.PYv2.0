@@ -47,7 +47,8 @@ OPTIONS
   --deadline-min N      Skip anything closing sooner than N days (default 7)
   --deadline-max N      Skip anything closing later than N days (default 60)
   --naics CODE[,CODE]   Override the profile's NAICS list
-  --csv PATH            Also write full ranked results to a CSV file
+  --csv PATH            Write the full ranked list to a CSV file
+  --top N               Print and email only the N highest-ranked notices (default 2)
   --limit N             Max results per NAICS call (default 100)
   --max-retries N       Retry attempts per API call on 429/5xx/network error (default 4)
   --db PATH             State file of previously-seen notices (default state-<profile>.sqlite3)
@@ -66,9 +67,10 @@ OPTIONS
 
 OUTPUT
 ------
-Ranked shortlist printed to the terminal, optionally written to CSV.
-New (never-before-seen) high scorers get a markdown review scaffold in
---drafts-dir and, if configured, an email digest.
+The top 2 by rank printed to the terminal (--top changes the count).
+The full ranked list can also be written to CSV. New high scorers inside
+that top cut get a markdown review scaffold in --drafts-dir and, if
+configured, an email digest of the same top cut.
 
 The score is a triage heuristic, not a bid decision — read the actual
 PWS/SOW before committing capture time to anything, and confirm your
@@ -437,6 +439,11 @@ DEFAULT_DB_PATH = "state.sqlite3"
 DEFAULT_DRAFTS_DIR = "drafts"
 DEFAULT_TO_EMAIL = "forrestjones2010@gmail.com"
 
+# How many ranked notices a run prints and emails. The full set is still
+# scored and sorted; this only cuts the daily output. --top overrides it
+# for a one-off look at a longer list.
+DEFAULT_DAILY_TOP_N = 2
+
 STATE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS seen (
     notice_id TEXT PRIMARY KEY,
@@ -687,6 +694,49 @@ def write_draft(opp, pts, reasons, elig, description_text, drafts_dir):
     return path
 
 
+def daily_shortlist(ranked, top_n=DEFAULT_DAILY_TOP_N):
+    """The notices a run shows, highest rank first.
+
+    `ranked` is already sorted best to worst. This does not rescore
+    anything; it only keeps the top of that list. A negative count shows
+    nothing — a negative slice would otherwise keep almost the whole list.
+    """
+    if top_n is None:
+        top_n = DEFAULT_DAILY_TOP_N
+    try:
+        n = int(top_n)
+    except (TypeError, ValueError):
+        n = DEFAULT_DAILY_TOP_N
+    if n < 0:
+        n = 0
+    return list(ranked)[:n]
+
+
+def format_ranked_stdout(ranked, top_n=DEFAULT_DAILY_TOP_N):
+    """The terminal shortlist: one block per notice, highest rank first."""
+    lines = []
+    for pts, reasons, opp in daily_shortlist(ranked, top_n):
+        pop = opp.get("placeOfPerformance") or {}
+        city = (pop.get("city") or {}).get("name", "-")
+        state = (pop.get("state") or {}).get("code", "-")
+        deadline_raw = opp.get("responseDeadLine")
+        deadline_str = deadline_raw[:10] if deadline_raw else "-"
+        set_aside = opp.get("typeOfSetAsideDescription") or "no set-aside"
+        kind = notice_type(opp) or "type not stated"
+        blocked = not_biddable_reason(opp)
+        lines.append(f"[{pts}] {opp.get('title')}")
+        lines.append(f"     {kind}{' — NOT BIDDABLE: ' + blocked if blocked else ''}")
+        lines.append(
+            f"     NAICS {opp.get('naicsCode')} | PSC {opp.get('classificationCode')} | {set_aside}"
+        )
+        lines.append(f"     {city}, {state} | deadline {deadline_str}")
+        if reasons:
+            lines.append(f"     why: {reasons}")
+        lines.append(f"     {opp.get('uiLink', '-')}")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def format_notice_lines(pts, reasons, opp):
     days_left = days_until_deadline(opp)
     deadline = (opp.get("responseDeadLine") or "")[:10] or "not listed"
@@ -730,11 +780,16 @@ def credential_blocked(opp, description_text, company):
 
 
 def send_email_digest(new_ones, to_addr, from_addr, app_password,
-                      profile_label=None, ranked=None, top_n=10, blocked=None):
-    """The daily digest. Leads with what's new, then lists the current best
-    matches so the mail is useful even on a day when nothing is new — which
-    is most days, and otherwise the reader can't tell a quiet day from a
-    broken search."""
+                      profile_label=None, ranked=None, top_n=DEFAULT_DAILY_TOP_N,
+                      blocked=None):
+    """The daily digest. Lists the top N by rank and nothing below that.
+
+    The whole set was scored. Notices under the cut are counted in the
+    footer and are not listed, so the mail is the two to choose from
+    rather than a long recap. top_n stays a parameter so a caller can ask
+    for a longer list. A quiet day still says so, which is how a reader
+    tells "nothing new" from a search that never ran.
+    """
     import smtplib
     from email.mime.text import MIMEText
 
@@ -744,33 +799,45 @@ def send_email_digest(new_ones, to_addr, from_addr, app_password,
     ranked = ranked or []
     blocked = blocked or []
     blocked_ids = {opp.get("noticeId") for opp, _ in blocked}
-    new_ones = [r for r in new_ones if r[2].get("noticeId") not in blocked_ids]
-    ranked = [r for r in ranked if r[2].get("noticeId") not in blocked_ids]
+    # The cut is by rank, taken before blocked notices are pulled out, so a
+    # blocked leader does not get replaced by whatever ranked third. The
+    # third was scored; it is not one of today's two.
+    shortlist = daily_shortlist(ranked, top_n)
+    short_ids = {opp.get("noticeId") for _, _, opp in shortlist}
+    blocked_shown = [(opp, gate) for opp, gate in blocked if opp.get("noticeId") in short_ids]
     new_ids = {opp.get("noticeId") for _, _, opp in new_ones}
+    shown = [r for r in shortlist if r[2].get("noticeId") not in blocked_ids]
+    new_shown = [r for r in shown if r[2].get("noticeId") in new_ids]
+    unblocked_new = [r for r in new_ones if r[2].get("noticeId") not in blocked_ids]
 
     lines = [f"SAM.gov daily search — {who}", f"{date.today().strftime('%A, %B %d, %Y')}", ""]
 
-    if new_ones:
-        lines.append(f"NEW SINCE YESTERDAY ({len(new_ones)})")
-        lines.append("=" * 40)
+    if new_shown:
+        lines.append(f"NEW SINCE YESTERDAY ({len(new_shown)})")
+        lines.append("Listed below in rank order.")
         lines.append("")
-        for pts, reasons, opp in new_ones:
-            lines += format_notice_lines(pts, reasons, opp)
-    else:
+    elif not unblocked_new:
         lines += ["Nothing new since yesterday.", ""]
+    else:
+        lines.append(
+            f"{len(unblocked_new)} new since yesterday, below the top {top_n} and not listed."
+        )
+        lines.append("")
 
-    others = [r for r in ranked if r[2].get("noticeId") not in new_ids and r[0] > 0]
-    if others:
-        lines.append(f"STILL OPEN — TOP MATCHES ({min(len(others), top_n)} of {len(others)})")
+    if shown:
+        lines.append(f"STILL OPEN — TOP MATCHES ({len(shown)} of {len(ranked)} ranked)")
         lines.append("=" * 40)
         lines.append("")
-        for pts, reasons, opp in others[:top_n]:
+        for pts, reasons, opp in shown:
             lines += format_notice_lines(pts, reasons, opp)
 
     # Below the fold, and never in the top matches. A notice requiring a
     # qualification the business does not hold is not a match, however well
     # it scores on codes and deadlines, and putting it first is worse than
-    # not mentioning it: it reads as a recommendation.
+    # not mentioning it: it reads as a recommendation. Only a blocked notice
+    # that actually sat in the top cut is named; the rest were not going
+    # to be shown.
+    blocked = blocked_shown
     if blocked:
         lines.append(f"CANNOT BID — QUALIFICATION NOT HELD ({len(blocked)})")
         lines.append("=" * 40)
@@ -792,8 +859,8 @@ def send_email_digest(new_ones, to_addr, from_addr, app_password,
     ]
 
     msg = MIMEText("\n".join(lines))
-    if new_ones:
-        msg["Subject"] = f"SAM.gov: {len(new_ones)} new for {who}"
+    if unblocked_new:
+        msg["Subject"] = f"SAM.gov: {len(unblocked_new)} new for {who}"
     else:
         msg["Subject"] = f"SAM.gov: nothing new for {who}"
     msg["From"] = from_addr
@@ -872,7 +939,16 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
 
     draft_paths = []
     descriptions = {}
-    draft_candidates = [r for r in new_ones if r[0] >= cfg["draft_min_score"]]
+    # Scaffolds only for new notices inside the daily cut. A high scorer
+    # below it was ranked; it does not get a file of its own.
+    top_n = cfg.get("digest_top_n", DEFAULT_DAILY_TOP_N)
+    shortlist_ids = {
+        opp.get("noticeId") for _, _, opp in daily_shortlist(ranked, top_n)
+    }
+    draft_candidates = [
+        r for r in new_ones
+        if r[0] >= cfg["draft_min_score"] and r[2].get("noticeId") in shortlist_ids
+    ]
     if draft_candidates and cfg["generate_drafts"]:
         for pts, reasons, opp in draft_candidates:
             description_text = fetch_description(opp, api_key)
@@ -894,7 +970,10 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
     from company import load_company
     company = load_company(cfg.get("profile") or DEFAULT_PROFILE)
     blocked = []
-    for pts, reasons, opp in ranked[:cfg.get("digest_top_n", 10) + len(new_ones)]:
+    # Only the notices that will actually be shown. A blocked notice further
+    # down the list is not in today's output, so it does not spend a
+    # description call.
+    for pts, reasons, opp in daily_shortlist(ranked, top_n):
         nid = opp.get("noticeId")
         text = descriptions.get(nid)
         if text is None:
@@ -915,6 +994,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
             new_ones, cfg["to_email"], cfg["from_email"], cfg["app_password"],
             profile_label=cfg.get("profile_label"),
             ranked=ranked,
+            top_n=top_n,
             blocked=blocked,
         )
         emailed = True
@@ -1113,7 +1193,8 @@ def main():
     # only at exit, so the whole list lands after every stderr line and the
     # counts end up buried mid-log instead of under the results they
     # describe. Line buffering keeps the two streams in real order.
-    sys.stdout.reconfigure(line_buffering=True)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
 
     ap = argparse.ArgumentParser(description="Pull and rank SAM.gov opportunities for one business profile.")
     ap.add_argument("--profile", choices=sorted(PROFILES), default=DEFAULT_PROFILE,
@@ -1124,7 +1205,11 @@ def main():
     ap.add_argument("--deadline-max", type=int, default=60)
     ap.add_argument("--naics", type=str, default=None,
                     help="override the profile's NAICS list")
-    ap.add_argument("--csv", type=str, default=None)
+    ap.add_argument("--csv", type=str, default=None,
+                    help="write the full ranked list to this CSV; the terminal still shows --top")
+    ap.add_argument("--top", type=int, default=DEFAULT_DAILY_TOP_N, metavar="N",
+                    help="print and email only the N highest-ranked notices "
+                         f"(default {DEFAULT_DAILY_TOP_N}). Every notice is still scored")
     ap.add_argument("--limit", type=int, default=100)
     ap.add_argument("--max-retries", type=int, default=4)
     ap.add_argument("--db", type=str, default=None,
@@ -1247,6 +1332,7 @@ def main():
         "app_password": app_password,
         "send_email": not args.no_email,
         "always_email": args.always_email,
+        "digest_top_n": args.top,
     }
 
     result = run_search(cfg, api_key)
@@ -1272,25 +1358,16 @@ def main():
             f"use --include-restricted-set-asides to see them)",
             file=sys.stderr,
         )
+    top_n = cfg["digest_top_n"]
+    shown = daily_shortlist(ranked, top_n)
+    print(
+        f"showing the top {len(shown)} of {len(ranked)} by rank",
+        file=sys.stderr,
+    )
     print()
-
-    for pts, reasons, opp in ranked[:40]:
-        pop = opp.get("placeOfPerformance") or {}
-        city = (pop.get("city") or {}).get("name", "-")
-        state = (pop.get("state") or {}).get("code", "-")
-        deadline_raw = opp.get("responseDeadLine")
-        deadline_str = deadline_raw[:10] if deadline_raw else "-"
-        set_aside = opp.get("typeOfSetAsideDescription") or "no set-aside"
-
-        print(f"[{pts}] {opp.get('title')}")
-        kind = notice_type(opp) or "type not stated"
-        blocked = not_biddable_reason(opp)
-        print(f"     {kind}{' — NOT BIDDABLE: ' + blocked if blocked else ''}")
-        print(f"     NAICS {opp.get('naicsCode')} | PSC {opp.get('classificationCode')} | {set_aside}")
-        print(f"     {city}, {state} | deadline {deadline_str}")
-        if reasons:
-            print(f"     why: {reasons}")
-        print(f"     {opp.get('uiLink', '-')}\n")
+    text = format_ranked_stdout(ranked, top_n)
+    if text:
+        print(text)
 
     if args.csv:
         with open(args.csv, "w", newline="") as f:

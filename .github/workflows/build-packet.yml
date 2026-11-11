@@ -1,7 +1,7 @@
 name: build-packet
 
 # A packet for one notice the owner has picked by hand — one that did not
-# make the daily top three, or that arrived in the digest and is wanted
+# make the daily top two, or that arrived in the digest and is wanted
 # now. The runner holds the SAM.gov key; a laptop or a sandbox may not.
 on:
   workflow_dispatch:

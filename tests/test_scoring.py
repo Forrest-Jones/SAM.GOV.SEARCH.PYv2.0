@@ -441,3 +441,158 @@ def test_an_unblocked_digest_has_no_cannot_bid_section(monkeypatch):
                          ranked=[(4, "why", good)], blocked=[])
     assert "CANNOT BID" not in sent["body"]
     assert "Bookkeeping Support" in sent["body"]
+
+
+def _capture_digest(monkeypatch):
+    """Returns a dict that gains a 'body' key when a digest is 'sent'."""
+    import smtplib
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def login(self, *a): pass
+        def sendmail(self, frm, to, text):
+            import email as email_mod
+            sent["body"] = email_mod.message_from_string(text).get_payload(
+                decode=True).decode("utf-8")
+
+    monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
+    return sent
+
+
+def _notice_titles(text):
+    """Titles from shortlist blocks, in the order they were printed."""
+    titles = []
+    for line in text.splitlines():
+        if line.startswith("[") and "] " in line:
+            titles.append(line.split("] ", 1)[1])
+    return titles
+
+
+def test_daily_output_is_exactly_the_top_two_in_rank_order(monkeypatch):
+    # Five notices, already ranked. The terminal and the digest must name
+    # the first two, in that order, and must not name the other three.
+    import find_opportunities as fo
+
+    ranked = []
+    for i, (pts, title) in enumerate((
+        (9, "ALPHA-NOTICE"),
+        (7, "BRAVO-NOTICE"),
+        (5, "CHARLIE-NOTICE"),
+        (3, "DELTA-NOTICE"),
+        (1, "ECHO-NOTICE"),
+    )):
+        ranked.append((pts, f"reason {pts}", make_opp(
+            noticeId=f"n{i}", title=title, uiLink=f"https://sam.gov/{title}",
+        )))
+
+    text = fo.format_ranked_stdout(ranked)
+    assert _notice_titles(text) == ["ALPHA-NOTICE", "BRAVO-NOTICE"]
+    for absent in ("CHARLIE-NOTICE", "DELTA-NOTICE", "ECHO-NOTICE"):
+        assert absent not in text
+
+    # The count stays a knob: asking for four returns four, still in order.
+    assert _notice_titles(fo.format_ranked_stdout(ranked, top_n=4)) == [
+        "ALPHA-NOTICE", "BRAVO-NOTICE", "CHARLIE-NOTICE", "DELTA-NOTICE",
+    ]
+
+    sent = _capture_digest(monkeypatch)
+    fo.send_email_digest([], "x@e.com", "y@e.com", "pw", ranked=ranked)
+    body = sent["body"]
+    assert _notice_titles(body) == ["ALPHA-NOTICE", "BRAVO-NOTICE"]
+    assert body.index("ALPHA-NOTICE") < body.index("BRAVO-NOTICE")
+    for absent in ("CHARLIE-NOTICE", "DELTA-NOTICE", "ECHO-NOTICE"):
+        assert absent not in body
+
+
+def test_a_mocked_search_outputs_only_its_top_two(monkeypatch, tmp_path):
+    # End to end against fixture notices, with the SAM.gov client replaced.
+    # Ranking is the real scorer. More than two clear the draft floor;
+    # the run still writes scaffolds and a digest for the top two only.
+    import find_opportunities as fo
+
+    deadline = (date.today() + timedelta(days=20)).isoformat() + "T17:00:00-06:00"
+    far = (date.today() + timedelta(days=200)).isoformat() + "T17:00:00-06:00"
+
+    def opp(**kw):
+        base = make_opp(
+            type="Solicitation",
+            classificationCode="R999",
+            responseDeadLine=deadline,
+            placeOfPerformance={"city": {"name": "Denver"}, "state": {"code": "CO"}},
+        )
+        base.update(kw)
+        return base
+
+    opps = [
+        opp(noticeId="a", title="Alpha Tax Accounting Support", classificationCode="R710",
+            typeOfSetAsideDescription="Small Business Set Aside - Total",
+            placeOfPerformance={"city": {"name": "Houston"}, "state": {"code": "TX"}},
+            uiLink="https://sam.gov/a"),
+        opp(noticeId="b", title="Beta Roofing Repair", classificationCode="R499",
+            typeOfSetAsideDescription="Small Business Set Aside - Total",
+            uiLink="https://sam.gov/b"),
+        opp(noticeId="c", title="Gamma Financial Audit Services", classificationCode="R407",
+            uiLink="https://sam.gov/c"),
+        opp(noticeId="d", title="Delta Electrical Repair", classificationCode="Z2JZ",
+            uiLink="https://sam.gov/d"),
+        opp(noticeId="e", title="Epsilon Warehouse Coordination", classificationCode="S100",
+            responseDeadLine=far, uiLink="https://sam.gov/e"),
+    ]
+    profile = fo.PROFILES["p1821"]
+    scored = []
+    for item in opps:
+        pts, _reasons = fo.score(
+            item, 7, 60, ["small_business"],
+            keywords=profile["keywords"], priority_psc=profile["priority_psc"],
+            home_states=profile["home_states"],
+        )
+        scored.append((pts, item["title"]))
+    scored.sort(reverse=True)
+    assert len({pts for pts, _ in scored}) == 5
+    assert sum(1 for pts, _ in scored if pts >= profile["draft_min_score"]) > 2
+    expected = [title for _pts, title in scored[:2]]
+
+    monkeypatch.setattr(fo, "fetch", lambda *a, **k: opps)
+    monkeypatch.setattr(fo, "fetch_description", lambda *a, **k: "Routine support services.")
+    cfg = {
+        "profile": "p1821",
+        "naics_codes": ["541219"],
+        "profile_label": profile["label"],
+        "keywords": profile["keywords"],
+        "priority_psc": profile["priority_psc"],
+        "home_states": profile["home_states"],
+        "posted_days": 45,
+        "deadline_min": 7,
+        "deadline_max": 60,
+        "limit": 100,
+        "max_retries": 1,
+        "held_certs": ["small_business"],
+        "include_restricted": False,
+        "include_expired": False,
+        "include_supplies": False,
+        "db_path": str(tmp_path / "state.sqlite3"),
+        "drafts_dir": str(tmp_path / "drafts"),
+        "draft_min_score": profile["draft_min_score"],
+        "generate_drafts": True,
+        "to_email": "x@e.com",
+        "from_email": "y@e.com",
+        "app_password": "pw",
+        "send_email": True,
+        "always_email": True,
+        "digest_top_n": fo.DEFAULT_DAILY_TOP_N,
+    }
+    sent = _capture_digest(monkeypatch)
+    result = fo.run_search(cfg, "fixture-key", log=lambda m: None)
+
+    assert len(result["ranked"]) == 5
+    assert fo.DEFAULT_DAILY_TOP_N == 2
+    text = fo.format_ranked_stdout(result["ranked"], fo.DEFAULT_DAILY_TOP_N)
+    assert _notice_titles(text) == expected
+    assert _notice_titles(sent["body"]) == expected
+    for _pts, title in scored[2:]:
+        assert title not in text
+        assert title not in sent["body"]
+    assert len(result["draft_paths"]) == 2

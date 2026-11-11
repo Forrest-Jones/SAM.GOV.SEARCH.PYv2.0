@@ -293,10 +293,10 @@ def skip_reason(company, opp):
     company.toml, so teaching the belt to stop producing work you don't
     perform is a one-line edit rather than a code change."""
     # A registration can carry more codes than the business can actually
-    # perform, and the search deliberately covers all of them — you should
-    # still see everything in the digest. This narrows only which ones get
-    # a bid packet built, so nothing is hidden and nothing unwinnable is
-    # prepared. Empty means every registered code is fair game.
+    # perform, and the search deliberately scores all of them. The daily
+    # digest shows the top 2 by rank, and a notice this filter skips can
+    # still be one of those two. This narrows only which ones get a bid
+    # packet built. Empty means every registered code is fair game.
     allowed = [str(c).strip() for c in (company.get("packet_naics") or []) if str(c).strip()]
     naics = str(opp.get("naicsCode") or "").strip()
     if allowed and naics and naics not in allowed:

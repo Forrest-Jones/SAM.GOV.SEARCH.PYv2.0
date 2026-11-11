@@ -86,8 +86,9 @@ capability_statement_construction = """Proverbs 1821 Consulting LLC performs con
 
 # Which of your registered NAICS codes should get a bid packet built.
 #
-# The search still covers every code on your registration and the digest
-# still shows you everything — this only decides where the conveyor belt
+# The search still scores every code on your registration. The daily
+# terminal shortlist and the email show the top 2 by rank (`--top` on
+# find_opportunities.py). This list only decides where the conveyor belt
 # spends effort. It exists because a registration is broader than a
 # capability: 541620 surfaced a confined-space assessment needing
 # OSHA/NFPA-trained crews, and 541720 surfaced an Army history office BPA

@@ -543,7 +543,9 @@
   }
 
   function renderDashboardPreview(result) {
-    const top = result.ranked.slice(0, 3);
+    // Home preview matches the daily shortlist (find_opportunities.py
+    // DEFAULT_DAILY_TOP_N). The Contracts tab still lists every match.
+    const top = result.ranked.slice(0, 2);
     const container = $("dashboard-preview");
     if (!top.length) {
       container.innerHTML = "<p class='muted'>No matches this time. Try widening your deadline window in Settings.</p>";
