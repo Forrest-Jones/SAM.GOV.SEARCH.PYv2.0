@@ -174,8 +174,14 @@ fewer packets is better than packets for work that does not really match.
 
 The daily run is set to **2 a day**, all Proverbs 1821. The terminal
 shortlist and the email each show those two, highest rank first, so the
-day's choice is which of the two to bid. `--top N` asks for a longer
-list on a one-off run; it does not change how notices are scored. Ares
+day's choice is which of the two to bid. Each pick shows the deadline
+in Central Time, the set-aside, the estimated value when the notice
+states one, the risks (including no federal past performance), and the
+SAM.gov link. `--top N` asks for a longer list on a one-off run; it
+does not change how notices are scored. The score prefers work this
+firm can win: a solicitation over a sources sought, an LPTA award over
+a best-value award that weighs past performance, and in-state field
+work over a distant construction job. Ares
 gets no packets while that lane is left out of `active_profiles`. Turn
 the lane back on and give it a `--batch` when someone is ready to act
 on it.
