@@ -141,14 +141,9 @@ app did not exist. It does; that was the wrong directory. Do not treat
 that project as a source for anything here, and do not split this work
 across it.
 
-## Construction lane (decided 2026-09-14)
+## Construction lane (decided 2026-09-14, narrowed 2026-11-20)
 
-Jason Teal is the in-house general contractor. Aaron Mumaki and Ashley Mumaki (owners of AMWR Roofing, 20 years in roofing, surety-bond track record, OSHA-trained) are in-house roofers; cite AMWR's roofing record as the firm's own, attributed "AMWR Roofing, in-house to Proverbs 1821". The owner wants construction
-work in the daily flow: roofing, welding, and anything a general
-contractor performs. The p1821 search and `packet_naics` carry the 236/238
-trade codes and 811310; `packet_psc_prefixes` include Y, Z and J. Bonding
-capacity is not on file — construction over the Miller Act threshold
-needs a bond, so a packet for one will show that as a gate to clear.
+Jason Teal is the in-house general contractor. Aaron Mumaki and Ashley Mumaki (owners of AMWR Roofing, 20 years in roofing, surety-bond track record, OSHA-trained) are in-house roofers; cite AMWR's roofing record as the firm's own, attributed "AMWR Roofing, in-house to Proverbs 1821". The capability is real. As of 20 November 2026 the daily search no longer surfaces one-off construction: a single roof repair, fence install, or one-day crane lift is out. What is pursued is multi-year recurring service work — base year plus option years, IDIQ/BPA, janitorial (NAICS 561720), grounds, and facility support — at least $1,000 a month for 24 months, with 5 to 10 years and higher monthly value ranked first. A multi-year construction vehicle (MATOC, JOC, IDIQ) still qualifies. The 236/238 codes stay on the search so those vehicles are found; the recurring-contract gate in `contract_fit.py` drops the one-offs. Bonding capacity is not on file — construction over the Miller Act threshold needs a bond, so a packet for one will show that as a gate to clear.
 
 ## Open items
 
@@ -159,5 +154,8 @@ needs a bond, so a packet for one will show that as a gate to clear.
 - Add **NAICS 541219** and **PSC R499** to the SAM registration. Notices
   require small-business status under the assigned NAICS to prime, and the
   registration currently carries neither.
+- Confirm **NAICS 561730, 561210, and 561790** are on the SAM registration.
+  561720 (janitorial) is. The search uses all four for recurring facility
+  services; a code that is not on the registration cannot be primed.
 - Confirm or strike the dollar values and periods in
   `p1821.past_performance` — every one is currently a placeholder.

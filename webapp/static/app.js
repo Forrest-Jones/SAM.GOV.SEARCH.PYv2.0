@@ -493,6 +493,24 @@
 
   // ---------------- Scoring labels ----------------
 
+  function needsReview(opp) {
+    return opp.contract_fit === "needs_review" || /needs review/i.test(opp.reasons || "");
+  }
+
+  function needsReviewBadge(opp) {
+    return needsReview(opp) ? '<span class="badge badge-warn">Needs review</span>' : "";
+  }
+
+  function contractFitMeta(opp) {
+    const bits = [];
+    if (opp.performance_months) bits.push(opp.performance_months + " months");
+    if (opp.monthly_value) {
+      bits.push("$" + Math.round(opp.monthly_value).toLocaleString() + "/mo");
+    }
+    if (!bits.length) return "";
+    return '<div class="opp-meta">' + escapeHtml(bits.join(" · ")) + "</div>";
+  }
+
   function matchBadge(score) {
     if (score >= 6) return { cls: "badge-great", text: "Great match" };
     if (score >= 4) return { cls: "badge-good", text: "Worth a look" };
@@ -523,6 +541,13 @@
       return;
     }
     $("search-status").textContent = "Done!";
+    const note = $("search-note");
+    if (note) {
+      const leftOut = result.excluded_one_off || 0;
+      note.textContent = leftOut
+        ? leftOut + " one-off or non-recurring notice" + (leftOut === 1 ? " was" : "s were") + " left out."
+        : "";
+    }
     renderSearchResult(result);
   }
 
@@ -578,8 +603,10 @@
         <div>
           <span class="badge ${badge.cls}">${badge.text}</span>
           ${isNew ? '<span class="badge badge-new">NEW</span>' : ""}
+          ${needsReviewBadge(opp)}
         </div>
       </div>
+      ${contractFitMeta(opp)}
       ${opp.eligibility === "unknown_set_aside" ? '<div class="opp-meta"><span class="badge badge-warn">Double-check you can bid on this one</span></div>' : ""}
     `;
     card.addEventListener("click", () => openOppModal(opp, isNew));
@@ -602,7 +629,8 @@
     const badge = matchBadge(opp.score);
     $("modal-body").innerHTML = `
       <h1>${escapeHtml(opp.title || "Untitled opportunity")}</h1>
-      <p><span class="badge ${badge.cls}">${badge.text}</span> ${isNew ? '<span class="badge badge-new">NEW</span>' : ""}</p>
+      <p><span class="badge ${badge.cls}">${badge.text}</span> ${isNew ? '<span class="badge badge-new">NEW</span>' : ""} ${needsReviewBadge(opp)}</p>
+      ${contractFitMeta(opp)}
       <p class="muted">${escapeHtml(opp.city || "-")}, ${escapeHtml(opp.state || "-")} &middot; Deadline: ${escapeHtml(opp.deadline || "not listed")}</p>
       <p><strong>Business category (NAICS):</strong> ${escapeHtml(opp.naics || "-")}</p>
       <p><strong>Special program:</strong> ${escapeHtml(opp.set_aside || "None (open to everyone)")}</p>
@@ -810,6 +838,7 @@
     state.activeProfile = data.active_profile;
     state.profiles = data.profiles || [];
     state.certifications = data.certifications;
+    state.contractCriteria = data.contract_criteria || {};
     state.naicsCodes = data.settings.naics_codes.slice();
     state.factbank = await api("/api/factbank");
     renderProfileSwitch();
@@ -870,6 +899,12 @@
     $("posted-days").value = s.posted_days;
     $("generate-drafts").checked = !!s.generate_drafts;
     $("draft-min-score").value = s.draft_min_score;
+    const floors = state.contractCriteria || {};
+    $("min-monthly-value").value = floors.min_monthly_value ?? 1000;
+    $("min-months").value = floors.min_months ?? 24;
+    $("preferred-months").value = floors.preferred_months ?? 60;
+    $("preferred-months-max").value = floors.preferred_months_max ?? 120;
+    $("target-monthly").value = floors.target_monthly_portfolio ?? 10000;
     $("send-email").checked = !!s.send_email;
     $("notify-email").value = s.notify_email;
 
@@ -914,7 +949,7 @@
     $("settings-status").textContent = "Saving...";
 
 
-    await api("/api/settings", {
+    const saved = await api("/api/settings", {
       method: "POST",
       body: JSON.stringify({
         naics_codes: state.naicsCodes,
@@ -926,8 +961,24 @@
         draft_min_score: $("draft-min-score").value,
         send_email: $("send-email").checked,
         notify_email: $("notify-email").value,
+        contract_criteria: {
+          min_monthly_value: $("min-monthly-value").value,
+          min_months: $("min-months").value,
+          preferred_months: $("preferred-months").value,
+          preferred_months_max: $("preferred-months-max").value,
+          target_monthly_portfolio: $("target-monthly").value,
+        },
       }),
     });
+    if (saved && saved.contract_criteria) {
+      state.contractCriteria = saved.contract_criteria;
+      const floors = saved.contract_criteria;
+      $("min-monthly-value").value = floors.min_monthly_value;
+      $("min-months").value = floors.min_months;
+      $("preferred-months").value = floors.preferred_months;
+      $("preferred-months-max").value = floors.preferred_months_max;
+      $("target-monthly").value = floors.target_monthly_portfolio;
+    }
 
     const credUpdates = {};
     if ($("sam-api-key").value.trim()) credUpdates.sam_api_key = $("sam-api-key").value.trim();

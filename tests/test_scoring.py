@@ -509,17 +509,20 @@ def test_daily_output_is_exactly_the_top_two_in_rank_order(monkeypatch):
 
 def test_a_mocked_search_outputs_only_its_top_two(monkeypatch, tmp_path):
     # End to end against fixture notices, with the SAM.gov client replaced.
-    # Ranking is the real scorer. More than two clear the draft floor;
-    # the run still writes scaffolds and a digest for the top two only.
+    # Ranking is the real scorer. The two kept contracts are recurring and
+    # clear the floor; the roof repair is a one-off and never reaches the
+    # list. More than two clear the draft floor; scaffolds and the digest
+    # still cover the top two only.
     import find_opportunities as fo
 
     deadline = (date.today() + timedelta(days=20)).isoformat() + "T17:00:00-06:00"
-    far = (date.today() + timedelta(days=200)).isoformat() + "T17:00:00-06:00"
+    profile = fo.PROFILES["p1821"]
 
     def opp(**kw):
         base = make_opp(
             type="Solicitation",
-            classificationCode="R999",
+            classificationCode="S216",
+            naicsCode="561210",
             responseDeadLine=deadline,
             placeOfPerformance={"city": {"name": "Denver"}, "state": {"code": "CO"}},
         )
@@ -527,39 +530,32 @@ def test_a_mocked_search_outputs_only_its_top_two(monkeypatch, tmp_path):
         return base
 
     opps = [
-        opp(noticeId="a", title="Alpha Tax Accounting Support", classificationCode="R710",
+        opp(noticeId="a", title="Alpha Janitorial Services IDIQ",
+            naicsCode="561720", classificationCode="S201",
             typeOfSetAsideDescription="Small Business Set Aside - Total",
             placeOfPerformance={"city": {"name": "Houston"}, "state": {"code": "TX"}},
             uiLink="https://sam.gov/a"),
-        opp(noticeId="b", title="Beta Roofing Repair", classificationCode="R499",
-            typeOfSetAsideDescription="Small Business Set Aside - Total",
-            uiLink="https://sam.gov/b"),
-        opp(noticeId="c", title="Gamma Financial Audit Services", classificationCode="R407",
-            uiLink="https://sam.gov/c"),
-        opp(noticeId="d", title="Delta Electrical Repair", classificationCode="Z2JZ",
-            uiLink="https://sam.gov/d"),
-        opp(noticeId="e", title="Epsilon Warehouse Coordination", classificationCode="S100",
-            responseDeadLine=far, uiLink="https://sam.gov/e"),
+        opp(noticeId="b", title="Beta Roof Repair", classificationCode="Z2JZ",
+            naicsCode="238160", uiLink="https://sam.gov/b"),
+        opp(noticeId="c", title="Charlie Grounds Maintenance",
+            naicsCode="561730", classificationCode="S208", uiLink="https://sam.gov/c"),
+        opp(noticeId="d", title="Delta Custodial Services",
+            naicsCode="561720", classificationCode="S201", uiLink="https://sam.gov/d"),
+        opp(noticeId="e", title="Echo Facilities Support",
+            naicsCode="561210", uiLink="https://sam.gov/e"),
     ]
-    profile = fo.PROFILES["p1821"]
-    scored = []
-    for item in opps:
-        pts, _reasons = fo.score(
-            item, 7, 60, ["small_business"],
-            keywords=profile["keywords"], priority_psc=profile["priority_psc"],
-            home_states=profile["home_states"],
-        )
-        scored.append((pts, item["title"]))
-    scored.sort(reverse=True)
-    assert len({pts for pts, _ in scored}) == 5
-    assert sum(1 for pts, _ in scored if pts >= profile["draft_min_score"]) > 2
-    expected = [title for _pts, title in scored[:2]]
-
+    texts = {
+        "a": "Janitorial services. One base year and four (4) option years. Estimated value $600,000.",
+        "b": "One-time roof repair at building 4.",
+        "c": "Grounds maintenance. Base year and three option years. $4,000 per month.",
+        "d": "Custodial services. Base year and one option year. $1,200 per month.",
+        "e": "Recurring facilities support. Value and period of performance not stated.",
+    }
     monkeypatch.setattr(fo, "fetch", lambda *a, **k: opps)
-    monkeypatch.setattr(fo, "fetch_description", lambda *a, **k: "Routine support services.")
+    monkeypatch.setattr(fo, "fetch_description", lambda item, *a, **k: texts[item["noticeId"]])
     cfg = {
         "profile": "p1821",
-        "naics_codes": ["541219"],
+        "naics_codes": ["561720"],
         "profile_label": profile["label"],
         "keywords": profile["keywords"],
         "priority_psc": profile["priority_psc"],
@@ -587,15 +583,18 @@ def test_a_mocked_search_outputs_only_its_top_two(monkeypatch, tmp_path):
     sent = _capture_digest(monkeypatch)
     result = fo.run_search(cfg, "fixture-key", log=lambda m: None)
 
-    assert len(result["ranked"]) == 5
     assert fo.DEFAULT_DAILY_TOP_N == 2
-    text = fo.format_ranked_stdout(result["ranked"], fo.DEFAULT_DAILY_TOP_N)
-    assert _notice_titles(text) == expected
-    assert _notice_titles(sent["body"]) == expected
-    for _pts, title in scored[2:]:
-        assert title not in text
-        assert title not in sent["body"]
+    titles = [item[2]["title"] for item in result["ranked"]]
+    assert "Beta Roof Repair" not in titles
+    assert result["excluded_one_off"] >= 1
+    text = fo.format_ranked_stdout(result["ranked"], fo.DEFAULT_DAILY_TOP_N, result["descriptions"])
+    assert _notice_titles(text) == ["Alpha Janitorial Services IDIQ", "Charlie Grounds Maintenance"]
+    assert _notice_titles(sent["body"]) == ["Alpha Janitorial Services IDIQ", "Charlie Grounds Maintenance"]
+    for absent in ("Beta Roof Repair", "Delta Custodial Services", "Echo Facilities Support"):
+        assert absent not in text
+        assert absent not in sent["body"]
     assert len(result["draft_paths"]) == 2
+    assert "needs review" in result["ranked"][-1][1].lower()
 
 
 def test_lpta_outranks_a_best_value_award_that_weighs_past_performance():
@@ -699,10 +698,9 @@ def test_the_top_two_card_carries_the_decision_facts():
 
 
 def test_description_rescore_demotes_a_distant_site_visit(monkeypatch, tmp_path):
-    # Preliminary rank would keep the Colorado roof. The description says
-    # the site visit is mandatory and the work is out of state, so the
-    # daily two should be the accounting notice and the in-window audit,
-    # not the roof.
+    # The roof repair is a one-off and never reaches the daily two. Of the
+    # two recurring notices, the longer, higher-value one leads, including
+    # after the description is read.
     import find_opportunities as fo
     deadline = (date.today() + timedelta(days=20)).isoformat() + "T17:00:00-06:00"
     profile = fo.PROFILES["p1821"]
@@ -728,9 +726,9 @@ def test_description_rescore_demotes_a_distant_site_visit(monkeypatch, tmp_path)
             description="https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=c"),
     ]
     texts = {
-        "a": "Accounting support. Estimated value $180,000. Lowest price technically acceptable.",
+        "a": "Facilities support. One base year and four option years. Estimated value $180,000. Lowest price technically acceptable.",
         "b": "Roof repair in Colorado. A mandatory site visit is required before bidding.",
-        "c": "Financial audit support for an office. No site visit.",
+        "c": "Recurring grounds maintenance. Base year and one option year. $1,500 per month. No site visit.",
     }
     monkeypatch.setattr(fo, "fetch", lambda *a, **k: opps)
     monkeypatch.setattr(fo, "fetch_description", lambda opp, key, max_retries=4: texts[opp["noticeId"]])
