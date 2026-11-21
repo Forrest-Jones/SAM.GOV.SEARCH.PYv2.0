@@ -72,6 +72,7 @@ SHARED_KEYS = (
     "accounting_system", "accounting_system_review",
     "secondary_contact_name", "secondary_contact_title",
     "secondary_contact_phone", "secondary_contact_email",
+    "contract_criteria",
 )
 
 

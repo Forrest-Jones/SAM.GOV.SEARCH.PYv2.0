@@ -47,10 +47,11 @@
       <!-- DASHBOARD -->
       <section id="tab-dashboard" class="tab-panel active">
         <div class="hero-card">
-          <h1>Find contracts that match your business</h1>
-          <p>One click checks SAM.gov for new opportunities in your business categories.</p>
+          <h1>Find multi-year service contracts</h1>
+          <p>One click checks SAM.gov for recurring work — janitorial, grounds, facility support, and other base-plus-option, IDIQ, or BPA contracts. One-off repairs and installs are left out. A recurring notice with no stated value or term is kept and marked needs review.</p>
           <button id="search-btn" class="btn btn-primary btn-large">Find new contracts</button>
           <p id="search-status" class="status-text"></p>
+          <p id="search-note" class="muted"></p>
         </div>
 
         <div id="summary-cards" class="summary-cards" hidden>
@@ -225,6 +226,33 @@
         </div>
 
         <div class="settings-card">
+          <h2>Recurring-contract floors</h2>
+          <p class="field-help">Only multi-year recurring service contracts make the list. These numbers are saved in <code>company.toml</code>, which the daily search reads too. A notice that looks recurring but does not state a value or a length is kept and marked needs review.</p>
+          <div class="field-row">
+            <label>Minimum monthly value $
+              <input type="number" id="min-monthly-value" class="num-input" min="1" step="1" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>Minimum length
+              <input type="number" id="min-months" class="num-input" min="1" step="1" /> months
+            </label>
+          </div>
+          <div class="field-row">
+            <label>Preferred length, from
+              <input type="number" id="preferred-months" class="num-input" min="1" step="1" />
+              to
+              <input type="number" id="preferred-months-max" class="num-input" min="1" step="1" /> months
+            </label>
+          </div>
+          <div class="field-row">
+            <label>Rank toward a portfolio of $
+              <input type="number" id="target-monthly" class="num-input" min="1" step="1" /> per month
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-card">
           <h2>Review Packets</h2>
           <label class="checkbox-row">
             <input type="checkbox" id="generate-drafts" />
@@ -232,7 +260,7 @@
           </label>
           <div class="field-row">
             <label>Only for matches scoring at least
-              <input type="number" id="draft-min-score" class="num-input" min="0" /> out of ~9
+              <input type="number" id="draft-min-score" class="num-input" min="0" />
             </label>
           </div>
         </div>

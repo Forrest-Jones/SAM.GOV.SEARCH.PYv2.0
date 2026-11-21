@@ -5,10 +5,11 @@ SAM.gov Opportunity Finder
 Pulls open SAM.gov solicitations, sources-sought and presolicitations for
 one business profile at a time (see PROFILES):
 
-  --profile p1821  Proverbs 1821 Consulting — tax, accounting, evaluation
-      Lane 1: Installation tax center support (Randy White performs)
-      Lane 2: Accounting / tax remediation task orders (Randy leads)
-      Lane 3: Third-party program evaluation (Forrest / Blackwater Evaluation)
+  --profile p1821  Proverbs 1821 Consulting — multi-year recurring services
+      Janitorial, grounds, facility support, and other base-plus-option,
+      IDIQ, or BPA work. One-off repairs and installs are filtered out.
+      A recurring notice with no stated value or term is kept and marked
+      "needs review".
 
   --profile ares   Ares Robotics — waste, remediation, machinery, structural
 
@@ -55,6 +56,13 @@ OPTIONS
   --drafts-dir PATH     Where review scaffolds go (default drafts/<profile>)
   --draft-min-score N   Minimum score for a scaffold (default: the profile's own)
   --include-supplies    Also show supply/equipment buys (digit-prefixed PSC)
+  --min-monthly-value N Floor in dollars per month (default 1000)
+  --min-months N        Minimum period of performance in months (default 24)
+  --preferred-months N  Bottom of the preferred term, in months (default 60)
+  --preferred-months-max N
+                        Top of the preferred term, in months (default 120)
+  --target-monthly N    Monthly portfolio the ranker is stacking toward
+                        (default 10000)
   --include-expired     Also show notices whose deadline has passed
   --no-drafts           Skip draft generation entirely
   --include-restricted-set-asides
@@ -88,6 +96,14 @@ import time
 from datetime import date, datetime, timedelta, timezone
 
 import requests
+
+from contract_fit import (
+    assess_contract,
+    contract_fit_label,
+    criteria_from_mapping,
+    load_criteria,
+    score_contract_fit,
+)
 
 API_URL = "https://api.sam.gov/opportunities/v2/search"
 
@@ -133,6 +149,9 @@ DEFAULT_NAICS = [
     # (verified 9/12/26). Already producing work: the Coast Guard Academy
     # NAFI audit came in on this code. ---
     "541211",  # Offices of Certified Public Accountants
+    # Owner-confirmed 2026-11-20. Janitorial is on the firm's codes; the
+    # search also covers grounds and facility support under the profile.
+    "561720",  # Janitorial Services
 ]
 
 # PSC codes worth a point. R710/B505/R499 came from the original script;
@@ -155,8 +174,17 @@ COMPANY_NAME = "Proverbs 1821 Consulting LLC"
 
 PROFILES = {
     "p1821": {
-        "label": "Financial, administrative & construction services",
+        "label": "Recurring multi-year services",
         "naics": [
+            # Recurring facility services. 561720 is on the firm's codes as
+            # of 2026-11-20. Grounds and facility support are searched with
+            # it; one-off jobs under the construction codes below are
+            # dropped after the fetch, and a multi-year vehicle filed under
+            # those codes is kept.
+            "561720",  # Janitorial Services
+            "561730",  # Landscaping Services
+            "561210",  # Facilities Support Services
+            "561790",  # Other Services to Buildings and Dwellings
             "541211",  # Offices of Certified Public Accountants
             "541213",  # Tax Preparation Services
             "541219",  # Other Accounting Services
@@ -192,13 +220,12 @@ PROFILES = {
             "238990",  # All Other Specialty Trade Contractors
             "811310",  # Commercial & Industrial Machinery Repair (welding, fabrication)
         ],
-        "priority_psc": {"R710", "B505", "R499", "R407"},
+        "priority_psc": {"R710", "B505", "R499", "R407", "S201", "S208", "S216", "S299"},
         "keywords": [
+            "janitorial", "custodial", "grounds", "landscaping", "facilities",
+            "recurring", "idiq", "bpa", "maintenance",
             "tax", "vita", "evaluation", "accounting", "financial",
             "audit", "irs", "compliance", "remediation",
-            "roof", "roofing", "welding", "construction", "renovation",
-            "repair", "remodel", "concrete", "carpentry", "painting",
-            "hvac", "plumbing", "electrical", "flooring", "demolition",
         ],
         "home_states": {"TX"},
         "draft_min_score": 4,
@@ -232,16 +259,18 @@ DEFAULT_PROFILE = "p1821"
 # shortlist never saw them.
 NOTICE_TYPES = "o,k,p,r"
 
-# Title keywords worth a point each (capped at 2). The first group serves the
-# tax/accounting/evaluation lanes; the second was added alongside the
-# industrial NAICS codes, since without it those notices never score high
-# enough to generate a review packet.
+# Title keywords worth a point each (capped at 2). Recurring-service words
+# lead, because that is the work the daily list is for. The professional
+# and environmental words stay so a multi-year vehicle in those lanes can
+# still earn a point once it has cleared the recurring-contract gate.
 #
-# Kept deliberately narrow. An earlier version added "repair", "machinery"
-# and "disposal", which scored commodity purchases ("43 Filter Element
-# Fluid", "Grease Tank Pumping") high enough to generate review packets —
-# a keyword has to describe the WORK, not merely appear near it.
+# Kept deliberately narrow. "repair", "machinery" and "disposal" scored
+# commodity purchases high enough to generate review packets, and the
+# construction words (roof, renovation, install) were pulling one-off jobs
+# to the top of the list. A keyword has to describe the WORK.
 KEYWORDS = [
+    "janitorial", "custodial", "grounds", "landscaping", "facilities",
+    "recurring", "idiq", "bpa", "maintenance",
     "tax", "vita", "evaluation", "accounting", "financial", "audit", "irs",
     "remediation", "hazardous waste", "environmental", "abatement",
 ]
@@ -451,8 +480,12 @@ DEFAULT_DAILY_TOP_N = 2
 # How many preliminary leaders get a description fetch and a second
 # score before the daily cut. Clearance, LPTA, and site-visit language
 # usually lives in the description, not the title. Twelve calls stays
-# well under the 1,000/day SAM.gov budget.
+# well under the 1,000/day SAM.gov budget. Contract fit reads the same
+# description, and the term is usually in that text rather than the title,
+# so the window is wide enough to re-rank the notices that could actually
+# make the daily cut once value and length are known.
 WINNABILITY_PRESCREEN = 12
+CONTRACT_REVIEW_WINDOW = 24
 MAX_BACKOFF_SECONDS = 60
 MAX_FETCH_PAGES = 25
 
@@ -613,16 +646,27 @@ def days_until_deadline(opp):
         return None
 
 
+def resolve_criteria(cfg):
+    """Thresholds for this run: an explicit dict, otherwise company.toml."""
+    if cfg.get("contract_criteria"):
+        return criteria_from_mapping(cfg["contract_criteria"])
+    return load_criteria(cfg.get("profile"))
+
+
 def score(opp, deadline_min, deadline_max, held_certs=DEFAULT_HELD_CERTS,
-          keywords=None, priority_psc=None, home_states=None, description_text=None):
+          keywords=None, priority_psc=None, home_states=None, description_text=None,
+          contract_criteria=None):
     """Triage score for one notice. keywords/priority_psc/home_states come
     from the active profile; the module-level defaults keep direct callers
     and the CLI's --naics override working without one.
 
     description_text is optional. The first pass scores the search record.
     Leaders are scored again once the description has been fetched, so a
-    clearance requirement or an LPTA clause that is not in the title can
-    still move the notice.
+    clearance requirement, an LPTA clause, or a period of performance that
+    is not in the title can still move the notice.
+
+    contract_criteria selects the recurring-contract floors. Omitted, the
+    built-in defaults are used; the search passes the company.toml values.
     """
     keywords = KEYWORDS if keywords is None else keywords
     priority_psc = PRIORITY_PSC if priority_psc is None else priority_psc
@@ -663,6 +707,13 @@ def score(opp, deadline_min, deadline_max, held_certs=DEFAULT_HELD_CERTS,
         opp, description_text, home_states=home_states)
     pts += extra
     reasons.extend(extra_reasons)
+
+    criteria = criteria_from_mapping(contract_criteria)
+    assessment = assess_contract(opp, criteria, description_text)
+    opp["_contract_fit"] = assessment.as_dict()
+    fit_pts, fit_reasons = score_contract_fit(assessment, criteria)
+    pts += fit_pts
+    reasons.extend(fit_reasons)
 
     return pts, ", ".join(reasons)
 
@@ -841,12 +892,16 @@ def format_deadline_ct(raw):
 def decision_lines(opp, description_text=None, indent="     "):
     risks = "; ".join(decision_risks(opp, description_text))
     set_aside = opp.get("typeOfSetAsideDescription") or "none (open to everyone)"
-    return [
+    lines = [
         f"{indent}Set-aside: {set_aside}",
         f"{indent}Deadline: {format_deadline_ct(opp.get('responseDeadLine'))}",
         f"{indent}Estimated value: {estimated_value_label(opp, description_text)}",
-        f"{indent}Risks: {risks}",
     ]
+    fit_line = contract_fit_label(opp)
+    if fit_line:
+        lines.append(f"{indent}Contract: {fit_line}")
+    lines.append(f"{indent}Risks: {risks}")
+    return lines
 
 
 def open_state(db_path):
@@ -933,6 +988,14 @@ def write_draft(opp, pts, reasons, elig, description_text, drafts_dir):
         f"# {opp.get('title')}",
         "",
         f"- **Score:** {pts} ({reasons or 'no heuristic matches'})",
+    ]
+    if (opp.get("_contract_fit") or {}).get("disposition") == "needs_review":
+        lines.append(
+            "- **Needs review:** this looks like recurring work, but the value "
+            "or the period of performance was not stated. Confirm both before "
+            "spending bid time."
+        )
+    lines += [
         f"- **Eligibility:** {elig}",
         f"- **NAICS:** {opp.get('naicsCode')}  **PSC:** {opp.get('classificationCode')}",
         f"- **Set-aside:** {opp.get('typeOfSetAsideDescription') or 'none (full & open)'}",
@@ -1175,10 +1238,12 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
             all_opps[opp.get("noticeId")] = opp  # dedupe across codes
 
     held_certs = cfg["held_certs"]
+    criteria = resolve_criteria(cfg)
 
     excluded_restricted = 0
     excluded_expired = 0
     excluded_supplies = 0
+    excluded_one_off = 0
     filtered = []
     for opp in all_opps.values():
         if is_supply_notice(opp) and not cfg.get("include_supplies"):
@@ -1195,22 +1260,36 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
             continue
         filtered.append(opp)
 
-    ranked = []
-    for opp in filtered:
-        pts, reasons = score(
+    def _score(opp, description_text=None):
+        return score(
             opp, cfg["deadline_min"], cfg["deadline_max"], held_certs,
             keywords=cfg.get("keywords"),
             priority_psc=cfg.get("priority_psc"),
             home_states=cfg.get("home_states"),
+            description_text=description_text,
+            contract_criteria=criteria,
         )
+
+    ranked = []
+    for opp in filtered:
+        pts, reasons = _score(opp)
+        # A one-off, or a recurring notice whose stated term or value is
+        # already under the floor, is out before a description is fetched.
+        if (opp.get("_contract_fit") or {}).get("disposition") == "exclude":
+            excluded_one_off += 1
+            continue
         ranked.append((pts, reasons, opp))
     ranked.sort(key=lambda r: r[0], reverse=True)
 
-    # Second pass on the leaders only. Description text is where LPTA,
-    # clearance, and site-visit requirements actually appear, and those
-    # change which two notices are worth a day.
+    # Second pass on the leaders. The description is where the period of
+    # performance, the ceiling, LPTA, and clearance language actually live,
+    # and those change which two notices are worth a day.
     descriptions = {}
-    window = max(WINNABILITY_PRESCREEN, int(cfg.get("digest_top_n") or DEFAULT_DAILY_TOP_N))
+    window = max(
+        WINNABILITY_PRESCREEN,
+        CONTRACT_REVIEW_WINDOW,
+        int(cfg.get("digest_top_n") or DEFAULT_DAILY_TOP_N),
+    )
     rescored = []
     for index, (pts, reasons, opp) in enumerate(ranked):
         if index < window:
@@ -1218,16 +1297,22 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
             text = fetch_description(opp, api_key, cfg.get("max_retries") or 4)
             descriptions[nid] = text or ""
             if text:
-                pts, reasons = score(
-                    opp, cfg["deadline_min"], cfg["deadline_max"], held_certs,
-                    keywords=cfg.get("keywords"),
-                    priority_psc=cfg.get("priority_psc"),
-                    home_states=cfg.get("home_states"),
-                    description_text=text,
-                )
+                pts, reasons = _score(opp, text)
                 log(f"  rescored with description: {opp.get('title')} → {pts}")
         rescored.append((pts, reasons, opp))
-    ranked = rescored
+
+    # Anything that still is not a recurring service contract — including a
+    # leader whose description revealed a one-off or a short term — does not
+    # reach the list. A recurring notice with the value or the term missing
+    # stays, labelled needs review.
+    kept = []
+    for item in rescored:
+        disposition = (item[2].get("_contract_fit") or {}).get("disposition")
+        if disposition in ("include", "needs_review"):
+            kept.append(item)
+        else:
+            excluded_one_off += 1
+    ranked = kept
     ranked.sort(key=lambda r: r[0], reverse=True)
 
     conn = open_state(cfg["db_path"])
@@ -1301,6 +1386,7 @@ def run_search(cfg, api_key, log=lambda msg: print(msg, file=sys.stderr)):
         "excluded_restricted": excluded_restricted,
         "excluded_expired": excluded_expired,
         "excluded_supplies": excluded_supplies,
+        "excluded_one_off": excluded_one_off,
         "new_ones": new_ones,
         "blocked": blocked,
         "draft_paths": draft_paths,
@@ -1376,7 +1462,8 @@ def build_one(notice_id, profile_key, profile, api_key, packets_root,
 
     pts, reasons = score(
         opp, 0, 365, DEFAULT_HELD_CERTS, keywords=profile["keywords"],
-        priority_psc=profile["priority_psc"], home_states=profile["home_states"])
+        priority_psc=profile["priority_psc"], home_states=profile["home_states"],
+        contract_criteria=load_criteria(profile_key))
     company = load_company(profile_key)
     description_text = fetch_description(opp, api_key)
     session = keyed_session(api_key)
@@ -1484,6 +1571,22 @@ def build_batch(count, profile_key, profile, ranked, descriptions, api_key,
     return built, skipped
 
 
+def _criteria_for_args(args):
+    """company.toml thresholds, with any flags the user passed on top."""
+    overrides = {}
+    if getattr(args, "min_monthly_value", None) is not None:
+        overrides["min_monthly_value"] = args.min_monthly_value
+    if getattr(args, "min_months", None) is not None:
+        overrides["min_months"] = args.min_months
+    if getattr(args, "preferred_months", None) is not None:
+        overrides["preferred_months"] = args.preferred_months
+    if getattr(args, "preferred_months_max", None) is not None:
+        overrides["preferred_months_max"] = args.preferred_months_max
+    if getattr(args, "target_monthly", None) is not None:
+        overrides["target_monthly_portfolio"] = args.target_monthly
+    return criteria_from_mapping(load_criteria(args.profile), overrides)
+
+
 def main():
     # Progress and summary lines go to stderr, the ranked list to stdout.
     # Redirected to a file (a CI log), stdout is block-buffered and flushes
@@ -1530,6 +1633,16 @@ def main():
                     help="also show notices whose response deadline has already passed")
     ap.add_argument("--include-supplies", action="store_true",
                     help="also show supply/equipment buys (digit-prefixed PSC), not just services")
+    ap.add_argument("--min-monthly-value", type=float, default=None, metavar="N",
+                    help="floor in dollars per month (default: company.toml, or 1000)")
+    ap.add_argument("--min-months", type=int, default=None, metavar="N",
+                    help="minimum period of performance in months (default: company.toml, or 24)")
+    ap.add_argument("--preferred-months", type=int, default=None, metavar="N",
+                    help="bottom of the preferred term, in months (default: company.toml, or 60)")
+    ap.add_argument("--preferred-months-max", type=int, default=None, metavar="N",
+                    help="top of the preferred term, in months (default: company.toml, or 120)")
+    ap.add_argument("--target-monthly", type=float, default=None, metavar="N",
+                    help="monthly portfolio the ranker stacks toward (default: company.toml, or 10000)")
     ap.add_argument("--certs", type=str, default=",".join(DEFAULT_HELD_CERTS),
                     help=f"certifications held, comma-separated from: {','.join(CERTIFICATION_HINTS)}")
     ap.add_argument("--email", action="store_true")
@@ -1617,6 +1730,7 @@ def main():
         "include_restricted": args.include_restricted_set_asides,
         "include_expired": args.include_expired,
         "include_supplies": args.include_supplies,
+        "contract_criteria": _criteria_for_args(args),
         "db_path": args.db or f"state-{args.profile}.sqlite3",
         "drafts_dir": args.drafts_dir or os.path.join(DEFAULT_DRAFTS_DIR, args.profile),
         "draft_min_score": (
@@ -1655,6 +1769,12 @@ def main():
             f"use --include-restricted-set-asides to see them)",
             file=sys.stderr,
         )
+    if result.get("excluded_one_off"):
+        print(
+            f"{result['excluded_one_off']} excluded (one-time work, or not a multi-year "
+            f"recurring contract at the configured floor)",
+            file=sys.stderr,
+        )
     top_n = cfg["digest_top_n"]
     shown = daily_shortlist(ranked, top_n)
     print(
@@ -1669,9 +1789,14 @@ def main():
     if args.csv:
         with open(args.csv, "w", newline="") as f:
             w = csv.writer(f)
-            w.writerow(["score", "title", "naics", "psc", "set_aside", "city", "state", "deadline", "link", "notice_id"])
+            w.writerow([
+                "score", "title", "naics", "psc", "set_aside", "city", "state",
+                "deadline", "link", "notice_id", "contract_fit", "months",
+                "monthly_value",
+            ])
             for pts, reasons, opp in ranked:
                 pop = opp.get("placeOfPerformance") or {}
+                fit = opp.get("_contract_fit") or {}
                 w.writerow([
                     pts,
                     opp.get("title"),
@@ -1683,6 +1808,9 @@ def main():
                     (opp.get("responseDeadLine") or "")[:10],
                     opp.get("uiLink", ""),
                     opp.get("noticeId"),
+                    fit.get("disposition") or "",
+                    fit.get("months") or "",
+                    fit.get("monthly_value") or "",
                 ])
         print(f"Wrote {args.csv}", file=sys.stderr)
 

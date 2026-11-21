@@ -40,6 +40,7 @@ import company as fact_bank  # noqa: E402
 import fillable  # noqa: E402
 import render  # noqa: E402
 import find_opportunities as core  # noqa: E402
+import contract_fit  # noqa: E402
 import packet as packet_builder  # noqa: E402
 import proposal as proposal_builder  # noqa: E402
 
@@ -305,6 +306,9 @@ def serialize_result(pts, reasons, opp, held_certs=None):
         "state": (pop.get("state") or {}).get("code"),
         "deadline": (opp.get("responseDeadLine") or "")[:10] or None,
         "link": opp.get("uiLink"),
+        "contract_fit": (opp.get("_contract_fit") or {}).get("disposition"),
+        "performance_months": (opp.get("_contract_fit") or {}).get("months"),
+        "monthly_value": (opp.get("_contract_fit") or {}).get("monthly_value"),
     }
 
 
@@ -364,6 +368,7 @@ def api_get_settings():
             {"key": key, "label": spec["label"]} for key, spec in core.PROFILES.items()
         ],
         "certifications": held_certifications(),
+        "contract_criteria": contract_fit.load_criteria(profile),
     })
 
 
@@ -407,12 +412,23 @@ def api_save_settings():
         if "@" in email:
             settings["notify_email"] = email
 
+    saved_criteria = None
+    if isinstance(body.get("contract_criteria"), dict):
+        # Written to company.toml, which is also what the daily search reads.
+        # Not stored in settings.json — two copies of a threshold is how a
+        # setting goes stale.
+        saved_criteria = contract_fit.save_contract_criteria(body["contract_criteria"])
+
     for key in DEFAULT_SHARED:
         store[key] = settings[key]
     store["profiles"][profile] = {k: settings[k] for k in PER_PROFILE_KEYS}
     save_store(store)
     settings["profile"] = profile
-    return jsonify({"settings": settings, "active_profile": store["active_profile"]})
+    return jsonify({
+        "settings": settings,
+        "active_profile": store["active_profile"],
+        "contract_criteria": saved_criteria or contract_fit.load_criteria(profile),
+    })
 
 
 @app.route("/api/search", methods=["POST"])
@@ -442,7 +458,9 @@ def api_search():
         "keywords": spec["keywords"],
         "priority_psc": spec["priority_psc"],
         "home_states": spec["home_states"],
+        "profile": profile,
         "profile_label": spec["label"],
+        "contract_criteria": contract_fit.load_criteria(profile),
         "db_path": db_path_for(profile),
         "drafts_dir": drafts_dir_for(profile),
         "draft_min_score": settings["draft_min_score"],
@@ -491,6 +509,7 @@ def api_search():
         "excluded_restricted": result["excluded_restricted"],
         "excluded_expired": result["excluded_expired"],
         "excluded_supplies": result["excluded_supplies"],
+        "excluded_one_off": result.get("excluded_one_off", 0),
         "draft_count": len(result["draft_paths"]),
         "emailed": result["emailed"],
         "log": log_lines,

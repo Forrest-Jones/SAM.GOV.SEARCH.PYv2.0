@@ -1,10 +1,12 @@
 # Proverbs 1821 — SAM.gov Searchable Contracts
 
-Finds, ranks, and triages SAM.gov contract opportunities against Proverbs
-1821 Consulting LLC's NAICS codes (tax center support, accounting/tax
-remediation, and third-party program evaluation). New high-scoring
-opportunities get a markdown review scaffold and, if configured, an
-email digest.
+Finds, ranks, and triages SAM.gov contract opportunities for Proverbs
+1821 Consulting LLC. The daily search keeps multi-year recurring service
+contracts — janitorial, grounds maintenance, facility support, and other
+base-plus-option, IDIQ, or BPA work — and drops one-off jobs such as a
+single roof repair, a fence install, or a one-day crane lift. New
+high-scoring opportunities get a markdown review scaffold and, if
+configured, an email digest.
 
 **This tool never submits a bid.** SAM.gov has no API for bid
 submission — federal proposal responses are a signed, human process
@@ -66,6 +68,9 @@ python3 find_opportunities.py --csv results.csv
 # Include set-asides you're not certified for (8(a), HUBZone, SDVOSB, etc.)
 python3 find_opportunities.py --include-restricted-set-asides
 
+# Raise the monthly floor for one run (company.toml is the standing value)
+python3 find_opportunities.py --min-monthly-value 2500 --min-months 36
+
 # Skip draft generation / email for a quick manual check
 python3 find_opportunities.py --no-drafts --no-email
 ```
@@ -124,6 +129,61 @@ key would have to sit in browser-visible JavaScript. Use a production
 WSGI server (`gunicorn webapp.app:app`) rather than the Flask dev
 server if you deploy.
 
+## Which contracts are pursued
+
+The strategy as of 20 November 2026 is to stack recurring service
+contracts, not to chase one-off jobs.
+
+A notice is kept when it is a multi-year recurring service contract:
+a base year plus option years, an IDIQ or BPA (also MATOC, JOC, or
+blanket purchase agreement), or recurring work such as janitorial,
+custodial, grounds maintenance, landscaping, or facility support.
+The search reads that from the title, the description, the NAICS code
+(561720 janitorial, 561730 grounds, 561210 facility support, 561790
+other building services), the PSC (the S family, including S201, S208,
+S216, S299), and any period-of-performance or ceiling fields SAM.gov
+sent. Phrases it treats as that signal include "option year", "base
+period", "IDIQ", "recurring", "annual", and "monthly".
+
+It is dropped when it is a one-time construction, repair, or
+installation job (a roof repair, a fence install, a crane lift, a
+renovation) and none of those recurring signals are present. A roofing
+MATOC or an IDIQ with option years is kept: the vehicle is the
+contract, not the trade. It is also dropped when the notice states a
+value or a term that fails the floor.
+
+The floor is **$1,000 per month for at least 24 months**, which is
+$24,000 over the term. Five to ten years is the preferred band, and
+the ranker pushes higher monthly value toward a **$10,000 per month**
+portfolio. A 10-year, $10,000-a-month janitorial contract outranks a
+2-year, $1,000-a-month one, which outranks a recurring notice whose
+value was never stated.
+
+When the notice looks recurring but the value or the duration cannot
+be determined, it is kept and marked **needs review**. It is not
+silently dropped. A stated value that cannot clear $24,000 over any
+term of 24 months or more, or a stated term under 24 months, is
+dropped: those are determined, and they fail.
+
+The four thresholds, plus the top of the preferred band, live in
+`company.toml` under `[shared.contract_criteria]`:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `min_monthly_value` | 1000 | Minimum dollars per month |
+| `min_months` | 24 | Minimum period of performance |
+| `preferred_months` | 60 | Start of the preferred band (5 years) |
+| `preferred_months_max` | 120 | End of the preferred band (10 years) |
+| `target_monthly_portfolio` | 10000 | Monthly total the ranker is stacking toward |
+
+The same numbers are on the website's Settings tab, which writes this
+block. A single run can override them without editing the file:
+
+```bash
+python3 find_opportunities.py --min-monthly-value 2500 --min-months 36 \
+    --preferred-months 60 --preferred-months-max 120 --target-monthly 10000
+```
+
 ## Eligibility filtering
 
 Set-aside notices are classified three ways:
@@ -176,12 +236,13 @@ The daily run is set to **2 a day**, all Proverbs 1821. The terminal
 shortlist and the email each show those two, highest rank first, so the
 day's choice is which of the two to bid. Each pick shows the deadline
 in Central Time, the set-aside, the estimated value when the notice
-states one, the risks (including no federal past performance), and the
-SAM.gov link. `--top N` asks for a longer list on a one-off run; it
-does not change how notices are scored. The score prefers work this
-firm can win: a solicitation over a sources sought, an LPTA award over
-a best-value award that weighs past performance, and in-state field
-work over a distant construction job. Ares
+states one, the term and monthly value when they can be read, the risks
+(including no federal past performance), and the SAM.gov link. `--top N`
+asks for a longer list on a single run; it does not change how notices
+are scored. The score ranks a longer term and a higher monthly value first. It
+also ranks a solicitation ahead of a sources sought, an LPTA award
+ahead of a best-value award that weighs past performance, and in-state
+field work ahead of a distant job. Ares
 gets no packets while that lane is left out of `active_profiles`. Turn
 the lane back on and give it a `--batch` when someone is ready to act
 on it.

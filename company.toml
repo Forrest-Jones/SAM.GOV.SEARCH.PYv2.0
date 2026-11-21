@@ -60,8 +60,20 @@ bonding_surety          = ""      # e.g. "Merchants Bonding Company (Treasury Ci
 skip_psc      = []                # e.g. ["Z2AZ", "Y1AZ"]
 skip_keywords = []                # e.g. ["foundation repair", "roofing"]
 
+# Recurring-contract floors for the daily search. One-off repairs and
+# installs are dropped. A notice that looks recurring but does not state
+# a value or a term is kept and marked "needs review". Longer terms and
+# higher monthly value rank first, toward the portfolio target.
+# The website Settings form writes these same lines.
+[shared.contract_criteria]
+min_monthly_value = 1000
+min_months = 24
+preferred_months = 60
+preferred_months_max = 120
+target_monthly_portfolio = 10000
+
 # =====================================================================
-# Proverbs 1821 — tax, accounting, audit, evaluation
+# Proverbs 1821 — recurring multi-year services
 # =====================================================================
 [p1821]
 legal_name = "Proverbs 1821 Consulting LLC"
@@ -86,14 +98,14 @@ capability_statement_construction = """Proverbs 1821 Consulting LLC performs con
 
 # Which of your registered NAICS codes should get a bid packet built.
 #
-# The search still scores every code on your registration. The daily
-# terminal shortlist and the email show the top 2 by rank (`--top` on
-# find_opportunities.py). This list only decides where the conveyor belt
-# spends effort. It exists because a registration is broader than a
-# capability: 541620 surfaced a confined-space assessment needing
-# OSHA/NFPA-trained crews, and 541720 surfaced an Army history office BPA
-# wanting archival finding aids and exhibit samples. Both real, both
-# biddable, neither one this firm's work.
+# The search still scores every code on the profile. The daily terminal
+# shortlist and the email show the top 2 by rank (`--top` on
+# find_opportunities.py), and only after the recurring-contract gate.
+# This list decides where the conveyor belt spends effort. It exists
+# because a registration is broader than a capability: 541620 surfaced a
+# confined-space assessment needing OSHA/NFPA-trained crews, and 541720
+# surfaced an Army history office BPA wanting archival finding aids and
+# exhibit samples. Both real, both biddable, neither one this firm's work.
 #
 # Leave the list empty to build packets for every code.
 #
@@ -101,6 +113,10 @@ capability_statement_construction = """Proverbs 1821 Consulting LLC performs con
 # than this one: NAICS says what industry the buyer filed under, PSC says
 # what is actually being bought.
 packet_naics = [
+  "561720",   # janitorial
+  "561730",   # landscaping / grounds
+  "561210",   # facilities support
+  "561790",   # other services to buildings
   "541211",   # CPA offices — note: much of this needs a CPA licence
   "541213",   # tax preparation
   "541219",   # other accounting services
@@ -134,7 +150,7 @@ packet_naics = [
 #   F = natural resources and conservation  <- field work
 #
 # Empty means every PSC is fair game.
-packet_psc_prefixes = ["R", "B", "Y", "Z", "J"]   # Y, Z construction; J repair (welding)
+packet_psc_prefixes = ["R", "B", "S", "Y", "Z", "J"]   # S housekeeping/facility services; Y, Z construction vehicles; J repair
 
 # Credentials the business actually holds. These answer the pass/fail
 # qualification questions a solicitation asks, so each packet can resolve
